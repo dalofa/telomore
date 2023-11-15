@@ -1,0 +1,4 @@
+### Priority list of problemns to adress
+1. Adress stiching problem -> Maybe a mapping plus prioritized sequence keeping?
+2. Make a more useful logfile
+3. Clean-up of tmp files

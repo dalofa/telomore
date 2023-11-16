@@ -2,3 +2,5 @@
 1. Adress stiching problem -> Maybe a mapping plus prioritized sequence keeping?
 2. Make a more useful logfile
 3. Clean-up of tmp files
+4. Update arg parser to take long form input "--threads" and short form "-t"
+5. Update arg parser to take offset as optional value

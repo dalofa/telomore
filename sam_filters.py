@@ -4,6 +4,8 @@ import pysam
 import re
 import subprocess
 from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 def get_terminal_reads(sam_file,loutput_handle,routput_handle):
    """A function that retrieves all reads mapping at the very start or end of a reference"""
    
@@ -125,8 +127,63 @@ def revcomp(fasta_in,fasta_out):
         # Write the reverse complement record to the output FASTQ file
         SeqIO.write(rev_complement_record, output_handle, "fasta")
 
+def stich_telo(ref,left_map,right_map,outfile):
+   # function to stitch telomeres onto the fucking reference
+   # add checks for mapping positions
+
+
+   # extract left cons-to-stich
+   l_sam_in = pysam.AlignmentFile(left_map, "r")
+   left_seqs =[]
+   start_clip = r"^(\d+)S"
+
+   # filter away mapping at right side
+   cons_at_left = [read for read in l_sam_in if read.reference_start<1000]
+
+   for read in cons_at_left:
+      lmatch = re.match(start_clip,read.cigarstring)
+      if lmatch:
+         clip_num=int(lmatch.group(1)) # digits are retrieve via .group
+         seq = read.query_sequence[0:(clip_num-read.reference_start)] # Adjust for if more than just overhanging bases are soft-clipped
+         left_seqs.append(seq)
+   l_sam_in.close()
+
+   # extract right cons-to-stich
+   r_sam_in = pysam.AlignmentFile(right_map, "r")
+   seq_end = r_sam_in.lengths[0] # get length of reference
+   right_seqs = []
+   end_clip = r"(\d+)S$" # reg. exp for ending with *S[num]
+
+   cons_at_right = [read for read in r_sam_in if read.reference_start>1000]
+   for read in cons_at_right:
+      rmatch = re.search(end_clip,read.cigarstring)
+      if rmatch:
+
+         clip_num=int(rmatch.group(1)) # digits are retrieve via .group
+         # Adjusting for potential difference between overhang and soft-clip
+         adj = seq_end-read.reference_end
+         if clip_num+read.reference_end>seq_end:
+            seq = read.query_sequence[-(clip_num-adj):]
+            right_seqs.append(seq)
+   r_sam_in.close()
+
+   # stich the fuckers toghether
+   genome = SeqIO.read(ref,"fasta")
+   left_cons = SeqRecord(Seq(left_seqs[0]),id="left_cons")
+   right_cons = SeqRecord(Seq(right_seqs[0]),id="right_cons")
+   new_genome = left_cons+genome+right_cons
+   new_genome.id="Reference_with_consensus_attached"
+   new_genome.description="" 
+   SeqIO.write(new_genome,outfile,"fasta")
+
+
 if __name__ == '__main__':
    print("testing samfilter functions")
+   ref="NBC_00287_chrom.fa"
+   left_map="left.sam"
+   right_map="right.sam"
+   outfile="nah2.fasta"
+   stich_telo(ref,left_map, right_map,outfile)
    #extract_reads("right_test.sam","filtered_right.sam")
    #get_right_soft("right_test.sam","filtered")
    #revcomp_reads("test2.fastq","test_out2.fastq")

@@ -31,7 +31,7 @@ def cons_genome_map(left_cons,right_cons,polished_genome,output_handle,t=1):
     merge_fasta(left_cons,right_cons,"all_cons.fasta")
     map_and_sort(polished_genome,"all_cons.fasta",t,output_handle)
 
-def cons_cons_map(left_cons,right_cons,polished_genome,output_handle,t=1):
+def cons_cons_map(left_cons,right_cons,output_handle,t=1):
     '''Collect consensus and maps them against each other'''
     map_and_sort(left_cons,right_cons,t,output_handle)
 

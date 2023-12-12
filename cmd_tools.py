@@ -3,7 +3,7 @@
 # Find out whether all reads or all terminal reads is needed to train lastdb
 # Maybe use the
 
-from sam_filters import revcomp
+from sam_tools import revcomp
 """
 Functions for running CLI-tools, namely: minimap2, lastdb, lamassemble and medaka
 """

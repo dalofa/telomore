@@ -19,22 +19,22 @@ import os
 from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map
 from fasta_tools import get_chromosome, attach_seq
 from cmd_tools import map_and_sort, train_lastDB, generate_consensus, polish
-from sam_filters import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp
+from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo
 import shutil
 import os
 
 
 def main():
-    print("Running telomore 0.1")
+    print("***************************Running telomore 0.1***************************")
     print("Working in",os.getcwd())
     
-    # prepare STUFF
+    # Read arguments
     args,ref_name = get_args()
     folder_cont = os.listdir()
-
-    # 1. Sort away non-chromsomal contigs
-    chrom_out = ref_name + "_chrom.fa"
+    # Select chromosome
+    chrom_out= ref_name + "_chrom.fa"
     get_chromosome(args.reference, chrom_out)
+    
 
     # 2. Map reads
     map_out = ref_name+".map.sam"
@@ -43,14 +43,14 @@ def main():
         map_and_sort(chrom_out,args.fastq,args.threads,map_out)
         print("Mapping finished")
     else:
-        print("Using already identified mapping file", map_out+".sort.bam")
+        print("Using already identified mapping file", map_finish)
 
     # 3. Filtering of reads
     get_terminal_reads(map_finish,"left.sam","right.sam")
 
-    get_left_soft("left.sam","left_filtered",offset=100)
+    get_left_soft("left.sam","left_filtered",offset=500)
     
-    get_right_soft("right.sam","right_filtered",offset=100)
+    get_right_soft("right.sam","right_filtered",offset=500)
     
     print("Terminal reads filtered and extracted")
 
@@ -71,21 +71,47 @@ def main():
     # 5. Attach and polish
     ref_att_cons=ref_name+"_att_cons.fa"
 
-    attach_seq("left_cons.fasta","right_cons.fasta",chrom_out,ref_att_cons,offset=100)
-    
-    polish(ref_att_cons,args.fastq,"medaka",threads=args.threads)
-    ref_att_cons_polish=ref_name+"cons_polished.fa"
+    #attach_seq("left_cons.fasta","right_cons.fasta",chrom_out,ref_att_cons,offset=100)
+    # testing the stich_telo method
+    # 1. produce a left and a right cons map
+    l_map_out = "left.map.sam"
+    l_map_finish= l_map_out+".sort.bam"
+    map_and_sort(chrom_out,"left_cons.fasta",args.threads,l_map_out)
+    r_map_out = "right.map.sam"
+    r_map_finish= r_map_out+".sort.bam"
+    map_and_sort(chrom_out,"right_cons.fasta",args.threads,r_map_out)
+    stitch_out = ref_name +"_genome.stitch.fasta"
+    stich_telo(chrom_out,l_map_finish,r_map_finish,stitch_out)
+
+    polish(stitch_out,args.fastq,"medaka",threads=args.threads)
+    ref_att_cons_polish=ref_name+"_stitch_polished.fa"
     #move file baaaack, this aint working, shoudl be now
     shutil.copyfile("medaka/consensus.fasta", ref_att_cons_polish)
 
+
+
+
+
+
+
+
+
+
+
+
     # 6. Evaluate consensus
     # QC report:
-    
-    
-    qc_map(ref_att_cons_polish,"left.sam","right.sam",ref_name+".qc.map.sam",t=args.threads)
-    cons_genome_map("left_cons.fasta","right_cons.fasta",ref_att_cons_polish,ref_name+".cons.map",t=args.threads)
-    cons_cons_map("left_cons.fasta","right_cons.fasta",ref_name+".cons_vs_cons.map.sam")
-    cons_length("all_cons.fasta","cons_lenghts.log.txt")
+    print("******QC*******")
+    # QC of non-polished genome
+    qc_map(stitch_out,"left.sam","right.sam",ref_name+".nonpolish.qc.map.sam",t=args.threads)
+    cons_genome_map("left_cons.fasta","right_cons.fasta",stitch_out,ref_name+".nonpolish.cons.map",t=args.threads)
+
+    # QC of stiched and polished genome
+    qc_map(ref_att_cons_polish,"left.sam","right.sam",ref_name+".polished.qc.map.sam",t=args.threads)
+    cons_genome_map("left_cons.fasta","right_cons.fasta",ref_att_cons_polish,ref_name+".polished.cons.map",t=args.threads)
+    cons_cons_map("left_cons.fasta","right_cons.fasta","cons_vs_cons.map",t=args.threads)
+    cons_length("all_cons.fasta","cons_lenghts.log.txt", offset=500)
+
     
 
     # Bam-file of org. cons and reads against full polished genome

@@ -19,6 +19,7 @@ def map_and_sort(ref, fastq, t, output_handle):
    out2 = output_handle +".sort.bam"
    subprocess.run(["samtools","sort","-@",str(t),output_handle,"-o",out2])
    subprocess.run(["samtools","index",out2])
+   subprocess.run(["rm",output_handle])
 
 def train_lastDB(fasta_name,reads,db_name, t=1):
    '''Trains and lastDB database using a reference and long-reads'''

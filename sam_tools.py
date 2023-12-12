@@ -130,7 +130,7 @@ def revcomp(fasta_in,fasta_out):
         # Write the reverse complement record to the output FASTQ file
         SeqIO.write(rev_complement_record, output_handle, "fasta")
 
-def stich_telo(ref,left_map,right_map,outfile):
+def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
    # function to stitch telomeres onto the fucking reference
    # add checks for mapping positions
 
@@ -179,6 +179,12 @@ def stich_telo(ref,left_map,right_map,outfile):
    new_genome.id="Reference_with_consensus_attached"
    new_genome.description="" 
    SeqIO.write(new_genome,outfile,"fasta")
+   
+   # Create log of consensus length
+   log = open(logout,"w")
+   log_content ="left_cons:{}\tright_consensus:{}".format(len(left_cons),len(right_cons))
+   log.write(log_content)
+   log.close()
 
 
 
@@ -199,14 +205,14 @@ from more_itertools import peekable
 #     # Iterator is non-empty.
 # else:
 
-def get_support_info(bam_file,ref_name, genome, position, qual_threshold=1):
-   """Returns the coverage, bases matching the reference and median of the base quality at a given position after removing bases below qual_filter."""
+def get_support_info(bam_file, genome, position, qual_threshold=1):
+   """Returns the coverage and bases matching the reference at a given position considering only base above the quality threshold"""
 
    bam_in = pysam.AlignmentFile(bam_file, "rb", )
    
    # pileup: Truncate=True ensures that only the specific position supplied is returned and not full length reds
    # stepper="nofilter" ensures that secondary alignments are also returned
-   pileup = bam_in.pileup(ref_name, start=position, stop=position+1,truncate=True,stepper="nofilter")
+   pileup = bam_in.pileup( start=position, stop=position+1,truncate=True,stepper="nofilter")
    fasta_file = SeqIO.read(genome,"fasta")
    # counter
    matching_bases = 0
@@ -223,8 +229,8 @@ def get_support_info(bam_file,ref_name, genome, position, qual_threshold=1):
       return(cov,matching_bases)
 
 
-def trim_by_map(genome, sorted_bam_file, ref_name, output_handle, cov_thres=5, ratio_thres=0.7, qual_thres=1):
-   """Trims a genome according to  """
+def trim_by_map(genome, sorted_bam_file, output_handle, cov_thres=5, ratio_thres=0.7, qual_thres=1):
+   """Trims the ends of a genome using an alignment of reads at the ends."""
    # load genome
    fasta = SeqIO.read(genome,"fasta")
    fasta_end = len(fasta.seq)-1
@@ -232,22 +238,21 @@ def trim_by_map(genome, sorted_bam_file, ref_name, output_handle, cov_thres=5, r
    # trim start/left
    for pos in range(0,fasta_end):
       try:
-         cov, match = get_support_info(sorted_bam_file,ref_name,genome,pos,qual_thres)
+         cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
          if cov>cov_thres and (match/cov)>ratio_thres:
             index_start=pos
             break
       except TypeError:
          continue
-      
+   # trim end/right
    for pos in range(fasta_end,0,-1):
       try:
-         cov, match = get_support_info(sorted_bam_file,ref_name,genome,pos,qual_thres)
+         cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
          if cov>cov_thres and (match/cov)>ratio_thres:
             index_end=pos
             break
       except TypeError:
          continue
-
 
    trimmed_fasta = fasta[index_start:index_end]
    trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
@@ -261,15 +266,5 @@ if __name__ == '__main__':
    test_file="NBC_00287.nonpolish.qc.map.sam.sort.bam"
    genome="NBC_00287_genome.stitch.fasta"
    test_output="test.fa"
-   trim_by_map(genome,test_file,ref,test_output)
-
-   # for i in range(0,10):
-
-   #    if get_support_info(test_file,ref,genome,i)==None:
-   #       pass
-   #    else:
-   #       print(i)
-   #       print(get_support_info(test_file,ref, genome, i))
-
-
+   trim_by_map(genome,test_file,test_output)
 

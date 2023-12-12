@@ -19,122 +19,86 @@ import os
 from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map
 from fasta_tools import get_chromosome, attach_seq
 from cmd_tools import map_and_sort, train_lastDB, generate_consensus, polish
-from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo
+from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map
 import shutil
 import os
 
 
 def main():
-    print("***************************Running telomore 0.1***************************")
-    print("Working in",os.getcwd())
     
-    # Read arguments
+    # Read in arguments
     args,ref_name = get_args()
-    folder_cont = os.listdir()
-    # Select chromosome
+    folder_content = os.listdir()
+    # Discarding nonchromosomal elements
     chrom_out= ref_name + "_chrom.fa"
     get_chromosome(args.reference, chrom_out)
-    
 
-    # 2. Map reads
+    # 0: Mapping of reads and extraction of soft-clipped reads
+    # -----------------------------------------------------------------
     map_out = ref_name+".map.sam"
     map_finish= map_out+".sort.bam"
-    if not map_finish in folder_cont:
+
+    if not map_finish in folder_content:
         map_and_sort(chrom_out,args.fastq,args.threads,map_out)
         print("Mapping finished")
     else:
         print("Using already identified mapping file", map_finish)
 
-    # 3. Filtering of reads
-    get_terminal_reads(map_finish,"left.sam","right.sam")
-
-    get_left_soft("left.sam","left_filtered",offset=500)
+    # Select soft-clipped reads that extend the reference
+    left_reads = "left.sam"
+    right_reads = "right.sam"
+    get_terminal_reads(map_finish,left_reads,right_reads)
+    get_left_soft(left_reads,"left_filtered",offset=500) 
+    get_right_soft(right_reads,"right_filtered",offset=500)
+    print("Terminals reads extracted")
     
-    get_right_soft("right.sam","right_filtered",offset=500)
-    
-    print("Terminal reads filtered and extracted")
-
-    # 4. Generate consensus
-    #       4.1 Train lastDB
+    # 1: Generate consensus 
+    # -----------------------------------------------------------------    
     db_out=ref_name+"_db"
     train_lastDB(chrom_out,args.fastq,db_out,args.threads)
-    # this needs to happen for both sides min vennebror i kristihimmelfart
-    
-    #       4.2 Produces left-consensus (which requires flipping reads and then flipping the resulting consensus)
+
+    # Generate left-consensus
+    # To maintain anchor point for alignment, the reads are flipped
+    # and the resulting consensus must then be flipped
     revcomp_reads("left_filtered.fastq","rev_left_filtered.fastq") # flip reads for 
     generate_consensus(db_out,"rev_left_filtered.fastq","rev_left_cons")
     revcomp("rev_left_cons.fasta","left_cons.fasta")
 
-    #       4.3 Produce right-consensus
+    # Generate right-consensus
     generate_consensus(db_out,"right_filtered.fastq","right_cons")
-
-    # 5. Attach and polish
-    ref_att_cons=ref_name+"_att_cons.fa"
-
-    #attach_seq("left_cons.fasta","right_cons.fasta",chrom_out,ref_att_cons,offset=100)
-    # testing the stich_telo method
-    # 1. produce a left and a right cons map
+    print("Consensus generated")
+    # Extend assembly with consensus using and mapping of the consensus
+    # onto the chromosome
     l_map_out = "left.map.sam"
     l_map_finish= l_map_out+".sort.bam"
     map_and_sort(chrom_out,"left_cons.fasta",args.threads,l_map_out)
+    
     r_map_out = "right.map.sam"
     r_map_finish= r_map_out+".sort.bam"
     map_and_sort(chrom_out,"right_cons.fasta",args.threads,r_map_out)
+
     stitch_out = ref_name +"_genome.stitch.fasta"
     stich_telo(chrom_out,l_map_finish,r_map_finish,stitch_out)
+    print("Consensus attached to genome")
 
-    polish(stitch_out,args.fastq,"medaka",threads=args.threads)
-    ref_att_cons_polish=ref_name+"_stitch_polished.fa"
-    #move file baaaack, this aint working, shoudl be now
-    shutil.copyfile("medaka/consensus.fasta", ref_att_cons_polish)
+    # 2: Trim consensus
+    # ----------------------------------------------------------------- 
+    trim_map = ref_name + ".nontrimmed.map.sam"
+    trim_map_bam = trim_map + ".sort.bam"
+    qc_map(stitch_out,left_reads,right_reads,trim_map,t=args.threads)
+    trim_out = ref_name + ".trimmed.consensus.fasta"
+    trim_by_map(stitch_out,trim_map_bam,trim_out,cov_trehs=5, ratio_thres=0.7,qual_thres=1)
+    print("Consensus quality trimmed")
 
-
-
-
-
-
-
-
-
-
-
-
-    # 6. Evaluate consensus
-    # QC report:
-    print("******QC*******")
-    # QC of non-polished genome
-    qc_map(stitch_out,"left.sam","right.sam",ref_name+".nonpolish.qc.map.sam",t=args.threads)
-    cons_genome_map("left_cons.fasta","right_cons.fasta",stitch_out,ref_name+".nonpolish.cons.map",t=args.threads)
-
-    # QC of stiched and polished genome
-    qc_map(ref_att_cons_polish,"left.sam","right.sam",ref_name+".polished.qc.map.sam",t=args.threads)
-    cons_genome_map("left_cons.fasta","right_cons.fasta",ref_att_cons_polish,ref_name+".polished.cons.map",t=args.threads)
+    # 3: QC and clean-up
+    # -----------------------------------------------------------------
+    qc_out = ref_name + ".qc.map.sam"
+    qc_map(trim_out,left_reads,right_reads,qc_out,t=args.threshold)
+    cons_genome_map_out = ref_name + ".cons.genome.map.sam"
+    cons_genome_map("left_cons.fasta","right_cons.fasta",trim_out,cons_genome_map_out,t=args.threads)
     cons_cons_map("left_cons.fasta","right_cons.fasta","cons_vs_cons.map",t=args.threads)
-    cons_length("all_cons.fasta","cons_lenghts.log.txt", offset=500)
+    print("QC report and alignments generated")
 
-    
-
-    # Bam-file of org. cons and reads against full polished genome
-
-
-    #get reads and assemble reference
-
-    
-    # parse args
-    # get chromosome
-    # map reads
-    # filter reads
-    # extract overhanging reads
-
-
-    # identify overhangs at termini
-    # create consensus
-    # evaluate consensus: reads supporting it and its quality at each position
-    # polish consensus
-    # evaluate reads supporting consensus and its quality
-
-
-# parse arguments
 def get_args():
     """Parses arguments"""
     parser = argparse.ArgumentParser(
@@ -158,4 +122,5 @@ def get_args():
 
 # Run script
 if __name__ == '__main__':
+    print("Running telomore 0.1")
     main()

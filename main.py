@@ -20,7 +20,6 @@ from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map
 from fasta_tools import get_chromosome, attach_seq
 from cmd_tools import map_and_sort, train_lastDB, generate_consensus, polish
 from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map
-import shutil
 import os
 
 
@@ -47,9 +46,12 @@ def main():
     # Select soft-clipped reads that extend the reference
     left_reads = "left.sam"
     right_reads = "right.sam"
+    left_filt = "left_filtered"
+    right_filt = "right_filtered"
+
     get_terminal_reads(map_finish,left_reads,right_reads)
-    get_left_soft(left_reads,"left_filtered",offset=500) 
-    get_right_soft(right_reads,"right_filtered",offset=500)
+    get_left_soft(left_reads,left_filt,offset=500) 
+    get_right_soft(right_reads,right_filt,offset=500)
     print("Terminals reads extracted")
     
 
@@ -63,11 +65,15 @@ def main():
     # To maintain anchor point for alignment, the reads are flipped
     # and the resulting consensus must then be flipped
     revcomp_reads("left_filtered.fastq","rev_left_filtered.fastq") # flip reads for 
-    generate_consensus(db_out,"rev_left_filtered.fastq","rev_left_cons")
-    revcomp("rev_left_cons.fasta","left_cons.fasta")
+    l_cons_out="rev_left_cons"
+    generate_consensus(db_out,"rev_left_filtered.fastq",l_cons_out)
+    l_cons_final_out="left_cons.fasta"
+    revcomp(l_cons_out,l_cons_final_out)
+
 
     # Generate right-consensus
-    generate_consensus(db_out,"right_filtered.fastq","right_cons")
+    r_cons_out="right_cons"
+    generate_consensus(db_out,"right_filtered.fastq",r_cons_out)
     print("Consensus generated")
     
 
@@ -86,17 +92,14 @@ def main():
     stich_telo(chrom_out,l_map_finish,r_map_finish,stitch_out)
     print("Consensus attached to genome")
 
-
-
     # 2: Trim consensus
     # ----------------------------------------------------------------- 
     trim_map = ref_name + ".nontrimmed.map.sam"
     trim_map_bam = trim_map + ".sort.bam"
     qc_map(stitch_out,left_reads,right_reads,trim_map,t=args.threads)
     trim_out = ref_name + ".trimmed.consensus.fasta"
-    trim_by_map(stitch_out,trim_map_bam,trim_out,cov_trehs=5, ratio_thres=0.7,qual_thres=1)
+    trim_by_map(stitch_out,trim_map_bam,trim_out,cov_thres=5, ratio_thres=0.7,qual_thres=1)
     print("Consensus quality trimmed")
-
 
     # 3: QC and clean-up
     # -----------------------------------------------------------------
@@ -107,17 +110,35 @@ def main():
     cons_cons_map("left_cons.fasta","right_cons.fasta","cons_vs_cons.map",t=args.threads)
     print("QC report and alignments generated")
 
-    #rm files
-    os.remove(l_map_finish)
-    os.remove(r_map_finish)
-    os.remove(trim_map)
-    os.remove(trim_map_bam)
-    for file_ext in [".bck",".des",".par",".prj",".sds",".ssp",".suf",".tis"]:
+    #rm all the files that were made
+
+    # all bam-files
+    maps_to_remove = [map_finish,l_map_finish,r_map_finish,trim_map_bam]
+    for file in maps_to_remove:
+        os.remove(file)
+        os.remove(file+".bai")
+
+    DATABASE_EXT=[".bck",".des",".par",".prj",".sds",".ssp",".suf",".tis"]
+    for file_ext in DATABASE_EXT:
         os.remove(db_out+file_ext)
 
-    os.remove("left_cons.fasta")
-    os.remove("right_cons.fasta")
-    os.remove(map_finish) 
+    for file_ext in [".sam",".fastq"]:
+        os.remove(left_filt+file_ext)
+        os.remove(right_filt+file_ext)
+    
+    os.remove(left_reads)
+    os.remove(right_reads)
+
+    CONS_EXT=[".fasta",".aln"]
+    for file_ext in CONS_EXT:
+        os.remove(r_cons_out+file_ext)
+        os.remove(l_cons_out+file_ext)
+     
+    os.remove(l_cons_final_out)
+    os.remove("all_terminal_reads.fastq")
+    os.remove(stitch_out)
+
+
 
 
 def get_args():

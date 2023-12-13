@@ -245,6 +245,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle, cov_thres=5, ratio_thres
       except TypeError:
          continue
    # trim end/right
+   
    for pos in range(fasta_end,0,-1):
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)

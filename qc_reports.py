@@ -8,15 +8,7 @@ import pysam
 """
 Functions for generating useful QC metrics from the telomore script.
 """
-def useful_files(left,right):
-    file="wah"
-    
-    #find reads that were soft-clipped
-    #count how many was in each direction
-    
-    #der skal tælles reads brugt til consensus
-    #
-    return file
+
 
 def qc_map(polished_genome,left,right,output_handle,t=1):
    '''Collect terminal reads previously identified and maps them against the polished genome'''

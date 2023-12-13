@@ -52,6 +52,8 @@ def main():
     get_right_soft(right_reads,"right_filtered",offset=500)
     print("Terminals reads extracted")
     
+
+
     # 1: Generate consensus 
     # -----------------------------------------------------------------    
     db_out=ref_name+"_db"
@@ -67,6 +69,9 @@ def main():
     # Generate right-consensus
     generate_consensus(db_out,"right_filtered.fastq","right_cons")
     print("Consensus generated")
+    
+
+
     # Extend assembly with consensus using and mapping of the consensus
     # onto the chromosome
     l_map_out = "left.map.sam"
@@ -81,6 +86,8 @@ def main():
     stich_telo(chrom_out,l_map_finish,r_map_finish,stitch_out)
     print("Consensus attached to genome")
 
+
+
     # 2: Trim consensus
     # ----------------------------------------------------------------- 
     trim_map = ref_name + ".nontrimmed.map.sam"
@@ -90,14 +97,28 @@ def main():
     trim_by_map(stitch_out,trim_map_bam,trim_out,cov_trehs=5, ratio_thres=0.7,qual_thres=1)
     print("Consensus quality trimmed")
 
+
     # 3: QC and clean-up
     # -----------------------------------------------------------------
     qc_out = ref_name + ".qc.map.sam"
-    qc_map(trim_out,left_reads,right_reads,qc_out,t=args.threshold)
+    qc_map(trim_out,left_reads,right_reads,qc_out,t=args.threads)
     cons_genome_map_out = ref_name + ".cons.genome.map.sam"
     cons_genome_map("left_cons.fasta","right_cons.fasta",trim_out,cons_genome_map_out,t=args.threads)
     cons_cons_map("left_cons.fasta","right_cons.fasta","cons_vs_cons.map",t=args.threads)
     print("QC report and alignments generated")
+
+    #rm files
+    os.remove(l_map_finish)
+    os.remove(r_map_finish)
+    os.remove(trim_map)
+    os.remove(trim_map_bam)
+    for file_ext in [".bck",".des",".par",".prj",".sds",".ssp",".suf",".tis"]:
+        os.remove(db_out+file_ext)
+
+    os.remove("left_cons.fasta")
+    os.remove("right_cons.fasta")
+    os.remove(map_finish) 
+
 
 def get_args():
     """Parses arguments"""

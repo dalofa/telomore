@@ -220,7 +220,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    txt_lines = txt.readlines()[0]
    txt.close()
    left_len = int(txt_lines.split("\t")[0].split(":")[1])
-   right_len = (txt_lines.split("\t")[1].split(":")[1])
+   right_len = int(txt_lines.split("\t")[1].split(":")[1])
 
    index_start = None
    index_end = None

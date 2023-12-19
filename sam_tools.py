@@ -218,6 +218,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    fasta_end = len(fasta.seq)-1
    txt = open(cons_log,"r")
    txt_lines = txt.readlines()[0]
+   txt.close()
    left_len = int(txt_lines.split("\t")[0].split(":")[1])
    right_len = (txt_lines.split("\t")[1].split(":")[1])
 
@@ -262,7 +263,10 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
       trimmed_fasta = fasta[index_start:index_end]
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
       trimmed_fasta.description=""
-
+   
+   txt = open(cons_log,"a")
+   txt.write(log_message)
+   txt.close()
    SeqIO.write(trimmed_fasta,output_handle,"fasta")
 
 if __name__ == '__main__':

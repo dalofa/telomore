@@ -89,7 +89,8 @@ def main():
     map_and_sort(chrom_out,"right_cons.fasta",args.threads,r_map_out)
 
     stitch_out = ref_name +"_genome.stitch.fasta"
-    stich_telo(chrom_out,l_map_finish,r_map_finish,stitch_out)
+    cons_log_out="consensus.log.txt"
+    stich_telo(chrom_out,l_map_finish,r_map_finish,stitch_out,logout=cons_log_out)
     print("Consensus attached to genome")
 
     # 2: Trim consensus
@@ -98,7 +99,7 @@ def main():
     trim_map_bam = trim_map + ".sort.bam"
     qc_map(stitch_out,left_reads,right_reads,trim_map,t=args.threads)
     trim_out = ref_name + ".trimmed.consensus.fasta"
-    trim_by_map(stitch_out,trim_map_bam,trim_out,cov_thres=5, ratio_thres=0.7,qual_thres=1)
+    trim_by_map(stitch_out,trim_map_bam,trim_out, cons_log=cons_log_out, cov_thres=5, ratio_thres=0.7,qual_thres=1)
     print("Consensus quality trimmed")
 
     # 3: QC and clean-up
@@ -113,8 +114,8 @@ def main():
     #rm all the files that were made
 
     # all bam-files
-    maps_to_remove = [map_finish,l_map_finish,r_map_finish,trim_map_bam]
-    for file in maps_to_remove:
+    MAPS_TO_REMOVE = [map_finish,l_map_finish,r_map_finish,trim_map_bam]
+    for file in MAPS_TO_REMOVE:
         os.remove(file)
         os.remove(file+".bai")
 
@@ -122,7 +123,8 @@ def main():
     for file_ext in DATABASE_EXT:
         os.remove(db_out+file_ext)
 
-    for file_ext in [".sam",".fastq"]:
+    TERMINAL_MAP_ENDINGS=[".sam",".fastq"]
+    for file_ext in TERMINAL_MAP_ENDINGS:
         os.remove(left_filt+file_ext)
         os.remove(right_filt+file_ext)
         if file_ext==".fastq":

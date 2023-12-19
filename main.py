@@ -68,7 +68,7 @@ def main():
     l_cons_out="rev_left_cons"
     generate_consensus(db_out,"rev_left_filtered.fastq",l_cons_out)
     l_cons_final_out="left_cons.fasta"
-    revcomp(l_cons_out,l_cons_final_out)
+    revcomp(l_cons_out+".fasta",l_cons_final_out)
 
 
     # Generate right-consensus
@@ -125,6 +125,8 @@ def main():
     for file_ext in [".sam",".fastq"]:
         os.remove(left_filt+file_ext)
         os.remove(right_filt+file_ext)
+        if file_ext==".fastq":
+            os.remove("rev_"+left_filt+file_ext)
     
     os.remove(left_reads)
     os.remove(right_reads)

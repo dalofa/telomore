@@ -1,0 +1,1 @@
+left_cons:3	right_consensus:2

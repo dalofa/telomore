@@ -185,25 +185,7 @@ def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
    log_content ="left_cons:{}\tright_consensus:{}".format(len(left_cons),len(right_cons))
    log.write(log_content)
    log.close()
-
-
-
-   # print()
-   # for pileupcolumn in bam_in.pileup(ref_name, position-1, position):
-   #    cov += pileupcolumn.nsegments  # Total number of reads at the position
-   #    for pileupread in pileupcolumn.pileups:
-   #       if not pileupread.is_del and not pileupread.is_refskip:
-   #             # Check if the base matches the reference
-   #             if pileupread.alignment.query_sequence[pileupread.query_position] == \
-   #                   bam_in.get_reference_sequence(ref_name)[pileupcolumn.pos]:
-   #                matching_bases += 1
-   # return cov, matching_bases
-
-from more_itertools import peekable
-# iterator = peekable(iterator)
-# if iterator:
-#     # Iterator is non-empty.
-# else:
+   return(len(left_cons),len(right_cons))
 
 def get_support_info(bam_file, genome, position, qual_threshold=1):
    """Returns the coverage and bases matching the reference at a given position considering only base above the quality threshold"""
@@ -229,24 +211,31 @@ def get_support_info(bam_file, genome, position, qual_threshold=1):
       return(cov,matching_bases)
 
 
-def trim_by_map(genome, sorted_bam_file, output_handle, cov_thres=5, ratio_thres=0.7, qual_thres=1):
+def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,ratio_thres=0.7, qual_thres=1):
    """Trims the ends of a genome using an alignment of reads at the ends."""
    # load genome
    fasta = SeqIO.read(genome,"fasta")
    fasta_end = len(fasta.seq)-1
+   txt = open(cons_log,"r")
+   txt_lines = txt.readlines()[0]
+   left_len = int(txt_lines.split("\t")[0].split(":")[1])
+   right_len = (txt_lines.split("\t")[1].split(":")[1])
+
+   index_start = None
+   index_end = None
    
-   # trim start/left
-   for pos in range(0,fasta_end):
+   #trim start/left-side
+   for pos in range(0,0+left_len):
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
          if cov>cov_thres and (match/cov)>ratio_thres:
             index_start=pos
             break
-      except TypeError:
+      except TypeError: # if no reads are mapped
          continue
-   # trim end/right
    
-   for pos in range(fasta_end,0,-1):
+   #trim end/right
+   for pos in range(fasta_end,fasta_end-right_len,-1):
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
          if cov>cov_thres and (match/cov)>ratio_thres:
@@ -254,10 +243,25 @@ def trim_by_map(genome, sorted_bam_file, output_handle, cov_thres=5, ratio_thres
             break
       except TypeError:
          continue
-
-   trimmed_fasta = fasta[index_start:index_end]
-   trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
-   trimmed_fasta.description=""
+   
+   # check if coverage is too low for either consensus
+   if index_start==None and index_end==None:
+      trimmed_fasta = fasta[(0+left_len):(fasta_end-right_len)]
+      print("Coverage too low: both consensus rejected")
+      log_message = "Both consensus rejceted and genome wihtout extension returned."
+   elif index_start==None:
+      print("Coverage too low for left consensus")
+      #index without consensus + right side
+      log_message = "Left consensus rejected. Right consensus trimmed with {}".format(fasta_end-index_end)
+   elif index_end==None:
+      print("Coverage too low for right consensus")
+      log_message = "Right consensus rejected. Left consensus trimmed with {}".format(index_start)
+      # index from consensus until before consensus on right side
+   else:
+      log_message = "Left consensus trimmed with {}. Right consensus trimmed with {}".format(index_start,(fasta_end-index_end))
+      trimmed_fasta = fasta[index_start:index_end]
+      trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
+      trimmed_fasta.description=""
 
    SeqIO.write(trimmed_fasta,output_handle,"fasta")
 
@@ -267,5 +271,6 @@ if __name__ == '__main__':
    test_file="NBC_00287.nonpolish.qc.map.sam.sort.bam"
    genome="NBC_00287_genome.stitch.fasta"
    test_output="test.fa"
-   trim_by_map(genome,test_file,test_output)
+   cons_log="consensus.log.txt"
+   trim_by_map(genome,test_file,test_output,cons_log="consensus.log.txt")
 

@@ -185,11 +185,11 @@ def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
    log_content ="left_cons:{}\tright_consensus:{}".format(len(left_cons),len(right_cons))
    log.write(log_content)
    log.write("\n>left_cons\n")
-   log.write(left_cons.seq)
+   log.write(str(left_cons.seq))
    log.write("\n>right_cons\n")
-   log.write(right_cons.seq)
+   log.write(str(right_cons.seq))
    log.close()
-   
+
    return(len(left_cons),len(right_cons))
 
 def get_support_info(bam_file, genome, position, qual_threshold=1):

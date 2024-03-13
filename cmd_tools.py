@@ -14,7 +14,7 @@ def map_and_sort(ref, fastq, t, output_handle):
    '''Maps long-reads and returns a sorted and indexed .bam-file'''
    load_command="module load minimap2/2.25"
    map_command =" ".join(["minimap2","-a","-t",str(t),str(ref),str(fastq),"-o",str(output_handle),"--secondary=yes",
-                         "--secondary-seq"])
+                         "--secondary-seq","-Y"])
    subprocess.run(" && ".join([load_command,map_command]),shell=True, executable="/bin/bash")
    out2 = output_handle +".sort.bam"
    subprocess.run(["samtools","sort","-@",str(t),output_handle,"-o",out2])

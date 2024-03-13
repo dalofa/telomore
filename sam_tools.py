@@ -184,7 +184,12 @@ def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
    log = open(logout,"w")
    log_content ="left_cons:{}\tright_consensus:{}".format(len(left_cons),len(right_cons))
    log.write(log_content)
+   log.write("\n>left_cons\n")
+   log.write(left_cons.seq)
+   log.write("\n>right_cons\n")
+   log.write(right_cons.seq)
    log.close()
+   
    return(len(left_cons),len(right_cons))
 
 def get_support_info(bam_file, genome, position, qual_threshold=1):
@@ -249,17 +254,17 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    if index_start==None and index_end==None:
       trimmed_fasta = fasta[(0+left_len):(fasta_end-right_len)]
       print("Coverage too low: both consensus rejected")
-      log_message = "Both consensus rejceted and genome wihtout extension returned."
+      log_message = "\nBoth consensus rejceted and genome wihtout extension returned."
    elif index_start==None:
       print("Coverage too low for left consensus")
       #index without consensus + right side
-      log_message = "Left consensus rejected. Right consensus trimmed with {}".format(fasta_end-index_end)
+      log_message = "\nLeft consensus rejected. Right consensus trimmed with {}".format(fasta_end-index_end)
    elif index_end==None:
       print("Coverage too low for right consensus")
-      log_message = "Right consensus rejected. Left consensus trimmed with {}".format(index_start)
+      log_message = "\nRight consensus rejected. Left consensus trimmed with {}".format(index_start)
       # index from consensus until before consensus on right side
    else:
-      log_message = "Left consensus trimmed with {}. Right consensus trimmed with {}".format(index_start,(fasta_end-index_end))
+      log_message = "\nLeft consensus trimmed with {}.\nRight consensus trimmed with {}".format(index_start,(fasta_end-index_end))
       trimmed_fasta = fasta[index_start:index_end]
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
       trimmed_fasta.description=""

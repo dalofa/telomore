@@ -89,7 +89,7 @@ def main():
     map_and_sort(chrom_out,"right_cons.fasta",args.threads,r_map_out)
 
     stitch_out = ref_name +"_genome.stitch.fasta"
-    cons_log_out="consensus.log.txt"
+    cons_log_out = ref_name + "consensus.log.txt"
     stich_telo(chrom_out,l_map_finish,r_map_finish,stitch_out,logout=cons_log_out)
     print("Consensus attached to genome")
 
@@ -108,7 +108,8 @@ def main():
     qc_map(trim_out,left_reads,right_reads,qc_out,t=args.threads)
     cons_genome_map_out = ref_name + ".cons.genome.map.sam"
     cons_genome_map("left_cons.fasta","right_cons.fasta",trim_out,cons_genome_map_out,t=args.threads)
-    cons_cons_map("left_cons.fasta","right_cons.fasta","cons_vs_cons.map",t=args.threads)
+    cons_cons_map_out=ref_name+"cons_vs_cons.map"
+    cons_cons_map("left_cons.fasta","right_cons.fasta",cons_cons_map_out,t=args.threads)
     print("QC report and alignments generated")
 
     #rm all the files that were made
@@ -142,7 +143,16 @@ def main():
     os.remove("all_terminal_reads.fastq")
     os.remove(stitch_out)
 
-
+    # move qc  files to QC_folder
+    qc_path= ref_name + "_QC"
+    os.mkdir(path)
+    QC_FILES = [qc_out,cons_genome_map_out,cons_genome_map_out]
+    for file in QC_FILES:
+        mv1 = file + ".sort.bam"
+        mv2 = mv1 + ".bai"
+        os.rename(mv1, os.join(qc_path,mv1))
+        os.rename(mv2, os.join(qc_path,mv1))
+    os.rename()
 
 
 def get_args():

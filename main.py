@@ -89,7 +89,7 @@ def main():
     map_and_sort(chrom_out,"right_cons.fasta",args.threads,r_map_out)
 
     stitch_out = ref_name +"_genome.stitch.fasta"
-    cons_log_out = ref_name + "consensus.log.txt"
+    cons_log_out = ref_name + "_consensus.log.txt"
     stich_telo(chrom_out,l_map_finish,r_map_finish,stitch_out,logout=cons_log_out)
     print("Consensus attached to genome")
 
@@ -145,14 +145,14 @@ def main():
 
     # move qc  files to QC_folder
     qc_path= ref_name + "_QC"
-    os.mkdir(path)
-    QC_FILES = [qc_out,cons_genome_map_out,cons_genome_map_out]
+    os.mkdir(qc_path)
+    QC_FILES = [qc_out,cons_genome_map_out,cons_cons_map_out]
     for file in QC_FILES:
         mv1 = file + ".sort.bam"
         mv2 = mv1 + ".bai"
-        os.rename(mv1, os.join(qc_path,mv1))
-        os.rename(mv2, os.join(qc_path,mv1))
-    os.rename()
+        os.rename(mv1, os.path.join(qc_path,mv1))
+        os.rename(mv2, os.path.join(qc_path,mv1))
+    os.rename(cons_log_out,os.path.join(qc_path,cons_log_out))
 
 
 def get_args():

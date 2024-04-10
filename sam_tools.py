@@ -194,29 +194,32 @@ def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
 
 def get_support_info(bam_file, genome, position, qual_threshold=1):
    """Returns the coverage and bases matching the reference at a given position considering only base above the quality threshold"""
-
-   bam_in = pysam.AlignmentFile(bam_file, "rb", )
-   
-   # pileup: Truncate=True ensures that only the specific position supplied is returned and not full length reds
-   # stepper="nofilter" ensures that secondary alignments are also returned
-   pileup = bam_in.pileup( start=position, stop=position+1,truncate=True,stepper="nofilter")
    fasta_file = SeqIO.read(genome,"fasta")
-   # counter
-   matching_bases = 0
+   bam_in = pysam.AlignmentFile(bam_file, "rb", )
 
-   for pileup_column in pileup:
-      pileup_column.set_min_base_quality(qual_threshold) # must be applied to not use the default base qual filter which is >13
-      cov = len(pileup_column.get_query_qualities()) # .get_query_qualities/get_query_sequences returns only reads passsing the filters
-      pos_base = pileup_column.get_query_sequences()
-      #print(pos_base)
-      # check how many bases match the reference
-      for base in pos_base:
-         if fasta_file.seq[position].upper() == base.upper():
-            matching_bases+=1
-      return(cov,matching_bases)
+   #Set read_callback="no filter" to include secondary-mappings
+   # Set quality threshold=1 to include all reads
+   coverage_count=bam_in.count_coverage("Reference_with_consensus_attached",start=position,stop=position+1,read_callback="nofilter",quality_threshold=1)
+   A_num=coverage_count[0][0]
+   C_num=coverage_count[1][0]
+   T_num=coverage_count[2][0]
+   G_num=coverage_count[3][0]
+   cov=A_num+C_num+G_num+T_num
+  
+   if fasta_file.seq[position]=="N":
+      matching_bases=0
+   elif fasta_file.seq[position]=="A":
+      matching_bases=A_num
+   elif fasta_file.seq[position]=="C":
+      matching_bases=C_num
+   elif fasta_file.seq[position]=="G":
+      matching_bases=G_num
+   elif fasta_file.seq[position]=="T":
+      matching_bases=T_num
 
+   return(cov,matching_bases)
 
-def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,ratio_thres=0.7, qual_thres=1):
+def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,ratio_thres=0.7, qual_thres=0):
    """Trims the ends of a genome using an alignment of reads at the ends."""
    # load genome
    fasta = SeqIO.read(genome,"fasta")
@@ -253,33 +256,27 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    # check if coverage is too low for either consensus
    if index_start==None and index_end==None:
       trimmed_fasta = fasta[(0+left_len):(fasta_end-right_len)]
-      print("Coverage too low: both consensus rejected")
-      log_message = "\nBoth consensus rejceted and genome wihtout extension returned."
+      log_message = "\nBoth consensus rejected and genome wihtout extension returned.\n"
    elif index_start==None:
-      print("Coverage too low for left consensus")
       #index without consensus + right side
-      log_message = "\nLeft consensus rejected. Right consensus trimmed with {}".format(fasta_end-index_end)
+      log_message = "\nLeft consensus rejected. Right consensus trimmed with {}\n".format(fasta_end-index_end)
    elif index_end==None:
-      print("Coverage too low for right consensus")
-      log_message = "\nRight consensus rejected. Left consensus trimmed with {}".format(index_start)
+      log_message = "\nRight consensus rejected. Left consensus trimmed with {}\n".format(index_start)
       # index from consensus until before consensus on right side
    else:
-      log_message = "\nLeft consensus trimmed with {}.\nRight consensus trimmed with {}".format(index_start,(fasta_end-index_end))
+      log_message = "\nLeft consensus trimmed with {}.\nRight consensus trimmed with {}\n".format(index_start,(fasta_end-index_end))
       trimmed_fasta = fasta[index_start:index_end]
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
       trimmed_fasta.description=""
    
    txt = open(cons_log,"a")
+   txt.write("\nRule: Trimmed until coverage>=5")
    txt.write(log_message)
    txt.close()
    SeqIO.write(trimmed_fasta,output_handle,"fasta")
 
 if __name__ == '__main__':
-   print("testing samfilter functions")
-   ref = "Reference_with_consensus_attached"
-   test_file="NBC_00287.nonpolish.qc.map.sam.sort.bam"
-   genome="NBC_00287_genome.stitch.fasta"
-   test_output="test.fa"
-   cons_log="consensus.log.txt"
-   trim_by_map(genome,test_file,test_output,cons_log="consensus.log.txt")
 
+   test_map="NBC_00701.nontrimmed.map.sam.sort.bam"
+   test_fasta = "NBC_00701_genome.stitch.fasta"
+   trim_by_map(test_fasta,test_map,"test_out.fa","NBC_00701_consensus.log.txt")

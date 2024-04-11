@@ -1,7 +1,7 @@
 # TELOMORE
 A pipeline for fishing out telomores trimmed of a linear genome (Streptomyces) by Flye.
 
-#Process overview
+## Process overview
 The process is as follows
 0. Identify the genome:
 The longest contig is extracted and assumed to be the genomee.
@@ -23,13 +23,15 @@ In here three bam files can be found:
 A file called *_consensus.log.txt can be found supplying information about the trimming of the attached sequence.
 
 
-#Running on NBC-shared
+## Running on NBC-shared
 Before running the script lamassemble and last must be loaded.
 > module load last lamassemble
+
 It is important to not have minimap2 loaded already as the script loads the correct version of minimap2 needed.
 
-The script is run as follows
+To run the script:
 >python3 path_to_telomore/main.py fastq reference threads
+
 fastq is a single file of all nanopore reads
 reference is a fasta-file of the relevant genome
 threads is the number of cores to use

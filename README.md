@@ -22,6 +22,12 @@ In here three bam files can be found:
 - 3: The two consensuses mapped against the genome
 A file called *_consensus.log.txt can be found supplying information about the trimming of the attached sequence.
 
+The final file of genome+trimmed consensus is called *.trimmed.consensus.fasta
+
+#### BE AWARE TUE!
+Currently the script also leaves the map used to trim the consensus sequence + the matching fasta file, which were the maps we used to QC the trimming.
+The map is named *.nontrimmed.map.sam.sort.bam and the corresponding fasta file is *_genome.stitch.fasta (which contains the genome + untrimmed consensus)
+
 
 ## Running on NBC-shared
 Before running the script lamassemble and last must be loaded.
@@ -36,5 +42,9 @@ fastq is a single file of all nanopore reads
 reference is a fasta-file of the relevant genome
 threads is the number of cores to use
 
-
+### Python Dependencies
+Python packages nessesary to run the script (generated using pipreqs):
+Bio==1.7.0
+biopython==1.81
+pysam==0.21.0
 

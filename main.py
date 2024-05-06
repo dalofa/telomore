@@ -21,13 +21,14 @@ from fasta_tools import get_chromosome, attach_seq
 from cmd_tools import map_and_sort, train_lastDB, generate_consensus, polish
 from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map
 import os
-
+import shutil
 
 def main():
     
     # Read in arguments
     args,ref_name = get_args()
     folder_content = os.listdir()
+
     # Discarding nonchromosomal elements
     chrom_out= ref_name + "_chrom.fa"
     get_chromosome(args.reference, chrom_out)
@@ -99,7 +100,7 @@ def main():
     trim_map_bam = trim_map + ".sort.bam"
     qc_map(stitch_out,left_reads,right_reads,trim_map,t=args.threads)
     trim_out = ref_name + ".trimmed.consensus.fasta"
-    trim_by_map(stitch_out,trim_map_bam,trim_out, cons_log=cons_log_out, cov_thres=5, ratio_thres=0.7,qual_thres=1)
+    trim_by_map(stitch_out,trim_map_bam,trim_out, cons_log=cons_log_out, cov_thres=5, ratio_thres=0.7,qual_thres=5)
     print("Consensus quality trimmed")
 
     # 3: QC and clean-up
@@ -115,7 +116,7 @@ def main():
     #rm all the files that were made
 
     # all bam-files
-    MAPS_TO_REMOVE = [map_finish,l_map_finish,r_map_finish,trim_map_bam]
+    MAPS_TO_REMOVE = [map_finish,l_map_finish,r_map_finish,] # trim_map_bam temporarily removed from list
     for file in MAPS_TO_REMOVE:
         os.remove(file)
         os.remove(file+".bai")
@@ -141,7 +142,7 @@ def main():
      
     os.remove(l_cons_final_out)
     os.remove("all_terminal_reads.fastq")
-    os.remove(stitch_out)
+    #os.remove(stitch_out)
 
     # move qc  files to QC_folder
     qc_path= ref_name + "_QC"
@@ -150,9 +151,9 @@ def main():
     for file in QC_FILES:
         mv1 = file + ".sort.bam"
         mv2 = mv1 + ".bai"
-        os.rename(mv1, os.path.join(qc_path,mv1))
-        os.rename(mv2, os.path.join(qc_path,mv1))
-    os.rename(cons_log_out,os.path.join(qc_path,cons_log_out))
+        shutil.move(mv1, os.path.join(qc_path,mv1))
+        shutil.move(mv2, os.path.join(qc_path,mv2))
+    shutil.move(cons_log_out,os.path.join(qc_path,cons_log_out))
 
 
 def get_args():
@@ -174,7 +175,6 @@ def get_args():
         ref_name = ref_name.split("/")[-1]
 
     return args,ref_name
-
 
 # Run script
 if __name__ == '__main__':

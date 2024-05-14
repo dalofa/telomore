@@ -14,6 +14,7 @@ a de novo assembly.
 #X. after telomore: clustering of telomers
 
 # imports
+import glob
 import argparse
 import os
 from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map
@@ -30,7 +31,7 @@ def main():
     folder_content = os.listdir()
 
     # Discarding nonchromosomal elements
-    chrom_out= ref_name + "_chrom.fa"
+    chrom_out= ref_name + ".chrom.fa"
     get_chromosome(args.reference, chrom_out)
 
     # 0: Mapping of reads and extraction of soft-clipped reads
@@ -59,7 +60,7 @@ def main():
 
     # 1: Generate consensus 
     # -----------------------------------------------------------------    
-    db_out=ref_name+"_db"
+    db_out=ref_name+".db"
     train_lastDB(chrom_out,args.fastq,db_out,args.threads)
 
     # Generate left-consensus
@@ -89,28 +90,28 @@ def main():
     r_map_finish= r_map_out+".sort.bam"
     map_and_sort(chrom_out,"right_cons.fasta",args.threads,r_map_out)
 
-    stitch_out = ref_name +"_genome.stitch.fasta"
-    cons_log_out = ref_name + "_consensus.log.txt"
+    stitch_out = ref_name +".01.nontrimmed.cons.fasta"
+    cons_log_out = ref_name + ".cons.log.txt"
     stich_telo(chrom_out,l_map_finish,r_map_finish,stitch_out,logout=cons_log_out)
     print("Consensus attached to genome")
 
     # 2: Trim consensus
     # ----------------------------------------------------------------- 
-    trim_map = ref_name + ".nontrimmed.map.sam"
+    trim_map = ref_name + ".01.nontrimmed.map.sam"
     trim_map_bam = trim_map + ".sort.bam"
     qc_map(stitch_out,left_reads,right_reads,trim_map,t=args.threads)
-    trim_out = ref_name + ".trimmed.consensus.fasta"
+    trim_out = ref_name + ".02.trimmed.cons.fasta"
     trim_by_map(stitch_out,trim_map_bam,trim_out, cons_log=cons_log_out, cov_thres=5, ratio_thres=0.7,qual_thres=5)
     print("Consensus quality trimmed")
 
     # 3: QC and clean-up
     # -----------------------------------------------------------------
-    qc_out = ref_name + ".qc.map.sam"
+    qc_out = ref_name + ".02.reads.trimmed.map.sam"
     qc_map(trim_out,left_reads,right_reads,qc_out,t=args.threads)
-    cons_genome_map_out = ref_name + ".cons.genome.map.sam"
+    cons_genome_map_out = ref_name + ".02.cons.trimmed.map.sam"
     cons_genome_map("left_cons.fasta","right_cons.fasta",trim_out,cons_genome_map_out,t=args.threads)
-    cons_cons_map_out=ref_name+"cons_vs_cons.map"
-    cons_cons_map("left_cons.fasta","right_cons.fasta",cons_cons_map_out,t=args.threads)
+    #cons_cons_map_out=ref_name+".03.cons_vs_cons.map"
+    #cons_cons_map("left_cons.fasta","right_cons.fasta",cons_cons_map_out,t=args.threads)
     print("QC report and alignments generated")
 
     #rm all the files that were made
@@ -144,16 +145,32 @@ def main():
     os.remove("all_terminal_reads.fastq")
     #os.remove(stitch_out)
 
+    # simplify all mapping names
+    for file_name in glob.glob("*map.sam.sort*"):
+        old_name = file_name
+        new_name = file_name.split("map.sam.sort.")[0]+file_name.split("map.sam.sort.")[1]
+        shutil.move(old_name,new_name)
+
     # move qc  files to QC_folder
     qc_path= ref_name + "_QC"
     os.mkdir(qc_path)
-    QC_FILES = [qc_out,cons_genome_map_out,cons_cons_map_out]
-    for file in QC_FILES:
-        mv1 = file + ".sort.bam"
-        mv2 = mv1 + ".bai"
-        shutil.move(mv1, os.path.join(qc_path,mv1))
-        shutil.move(mv2, os.path.join(qc_path,mv2))
-    shutil.move(cons_log_out,os.path.join(qc_path,cons_log_out))
+
+    for QC_FILE in glob.glob(ref_name+".0*"):
+        
+        if "02.trimmed.cons.fasta" in QC_FILE:
+            shutil.copyfile(QC_FILE,os.path.join(qc_path,QC_FILE))
+        else:
+            shutil.move(QC_FILE, os.path.join(qc_path,QC_FILE))
+
+
+    # outcommented and replaced by the glob.glob utilizing code above
+    # QC_FILES = [qc_out,cons_genome_map_out,cons_cons_map_out]
+    # for file in QC_FILES:
+    #     mv1 = file + ".sort.bam"
+    #     mv2 = mv1 + ".bai"
+    #     shutil.move(mv1, os.path.join(qc_path,mv1))
+    #     shutil.move(mv2, os.path.join(qc_path,mv2))
+    # shutil.move(cons_log_out,os.path.join(qc_path,cons_log_out))
 
 
 def get_args():

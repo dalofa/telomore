@@ -171,10 +171,21 @@ def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
 
    # stich the fuckers toghether
    genome = SeqIO.read(ref,"fasta")
-   left_cons = SeqRecord(Seq(left_seqs[0]),id="left_cons")
-   right_cons = SeqRecord(Seq(right_seqs[0]),id="right_cons")
-   print("left cons is", len(left_cons))
-   print("right cons is", len(right_cons))
+
+   # check if no conesnsus extens beyond the reference
+   if len(left_seqs)==0:
+      left_cons=SeqRecord(Seq("")) # if it is empty make an empty seqrecord to avoid errors in joining later
+      print("Left cons does not extend genome")
+   else:
+      left_cons = SeqRecord(Seq(left_seqs[0]),id="left_cons")
+      print("left cons is", len(left_cons))
+   if len(right_seqs)==0:
+      right_cons=SeqRecord(Seq("")) # if it is empty make an empty seqrecord to avoid errors in joining later
+      print("right cons does not extend genome")
+   else:
+      right_cons = SeqRecord(Seq(right_seqs[0]),id="right_cons")
+   
+      print("right cons is", len(right_cons))
    new_genome = left_cons+genome+right_cons
    new_genome.id="Reference_with_consensus_attached"
    new_genome.description="" 

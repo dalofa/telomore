@@ -124,35 +124,35 @@ def main():
     print("QC report and alignments generated")
 
     #rm all the files that were made
-    
+    if args.keep==False:
     # all bam-files
-    MAPS_TO_REMOVE = [map_finish,l_map_finish,r_map_finish,] # trim_map_bam temporarily removed from list
-    for file in MAPS_TO_REMOVE:
-        os.remove(file)
-        os.remove(file+".bai")
+        MAPS_TO_REMOVE = [map_finish,l_map_finish,r_map_finish,] # trim_map_bam temporarily removed from list
+        for file in MAPS_TO_REMOVE:
+            os.remove(file)
+            os.remove(file+".bai")
 
-    DATABASE_EXT=[".bck",".des",".par",".prj",".sds",".ssp",".suf",".tis"]
-    for file_ext in DATABASE_EXT:
-        os.remove(db_out+file_ext)
+        DATABASE_EXT=[".bck",".des",".par",".prj",".sds",".ssp",".suf",".tis"]
+        for file_ext in DATABASE_EXT:
+            os.remove(db_out+file_ext)
 
-    TERMINAL_MAP_ENDINGS=[".sam",".fastq"]
-    for file_ext in TERMINAL_MAP_ENDINGS:
-        os.remove(left_filt+file_ext)
-        os.remove(right_filt+file_ext)
-        if file_ext==".fastq":
-            os.remove("rev_"+left_filt+file_ext)
-    
-    os.remove(left_reads)
-    os.remove(right_reads)
+        TERMINAL_MAP_ENDINGS=[".sam",".fastq"]
+        for file_ext in TERMINAL_MAP_ENDINGS:
+            os.remove(left_filt+file_ext)
+            os.remove(right_filt+file_ext)
+            if file_ext==".fastq":
+                os.remove("rev_"+left_filt+file_ext)
+        
+        os.remove(left_reads)
+        os.remove(right_reads)
 
-    CONS_EXT=[".fasta",".aln"]
-    for file_ext in CONS_EXT:
-        os.remove(r_cons_out+file_ext)
-        os.remove(l_cons_out+file_ext)
-     
-    os.remove(l_cons_final_out)
-    os.remove("all_terminal_reads.fastq")
-    #os.remove(stitch_out)
+        CONS_EXT=[".fasta",".aln"]
+        for file_ext in CONS_EXT:
+            os.remove(r_cons_out+file_ext)
+            os.remove(l_cons_out+file_ext)
+        
+        os.remove(l_cons_final_out)
+        os.remove("all_terminal_reads.fastq")
+        #os.remove(stitch_out)
 
     # simplify all mapping names
     for file_name in glob.glob("*map.sam.sort*"):
@@ -185,7 +185,7 @@ def main():
 def get_args():
     """Parses arguments"""
     parser = argparse.ArgumentParser(
-        description="Recover ssDNA from Streptomyces Oxford Nanopore data")
+        description="Recover potential telomeric seq from Streptomyces Oxford Nanopore data")
 
     parser.add_argument(
         "-f", "--fastq", 
@@ -206,13 +206,18 @@ def get_args():
         help="Threads to use. Default is 1"
     )
 
+    parser.add_argument(
+        "-k", "--keep", 
+        action='store_true', 
+        help="Flag to keep intermediate files. Default is False"
+    )   
+
     # Check if no arguments were provided
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
 
     args = parser.parse_args()
-
     # Generate a filename stripped of the .fasta
     ref_name = args.reference.split(".")[-2]
     if "\\" in ref_name:
@@ -222,12 +227,6 @@ def get_args():
 
     return args, ref_name
 
-if __name__ == "__main__":
-    args, ref_name = get_args()
-    print(f"FASTQ file: {args.fastq}")
-    print(f"Reference file: {args.reference}")
-    print(f"Threads: {args.threads}")
-    print(f"Reference name: {ref_name}")
 
 # Run script
 if __name__ == '__main__':

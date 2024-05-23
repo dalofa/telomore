@@ -23,6 +23,7 @@ from cmd_tools import map_and_sort, train_lastDB, generate_consensus, polish
 from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map
 import os
 import shutil
+import sys
 
 def main():
     
@@ -184,22 +185,49 @@ def main():
 def get_args():
     """Parses arguments"""
     parser = argparse.ArgumentParser(
-    description="Recover ssDNA from Streptomyces Oxford Nanopore data")
+        description="Recover ssDNA from Streptomyces Oxford Nanopore data")
 
-    parser.add_argument("fastq",type=str,help="path to gzipped fastq-file")
-    parser.add_argument("reference",type=str,help="path to gzipped fastq-file")
-    parser.add_argument("threads",type=int,help="Threads to use")
+    parser.add_argument(
+        "-f", "--fastq", 
+        type=str, 
+        required=True,
+        help="Path to gzipped fastq-file"
+    )
+    parser.add_argument(
+        "-r", "--reference", 
+        type=str, 
+        required=True,
+        help="Path to gzipped reference fastq-file"
+    )
+    parser.add_argument(
+        "-t", "--threads", 
+        type=int, 
+        default=1,
+        help="Threads to use. Default is 1"
+    )
 
-    args=parser.parse_args()
+    # Check if no arguments were provided
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
 
-    # generate a filename stripped of the .fasta
+    args = parser.parse_args()
+
+    # Generate a filename stripped of the .fasta
     ref_name = args.reference.split(".")[-2]
     if "\\" in ref_name:
         ref_name = ref_name.split("\\")[-1]
     elif "/" in ref_name:
         ref_name = ref_name.split("/")[-1]
 
-    return args,ref_name
+    return args, ref_name
+
+if __name__ == "__main__":
+    args, ref_name = get_args()
+    print(f"FASTQ file: {args.fastq}")
+    print(f"Reference file: {args.reference}")
+    print(f"Threads: {args.threads}")
+    print(f"Reference name: {ref_name}")
 
 # Run script
 if __name__ == '__main__':

@@ -18,7 +18,7 @@ import glob
 import argparse
 import os
 from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map
-from fasta_tools import get_chromosome, attach_seq
+from fasta_tools import get_chromosome, strip_fasta
 from cmd_tools import map_and_sort, train_lastDB, generate_consensus, polish
 from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map
 import os
@@ -82,13 +82,21 @@ def main():
 
     # Extend assembly with consensus using and mapping of the consensus
     # onto the chromosome
+    # discard start or end bases that can provide alternative mapping spots for consensus
+    l_map_in= ref_name + ".chrom.left.fa"
+    strip_fasta(chrom_out,l_map_in,500,"end")
+
+    r_map_in = ref_name + ".chrom.right.fa"
+    
+    strip_fasta(chrom_out,r_map_in ,500,"start")
+
     l_map_out = "left.map.sam"
     l_map_finish= l_map_out+".sort.bam"
-    map_and_sort(chrom_out,"left_cons.fasta",args.threads,l_map_out)
+    map_and_sort(l_map_in,"left_cons.fasta",args.threads,l_map_out)
     
     r_map_out = "right.map.sam"
     r_map_finish= r_map_out+".sort.bam"
-    map_and_sort(chrom_out,"right_cons.fasta",args.threads,r_map_out)
+    map_and_sort(r_map_in,"right_cons.fasta",args.threads,r_map_out)
 
     stitch_out = ref_name +".01.nontrimmed.cons.fasta"
     cons_log_out = ref_name + ".cons.log.txt"
@@ -115,7 +123,7 @@ def main():
     print("QC report and alignments generated")
 
     #rm all the files that were made
-
+    
     # all bam-files
     MAPS_TO_REMOVE = [map_finish,l_map_finish,r_map_finish,] # trim_map_bam temporarily removed from list
     for file in MAPS_TO_REMOVE:

@@ -92,7 +92,26 @@ def trim_to_cons(input_seq,num_base,output_handle):
 
 
 
-    # sanity-check for lengths
+def strip_fasta(input_file, output_file, x, remove_from='start'):
+    """
+    Modify sequences in a FASTA file by removing the first or last x bases.
+    """
+
+    assert type(x)==int
+    records = []
+    
+    for record in SeqIO.parse(input_file, "fasta"):
+        if remove_from == 'start':
+            modified_seq = record.seq[x:]
+        elif remove_from == 'end':
+            modified_seq = record.seq[:-x]
+        else:
+            raise ValueError("remove_from must be either 'start' or 'end'")
+        
+        record.seq = modified_seq
+        records.append(record)
+    
+    SeqIO.write(records, output_file, "fasta")
 
 
 

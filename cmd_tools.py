@@ -4,22 +4,27 @@
 # Maybe use the
 
 from sam_tools import revcomp
+import os
+
+
 """
 Functions for running CLI-tools, namely: minimap2, lastdb, lamassemble and medaka
 """
 
 import subprocess
 
-def map_and_sort(ref, fastq, t, output_handle):
-   '''Maps long-reads and returns a sorted and indexed .bam-file'''
-   load_command="module load minimap2/2.25"
-   map_command =" ".join(["minimap2","-a","-t",str(t),str(ref),str(fastq),"-o",str(output_handle),"--secondary=yes",
-                         "--secondary-seq","-Y"])
-   subprocess.run(" && ".join([load_command,map_command]),shell=True, executable="/bin/bash")
-   out2 = output_handle +".sort.bam"
-   subprocess.run(["samtools","sort","-@",str(t),output_handle,"-o",out2])
-   subprocess.run(["samtools","index",out2])
-   subprocess.run(["rm",output_handle])
+def map_and_sort(reference, fastq, output,threads=1):
+    """Maps long-reads against a reference using minimap2 through a bash
+    script and returns a sorted and index bam-file"""
+
+    # input check
+    assert type(threads)==int, "threads must be an integer"
+    assert os.path.isfile(reference), "the reference file specified does not exist"
+    assert os.path.isfile(fastq), "the fastx-file specified does not exist"
+    # run bash script
+    basedir = os.path.dirname(__file__) # nessesary to find the location of the bash script
+    cmd = " ".join(["bash", os.path.join(basedir,"minimap2_cmd.sh") ,reference , fastq , str(threads), output])
+    subprocess.run(cmd,shell=True)
 
 def train_lastDB(fasta_name,reads,db_name, t=1):
    '''Trains and lastDB database using a reference and long-reads'''

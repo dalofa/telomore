@@ -26,7 +26,7 @@ import shutil
 import sys
 
 def main():
-    
+    print (__file__)
     # Read in arguments
     args,ref_name = get_args()
     folder_content = os.listdir()
@@ -37,14 +37,12 @@ def main():
 
     # 0: Mapping of reads and extraction of soft-clipped reads
     # -----------------------------------------------------------------
-    map_out = ref_name+".map.sam"
-    map_finish= map_out+".sort.bam"
-
-    if not map_finish in folder_content:
-        map_and_sort(chrom_out,args.fastq,args.threads,map_out)
+    map_out = ref_name+".map.sort.bam"
+    if not map_out in folder_content:
+        map_and_sort(chrom_out, args.fastq , map_out , args.threads)
         print("Mapping finished")
     else:
-        print("Using already identified mapping file", map_finish)
+        print("Using already identified mapping file", map_out)
 
     # Select soft-clipped reads that extend the reference
     left_reads = "left.sam"
@@ -52,7 +50,7 @@ def main():
     left_filt = "left_filtered"
     right_filt = "right_filtered"
 
-    get_terminal_reads(map_finish,left_reads,right_reads)
+    get_terminal_reads(map_out,left_reads,right_reads)
     get_left_soft(left_reads,left_filt,offset=500) 
     get_right_soft(right_reads,right_filt,offset=500)
     print("Terminals reads extracted")
@@ -91,26 +89,23 @@ def main():
     
     strip_fasta(chrom_out,r_map_in ,500,"start")
 
-    l_map_out = "left.map.sam"
-    l_map_finish= l_map_out+".sort.bam"
-    map_and_sort(l_map_in,"left_cons.fasta",args.threads,l_map_out)
+    l_map_out = "left.map.sort.bam"
+    map_and_sort(l_map_in,"left_cons.fasta",l_map_out,args.threads,)
     
-    r_map_out = "right.map.sam"
-    r_map_finish= r_map_out+".sort.bam"
-    map_and_sort(r_map_in,"right_cons.fasta",args.threads,r_map_out)
+    r_map_out = "right.map.sort.bam"
+    map_and_sort(r_map_in,"right_cons.fasta",r_map_out,args.threads)
 
     stitch_out = ref_name +".01.nontrimmed.cons.fasta"
     cons_log_out = ref_name + ".cons.log.txt"
-    stich_telo(chrom_out,l_map_finish,r_map_finish,stitch_out,logout=cons_log_out)
+    stich_telo(chrom_out,l_map_out,r_map_out,stitch_out,logout=cons_log_out)
     print("Consensus attached to genome")
 
     # 2: Trim consensus
     # ----------------------------------------------------------------- 
-    trim_map = ref_name + ".01.nontrimmed.map.sam"
-    trim_map_bam = trim_map + ".sort.bam"
+    trim_map = ref_name + ".01.nontrimmed.map.bam"
     qc_map(stitch_out,left_reads,right_reads,trim_map,t=args.threads)
     trim_out = ref_name + ".02.trimmed.cons.fasta"
-    trim_by_map(stitch_out,trim_map_bam,trim_out, cons_log=cons_log_out, cov_thres=5, ratio_thres=0.7,qual_thres=5)
+    trim_by_map(stitch_out,trim_map,trim_out, cons_log=cons_log_out, cov_thres=5, ratio_thres=0.7,qual_thres=5)
     print("Consensus quality trimmed")
 
     # 3: QC and clean-up
@@ -126,7 +121,7 @@ def main():
     #rm all the files that were made
     if args.keep==False:
     # all bam-files
-        MAPS_TO_REMOVE = [map_finish,l_map_finish,r_map_finish,] # trim_map_bam temporarily removed from list
+        MAPS_TO_REMOVE = [map_out,l_map_out,r_map_out,] # trim_map_bam temporarily removed from list
         for file in MAPS_TO_REMOVE:
             os.remove(file)
             os.remove(file+".bai")
@@ -218,6 +213,7 @@ def get_args():
         sys.exit(1)
 
     args = parser.parse_args()
+
     # Generate a filename stripped of the .fasta
     ref_name = args.reference.split(".")[-2]
     if "\\" in ref_name:

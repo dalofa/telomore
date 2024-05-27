@@ -8,17 +8,16 @@ A pipeline for fishing out telomores trimmed of a linear genome (Streptomyces) b
 
 The process is as follows:
 0. Identify the genome:
-The longest contig is extracted and assumed to be the genomee.
-1. Mapping of reads and extract of soft-clipped reads
-Nanopore reads are mapped to the genome using minimap2 and all reads that are soft-clipped are extracted.
-2. Consensus building and attachment
-Using LAST and lamassemble and consensus i constructed from the soft-clip sequenced + 500 bases. The resulting consensus
+The longest contig is extracted and assumed to be the genome.
+1. Mapping of reads and extraction of soft-clipped reads:
+Nanopore reads are mapped to the genome using minimap2 and terminally mapped reads that are soft-clipped are extracted.
+3. Consensus building and attachment:
+Using LAST and lamassemble a consensus is constructed from soft-clipped sequence that extends the genome + 500 bases. The resulting consensus
 is aligned to genome and any sequence that extend beyond the ends are added, creating a temporary genome+consensus.
-3. Trimming of newly attached sequence
+4. Trimming of newly attached sequence:
 The previously identified terminal reads are mapped to genome+consensus and the sequence is trimmed. This is done by
-removing bases from the ends until at least 5 reads supported the position with at least 70% of the reads supporting the
-base.
-4. QC and clean-up
+removing bases from the ends until at least 5 reads support the position and at least 70% of the reads agree with the position.
+5. QC and clean-up:
 A number of QC-maps are generated and moved to a folder called *_QC, where * is the basename of the reference supplied.
 In here three bam files can be found toghether witht their references:
 - 1: The terminal reads mapped against the genome+full consensus. These are denoted with *.nontrimmed*
@@ -27,14 +26,13 @@ In here three bam files can be found toghether witht their references:
 
 #### Matching QC mapping files to fasta files:
 
-A number prefix is used to match reference to a given bam file, such that BASE.02.reads.trimmed.bam is a mapping of reads
+A number prefix is used to match a reference to a given bam file, such that BASE.02.reads.trimmed.bam is a mapping of reads
 onto the BASE.02.trimmed.cons.fasta file. In the same vein BASE.02.cons.trimmed.bam is a mapping of the consensus seq onto
 the BASE.02.trimmed.cons.fasta file.
 
 A file called *_consensus.log.txt can be found supplying information about the trimming of the attached sequence.
 
 The final file of genome+trimmed consensus is called *.trimmed.cons.fasta
-
 
 
 #### BE AWARE TUE!

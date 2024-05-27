@@ -25,7 +25,8 @@ In here three bam files can be found toghether witht their references:
 - 2: The terminal reads mapped against the final genome+trimmed_consensus. These are denoted with *.trimmed.*
 - 3: The two consensuses mapped against the genome
 
-Matching QC mapping files to fasta files:
+### Matching QC mapping files to fasta files:
+
 A number prefix is used to match reference to a given bam file, such that BASE.02.reads.trimmed.bam is a mapping of reads
 onto the BASE.02.trimmed.cons.fasta file. In the same vein BASE.02.cons.trimmed.bam is a mapping of the consensus seq onto
 the BASE.02.trimmed.cons.fasta file.

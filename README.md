@@ -44,16 +44,29 @@ The map is named *.nontrimmed.map.sam.sort.bam and the corresponding fasta file 
 
 ## Running on NBC-shared
 Before running the script lamassemble and last must be loaded.
-> module load last lamassemble
+> module load lamassemble/1.4.2 last/1448 minimap2/2.5
 
 It is important to not have minimap2 loaded already as the script loads the correct version of minimap2 needed.
 
 To run the script:
->python3 path_to_telomore/main.py fastq reference threads
+>python3 path_to_telomore/main.py -f fastq -r reference -t threads
 
-fastq is a single file of all nanopore reads
-reference is a fasta-file of the relevant genome
-threads is the number of cores to use
+More details:
+```
+usage: main.py [-h] -f FASTQ -r REFERENCE [-t THREADS] [-k]
+
+Recover potential telomeric seq from Streptomyces Oxford Nanopore data
+
+options:
+  -h, --help            show this help message and exit
+  -f FASTQ, --fastq FASTQ
+                        Path to gzipped fastq-file
+  -r REFERENCE, --reference REFERENCE
+                        Path to gzipped reference fastq-file
+  -t THREADS, --threads THREADS
+                        Threads to use. Default is 1
+  -k, --keep            Flag to keep intermediate files. Default is False
+```
 
 ### Python Dependencies
 Python packages nessesary to run the script (generated using pipreqs):

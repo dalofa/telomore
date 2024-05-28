@@ -268,6 +268,8 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    if index_start==None and index_end==None:
       trimmed_fasta = fasta[(0+left_len):(fasta_end-right_len)]
       log_message = "\nBoth consensus rejected and genome wihtout extension returned.\n"
+      trimmed_fasta.id=output_handle.split(".")[0]+"_with_no_consensus"
+      trimmed_fasta.description=""
    elif index_start==None: #index without left consensus, but + right side
       log_message = "\nLeft consensus rejected. Right consensus trimmed with {}\n".format(fasta_end-index_end)
       trimmed_fasta = fasta[(0+left_len):index_end]
@@ -276,6 +278,8 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    elif index_end==None: # index from consensus until before consensus on right side
       log_message = "\nRight consensus rejected. Left consensus trimmed with {}\n".format(index_start)
       trimmed_fasta = fasta[0:(fasta_end-right_len)]
+      trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
+      trimmed_fasta.description=""
    else:
       log_message = "\nLeft consensus trimmed with {}.\nRight consensus trimmed with {}\n".format(index_start,(fasta_end-index_end))
       trimmed_fasta = fasta[index_start:index_end]

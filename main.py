@@ -17,7 +17,7 @@ a de novo assembly.
 import glob
 import argparse
 import os
-from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map
+from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map, finalize_log
 from fasta_tools import get_chromosome, strip_fasta
 from cmd_tools import map_and_sort, train_lastDB, generate_consensus, polish
 from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map
@@ -116,6 +116,7 @@ def main():
     cons_genome_map("left_cons.fasta","right_cons.fasta",trim_out,cons_genome_map_out,t=args.threads)
     #cons_cons_map_out=ref_name+".03.cons_vs_cons.map"
     #cons_cons_map("left_cons.fasta","right_cons.fasta",cons_cons_map_out,t=args.threads)
+    finalize_log(cons_log_out,"tmp.right.fasta","tmp.left.fasta")
     print("QC report and alignments generated")
 
     #rm all the files that were made
@@ -192,7 +193,7 @@ def get_args():
         "-r", "--reference", 
         type=str, 
         required=True,
-        help="Path to gzipped reference fastq-file"
+        help="Path to reference file"
     )
     parser.add_argument(
         "-t", "--threads", 

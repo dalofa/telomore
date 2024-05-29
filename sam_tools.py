@@ -190,10 +190,15 @@ def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
    new_genome.id="Reference_with_consensus_attached"
    new_genome.description="" 
    SeqIO.write(new_genome,outfile,"fasta")
+   SeqIO.write(right_cons,"tmp.right.fasta","fasta")
+   SeqIO.write(left_cons,"tmp.left.fasta","fasta")
    
    # Create log of consensus length
    log = open(logout,"w")
-   log_content ="left_cons:{}\tright_consensus:{}".format(len(left_cons),len(right_cons))
+   log.write("##############################################################################")
+   log.write("\nINTIAL CONSENSUS")
+   log.write("\n##############################################################################")
+   log_content ="\nleft_cons:{}\tright_consensus:{}".format(len(left_cons),len(right_cons))
    log.write(log_content)
    log.write("\n>left_cons\n")
    log.write(str(left_cons.seq))
@@ -236,7 +241,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    fasta = SeqIO.read(genome,"fasta")
    fasta_end = len(fasta.seq)-1
    txt = open(cons_log,"r")
-   txt_lines = txt.readlines()[0]
+   txt_lines = txt.readlines()[3]
    txt.close()
    left_len = int(txt_lines.split("\t")[0].split(":")[1])
    right_len = int(txt_lines.split("\t")[1].split(":")[1])
@@ -267,29 +272,32 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    # check if coverage is too low for either consensus
    if index_start==None and index_end==None:
       trimmed_fasta = fasta[(0+left_len):(fasta_end-right_len)]
-      log_message = "\nBoth consensus rejected and genome wihtout extension returned.\n"
+      log_message = "\nLeft consensus rejected\nRight consensus rejected\n"
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_no_consensus"
       trimmed_fasta.description=""
    elif index_start==None: #index without left consensus, but + right side
-      log_message = "\nLeft consensus rejected. Right consensus trimmed with {}\n".format(fasta_end-index_end)
+      log_message = "\nLeft consensus rejected\nRight consensus trimmed with {}\n".format((fasta_end-index_end))
       trimmed_fasta = fasta[(0+left_len):index_end]
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
       trimmed_fasta.description=""
    elif index_end==None: # index from consensus until before consensus on right side
-      log_message = "\nRight consensus rejected. Left consensus trimmed with {}\n".format(index_start)
+      log_message = "\nRight consensus rejected\nLeft consensus trimmed with {}\n".format(index_start)
       trimmed_fasta = fasta[0:(fasta_end-right_len)]
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
       trimmed_fasta.description=""
    else:
-      log_message = "\nLeft consensus trimmed with {}.\nRight consensus trimmed with {}\n".format(index_start,(fasta_end-index_end))
+      log_message = "\nLeft consensus trimmed with {}\nRight consensus trimmed with {}\n".format(index_start,(fasta_end-index_end))
       trimmed_fasta = fasta[index_start:index_end]
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
       trimmed_fasta.description=""
    
-   txt = open(cons_log,"a")
-   txt.write("\nRule: Trimmed until coverage>=5")
-   txt.write(log_message)
-   txt.close()
+   log = open(cons_log,"a")
+   log.write("\n##############################################################################")
+   log.write("\nCONSENSUS TRIMMING")
+   log.write("\n##############################################################################")
+   log.write("\nRule: Trimmed until coverage>=5 and 70% read matching position:")
+   log.write(log_message)
+   log.close()
    SeqIO.write(trimmed_fasta,output_handle,"fasta")
 
 if __name__ == '__main__':

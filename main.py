@@ -146,7 +146,12 @@ def main():
             os.remove(r_cons_out+file_ext)
             os.remove(l_cons_out+file_ext)
         
+        #remove temp files not needed in the end
         os.remove(l_cons_final_out)
+        os.remove(l_map_in)
+        os.remove(r_map_in)
+        os.remove("tmp.left.fasta")
+        os.remove("tmp.right.fasta")
         os.remove("all_terminal_reads.fastq")
         #os.remove(stitch_out)
 

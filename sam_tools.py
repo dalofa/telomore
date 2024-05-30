@@ -273,8 +273,10 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
          continue
    
    # check if coverage is too low for either consensus
+   # Unclear on why, but adding one on the right side is nessesary to not trim an additional base
+   # Even if the consensus is rejected.
    if index_start==None and index_end==None:
-      trimmed_fasta = fasta[(0+left_len):(fasta_end-right_len)]
+      trimmed_fasta = fasta[(0+left_len):(fasta_end-right_len)+1]
       log_message = "\nLeft consensus rejected\nRight consensus rejected\n"
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_no_consensus"
       trimmed_fasta.description=""
@@ -285,7 +287,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
       trimmed_fasta.description=""
    elif index_end==None: # index from consensus until before consensus on right side
       log_message = "\nLeft consensus trimmed with {}\nRight rejected\n".format(index_start)
-      trimmed_fasta = fasta[0:(fasta_end-right_len)]
+      trimmed_fasta = fasta[0:(fasta_end-right_len)+1]
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
       trimmed_fasta.description=""
    else:

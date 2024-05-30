@@ -53,7 +53,7 @@ def main():
     get_terminal_reads(map_out,left_reads,right_reads)
     get_left_soft(left_reads,left_filt,offset=500) 
     get_right_soft(right_reads,right_filt,offset=500)
-    print("Terminals reads extracted")
+    print("Terminal reads extracted")
     
 
 

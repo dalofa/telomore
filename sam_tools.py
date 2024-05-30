@@ -239,7 +239,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    """Trims the ends of a genome using an alignment of reads at the ends."""
    # load genome
    fasta = SeqIO.read(genome,"fasta")
-   fasta_end = len(fasta.seq)-1
+   fasta_end = len(fasta.seq)-1 # subtract one to make it 0-indexed
    txt = open(cons_log,"r")
    txt_lines = txt.readlines()[3]
    txt.close()
@@ -261,10 +261,13 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    
    #trim end/right
    for pos in range(fasta_end,fasta_end-right_len,-1):
+      #print("POSITIONS IS ",pos)
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
+         #print(cov)
          if cov>cov_thres and (match/cov)>ratio_thres:
             index_end=pos
+            #print("INDEX END IS:",index_end)
             break
       except TypeError:
          continue
@@ -277,17 +280,17 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
       trimmed_fasta.description=""
    elif index_start==None: #index without left consensus, but + right side
       log_message = "\nLeft consensus rejected\nRight consensus trimmed with {}\n".format((fasta_end-index_end))
-      trimmed_fasta = fasta[(0+left_len):index_end]
+      trimmed_fasta = fasta[(0+left_len):index_end+1]
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
       trimmed_fasta.description=""
    elif index_end==None: # index from consensus until before consensus on right side
-      log_message = "\nRight consensus rejected\nLeft consensus trimmed with {}\n".format(index_start)
+      log_message = "\nLeft consensus trimmed with {}\nRight rejected\n".format(index_start)
       trimmed_fasta = fasta[0:(fasta_end-right_len)]
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
       trimmed_fasta.description=""
    else:
       log_message = "\nLeft consensus trimmed with {}\nRight consensus trimmed with {}\n".format(index_start,(fasta_end-index_end))
-      trimmed_fasta = fasta[index_start:index_end]
+      trimmed_fasta = fasta[index_start:index_end+1]
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
       trimmed_fasta.description=""
    

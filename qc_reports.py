@@ -65,13 +65,13 @@ def finalize_log(log,right_fasta,left_fasta):
     left_seq = SeqIO.read(left_fasta,"fasta")
     right_seq = SeqIO.read(right_fasta,"fasta")
 
-    if trim_left =="rejected":
+    if trim_left.rstrip() =="rejected":
         new_left = "rejected"
         left_seq=SeqRecord(Seq(""))
     else:
         new_left = left_len - int(trim_left)
-        left_seq = left_seq[int(trim_left):] # as indexing is from 0 but trimmed length is 1-index, one must subtract 1 to get the correct seq
-    if trim_right == "rejected":
+        left_seq = left_seq[int(trim_left):]
+    if trim_right.rstrip() == "rejected":
         new_right="rejected"
         right_seq=SeqRecord(Seq(""))
     else:

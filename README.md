@@ -44,8 +44,6 @@ The map is named *.nontrimmed.map.sam.sort.bam and the corresponding fasta file 
 Before running the script lamassemble and last must be loaded.
 > module load lamassemble/1.4.2 last/1448 minimap2/2.25
 
-It is important to not have minimap2 loaded already as the script loads the correct version of minimap2 needed.
-
 To run the script:
 >python3 path_to_telomore/main.py -f fastq -r reference -t threads
 

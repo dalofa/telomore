@@ -9,7 +9,7 @@ A pipeline for fishing out telomores trimmed off a linear genome (Streptomyces) 
 The process is as follows:
 
 0. Identify the genome:
-The longest contig is extracted and assumed to be the genome.
+The longest contig is extracted and assumed to be the chromosome.
 1. Mapping of reads and extraction of soft-clipped reads:
 Nanopore reads are mapped to the genome using minimap2 and terminally mapped reads that are soft-clipped are extracted.
 3. Consensus building and attachment:

@@ -14,7 +14,7 @@ The longest contig is extracted and assumed to be the chromosome.
 Nanopore reads are mapped to the genome using minimap2 and terminally mapped reads that are soft-clipped are extracted.
 3. Consensus building and attachment:
 Using LAST and lamassemble a consensus is constructed from soft-clipped sequence that extends the genome + 500 bases. The resulting consensus
-is aligned to genome and any sequence that extend beyond the ends are added, creating a temporary genome+consensus.
+is aligned to teh chromosome and any sequence that extend beyond the chromosome ends are added, creating a temporary consensus+genome+consensus.
 4. Trimming of newly attached sequence:
 The previously identified terminal reads are mapped to genome+consensus and the sequence is trimmed. This is done by
 removing bases from the ends until at least 5 reads support the position and at least 70% of the reads agree with the position.

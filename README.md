@@ -1,5 +1,5 @@
 # TELOMORE
-A pipeline for fishing out telomores trimmed of a linear genome (Streptomyces) by Flye.
+A pipeline for fishing out telomores trimmed off a linear genome (Streptomyces) by Flye.
 
 ## Process overview
 
@@ -7,6 +7,7 @@ A pipeline for fishing out telomores trimmed of a linear genome (Streptomyces) b
 ![telo_crop_pipeline](https://github.com/dalofa/telomore/assets/83669966/1cdc3192-3821-4b70-8767-8613accaced0)
 
 The process is as follows:
+
 0. Identify the genome:
 The longest contig is extracted and assumed to be the genome.
 1. Mapping of reads and extraction of soft-clipped reads:

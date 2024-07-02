@@ -20,7 +20,7 @@ The previously identified terminal reads are mapped to genome+consensus and the 
 removing bases from the ends until at least 5 reads support the position and at least 70% of the reads agree with the position.
 5. QC and clean-up:
 A number of QC-maps are generated and moved to a folder called *_QC, where * is the basename of the reference supplied.
-In here three bam files can be found toghether witht their references:
+In here three bam files can be found together with their references:
 - 1: The terminal reads mapped against the genome+full consensus. These are denoted with *.nontrimmed*
 - 2: The terminal reads mapped against the final genome+trimmed_consensus. These are denoted with *.trimmed.*
 - 3: The two consensuses mapped against the genome

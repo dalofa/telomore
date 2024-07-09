@@ -255,6 +255,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
          if cov>cov_thres and (match/cov)>ratio_thres:
             index_start=pos
+            print(index_start)
             break
       except TypeError: # if no reads are mapped
          continue
@@ -287,7 +288,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
       trimmed_fasta.description=""
    elif index_end==None: # index from consensus until before consensus on right side
       log_message = "\nLeft consensus trimmed with {}\nRight rejected\n".format(index_start)
-      trimmed_fasta = fasta[0:(fasta_end-right_len)+1]
+      trimmed_fasta = fasta[index_start:(fasta_end-right_len)+1]
       trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
       trimmed_fasta.description=""
    else:

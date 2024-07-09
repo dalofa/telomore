@@ -255,7 +255,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
          if cov>cov_thres and (match/cov)>ratio_thres:
             index_start=pos
-            print(index_start)
+            #print(index_start)
             break
       except TypeError: # if no reads are mapped
          continue

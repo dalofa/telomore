@@ -191,14 +191,17 @@ def get_args():
     parser.add_argument(
         "-f", "--fastq", 
         type=str, 
-        required=True,
         help="Path to gzipped fastq-file"
     )
     parser.add_argument(
         "-r", "--reference", 
         type=str, 
-        required=True,
-        help="Path to reference file"
+        help="Path to reference file (.fasta, .fna, or .fa)"
+    )
+    parser.add_argument(
+        "-d", "--directory", 
+        type=str, 
+        help="Path to directory containing both the reference (.fasta, .fna, or .fa) and reads (.fq.gz or .fastq.gz)"
     )
     parser.add_argument(
         "-t", "--threads", 
@@ -206,7 +209,6 @@ def get_args():
         default=1,
         help="Threads to use. Default is 1"
     )
-
     parser.add_argument(
         "-k", "--keep", 
         action='store_true', 
@@ -220,7 +222,29 @@ def get_args():
 
     args = parser.parse_args()
 
-    # Generate a filename stripped of the .fasta
+    # Validate input options
+    if args.directory:
+        # If directory is provided, locate the reference and fastq files
+        ref_file = None
+        fastq_file = None
+        for file in os.listdir(args.directory):
+            if file.endswith((".fasta", ".fna", ".fa")):
+                ref_file = os.path.join(args.directory, file)
+            elif file.endswith(".fq.gz") or file.endswith(".fastq.gz"):
+                fastq_file = os.path.join(args.directory, file)
+
+        if not ref_file or not fastq_file:
+            sys.stderr.write("Error: Could not find both .fasta/.fna/.fa (reference) and .fq.gz/.fastq.gz (reads) files in the directory.\n")
+            sys.exit(1)
+
+        args.reference = ref_file
+        args.fastq = fastq_file
+
+    elif not args.fastq or not args.reference:
+        sys.stderr.write("Error: Either provide both --fastq and --reference or use --directory to specify a folder containing them.\n")
+        sys.exit(1)
+
+    # Generate a filename stripped of the .fasta/.fna/.fa extension
     ref_name = args.reference.split(".")[-2]
     if "\\" in ref_name:
         ref_name = ref_name.split("\\")[-1]

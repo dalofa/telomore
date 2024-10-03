@@ -221,7 +221,7 @@ def get_support_info(bam_file, genome, position, qual_threshold=1):
    T_num=coverage_count[2][0]
    G_num=coverage_count[3][0]
    cov=A_num+C_num+G_num+T_num
-  
+   
    if fasta_file.seq[position]=="N":
       matching_bases=0
    elif fasta_file.seq[position]=="A":
@@ -253,6 +253,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    for pos in range(0,0+left_len):
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
+         print("Pos",pos,"Cov",cov,"Matching",match)
          if cov>cov_thres and (match/cov)>ratio_thres:
             index_start=pos
             #print(index_start)
@@ -265,7 +266,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
       #print("POSITIONS IS ",pos)
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
-         #print(cov)
+         print("Pos",pos,"Cov",cov,"Matching",match)
          if cov>cov_thres and (match/cov)>ratio_thres:
             index_end=pos
             #print("INDEX END IS:",index_end)

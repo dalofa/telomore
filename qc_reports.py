@@ -1,4 +1,4 @@
-from cmd_tools import map_and_sort
+from cmd_tools import map_and_sort, map_and_sort_illumina
 from fasta_tools import merge_fasta
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -19,6 +19,14 @@ def qc_map(polished_genome,left,right,output_handle,t=1):
    subprocess.run(["samtools","fastq","-@",str(t),right],stdout=collect_fastq)
    collect_fastq.close()
    map_and_sort(polished_genome,"all_terminal_reads.fastq",output_handle,t)
+
+def qc_map_illumina(polished_genome,left,right,output_handle,t=1):
+   '''Collect terminal reads previously identified and maps them against the polished genome'''
+   collect_fastq = open("all_terminal_reads.fastq","a")
+   subprocess.run(["samtools","fastq","-@",str(t),left],stdout=collect_fastq)
+   subprocess.run(["samtools","fastq","-@",str(t),right],stdout=collect_fastq)
+   collect_fastq.close()
+   map_and_sort_illumina(polished_genome,"all_terminal_reads.fastq",output_handle,t)
 
 def cons_genome_map(left_cons,right_cons,polished_genome,output_handle,t=1):
     '''Collect consensus and maps them against the polished genome'''

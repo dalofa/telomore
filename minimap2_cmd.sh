@@ -1,5 +1,5 @@
 #!/bin/bash
-# Maps reads to a genome
+# Maps nanopore reads to a genome
 REF=$1
 READS=$2
 THREADS=$3

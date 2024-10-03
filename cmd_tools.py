@@ -26,6 +26,20 @@ def map_and_sort(reference, fastq, output,threads=1):
     cmd = " ".join(["bash", os.path.join(basedir,"minimap2_cmd.sh") ,reference , fastq , str(threads), output])
     subprocess.run(cmd,shell=True)
 
+def map_and_sort_illumina(reference, fastq, output,threads=1):
+    """Maps illumina against a reference using bowtie2 through a bash
+    script and returns a sorted and index bam-file"""
+
+    # input check
+    assert type(threads)==int, "threads must be an integer"
+    assert os.path.isfile(reference), "the reference file specified does not exist"
+    assert os.path.isfile(fastq), "the fastx-file specified does not exist"
+    
+    # run bash script
+    basedir = os.path.dirname(__file__) # nessesary to find the location of the bash script
+    cmd = " ".join(["bash", os.path.join(basedir,"bowtie_2_cmd.sh") ,reference , fastq , str(threads), output])
+    subprocess.run(cmd,shell=True)
+
 def train_lastDB(fasta_name,reads,db_name, t=1):
    '''Trains and lastDB database using a reference and long-reads'''
    # index fasta file

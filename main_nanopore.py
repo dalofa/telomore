@@ -256,5 +256,5 @@ def get_args():
 
 # Run script
 if __name__ == '__main__':
-    print("Running telomore 0.1")
+    print("Running telomore 0.1 in Nanopore mode")
     main()

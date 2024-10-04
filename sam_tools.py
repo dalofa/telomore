@@ -307,6 +307,80 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    log.close()
    SeqIO.write(trimmed_fasta,output_handle,"fasta")
 
+def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,ratio_thres=0.7, qual_thres=0):
+   """Trims the ends of a genome using an alignment of reads at the ends."""
+   # load genome
+   fasta = SeqIO.read(genome,"fasta")
+   fasta_end = len(fasta.seq)-1 # subtract one to make it 0-indexed
+   txt = open(cons_log,"r")
+   txt_lines = txt.readlines()[3]
+   txt.close()
+   left_len = int(txt_lines.split("\t")[0].split(":")[1])
+   right_len = int(txt_lines.split("\t")[1].split(":")[1])
+
+   index_start = None
+   index_end = None
+   
+   #trim start/left-side
+   for pos in range(0,0+left_len):
+      try:
+         cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
+         #print("Pos",pos,"Cov",cov,"Matching",match)
+         if cov>cov_thres and (match/cov)>ratio_thres:
+            index_start=pos
+            #print(index_start)
+            break
+      except TypeError: # if no reads are mapped
+         continue
+   
+   #trim end/right
+   for pos in range(fasta_end,fasta_end-right_len,-1):
+      #print("POSITIONS IS ",pos)
+      try:
+         cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
+         #print("Pos",pos,"Cov",cov,"Matching",match)
+         if cov>cov_thres and (match/cov)>ratio_thres:
+            index_end=pos
+            #print("INDEX END IS:",index_end)
+            break
+      except TypeError:
+         continue
+   
+   # check if coverage is too low for either consensus
+   # Unclear on why, but adding one on the right side is nessesary to not trim an additional base
+   # Even if the consensus is rejected.
+   if index_start==None and index_end==None:
+      trimmed_fasta = fasta[(0+left_len):(fasta_end-right_len)+1]
+      log_message = "\nLeft consensus rejected\nRight consensus rejected\n"
+      trimmed_fasta.id=output_handle.split(".")[0]+"_with_no_consensus"
+      trimmed_fasta.description=""
+   elif index_start==None: #index without left consensus, but + right side
+      log_message = "\nLeft consensus rejected\nRight consensus trimmed with {}\n".format((fasta_end-index_end))
+      trimmed_fasta = fasta[(0+left_len):index_end+1]
+      trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
+      trimmed_fasta.description=""
+   elif index_end==None: # index from consensus until before consensus on right side
+      log_message = "\nLeft consensus trimmed with {}\nRight rejected\n".format(index_start)
+      trimmed_fasta = fasta[index_start:(fasta_end-right_len)+1]
+      trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
+      trimmed_fasta.description=""
+   else:
+      log_message = "\nLeft consensus trimmed with {}\nRight consensus trimmed with {}\n".format(index_start,(fasta_end-index_end))
+      trimmed_fasta = fasta[index_start:index_end+1]
+      trimmed_fasta.id=output_handle.split(".")[0]+"_with_trimmed_consensus_attached"
+      trimmed_fasta.description=""
+   
+   log = open(cons_log,"a")
+   log.write("\n##############################################################################")
+   log.write("\nCONSENSUS TRIMMING")
+   log.write("\n##############################################################################")
+   log.write("\nRule: Trimmed until coverage Q_score>Q30")
+   log.write(log_message)
+   log.close()
+   SeqIO.write(trimmed_fasta,output_handle,"fasta")
+
+
+
 if __name__ == '__main__':
 
    test_map="NBC_00701.nontrimmed.map.sam.sort.bam"

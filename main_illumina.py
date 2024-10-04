@@ -13,10 +13,10 @@ Main differences from main_nanopore:
 import glob
 import argparse
 import os
-from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map, finalize_log, qc_map_illumina
+from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map, qc_map_illumina, finalize_log
 from fasta_tools import get_chromosome, strip_fasta
 from cmd_tools import map_and_sort_illumina, train_lastDB, generate_consensus, map_and_sort
-from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map
+from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map_illumina
 import os
 import shutil
 import sys
@@ -104,7 +104,7 @@ def main():
     trim_map = ref_name + ".01.nontrimmed.map.bam"
     qc_map_illumina(stitch_out,left_reads,right_reads,trim_map,t=args.threads)
     trim_out = ref_name + ".02.trimmed.cons.fasta"
-    trim_by_map(stitch_out,trim_map,trim_out, cons_log=cons_log_out, cov_thres=1, ratio_thres=0.7,qual_thres=20)
+    trim_by_map_illumina(stitch_out,trim_map,trim_out, cons_log=cons_log_out, cov_thres=1, ratio_thres=0.7,qual_thres=20)
     print("Consensus quality trimmed")
 
     # 3: QC and clean-up

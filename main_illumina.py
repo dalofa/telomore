@@ -244,7 +244,7 @@ def get_args():
         sys.exit(1)
 
     # Generate a filename stripped of the .fasta/.fna/.fa extension
-    ref_name = args.reference.split(".")[-2]
+    ref_name = args.reference.split(".")[0]
     if "\\" in ref_name:
         ref_name = ref_name.split("\\")[-1]
     elif "/" in ref_name:

@@ -141,7 +141,6 @@ def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
 
    # filter away mapping at right side
    cons_at_left = [read for read in l_sam_in if read.reference_start<1000]
-
    for read in cons_at_left:
       lmatch = re.match(start_clip,read.cigarstring)
       if lmatch:
@@ -254,7 +253,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
          #print("Pos",pos,"Cov",cov,"Matching",match)
-         if cov>cov_thres and (match/cov)>ratio_thres:
+         if cov>=cov_thres and (match/cov)>ratio_thres:
             index_start=pos
             #print(index_start)
             break
@@ -267,7 +266,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
          #print("Pos",pos,"Cov",cov,"Matching",match)
-         if cov>cov_thres and (match/cov)>ratio_thres:
+         if cov>=cov_thres and (match/cov)>ratio_thres:
             index_end=pos
             #print("INDEX END IS:",index_end)
             break
@@ -307,7 +306,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    log.close()
    SeqIO.write(trimmed_fasta,output_handle,"fasta")
 
-def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,ratio_thres=0.7, qual_thres=0):
+def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_thres=1,ratio_thres=0.7, qual_thres=30):
    """Trims the ends of a genome using an alignment of reads at the ends."""
    # load genome
    fasta = SeqIO.read(genome,"fasta")
@@ -326,7 +325,7 @@ def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_th
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
          #print("Pos",pos,"Cov",cov,"Matching",match)
-         if cov>cov_thres and (match/cov)>ratio_thres:
+         if cov>=cov_thres and (match/cov)>ratio_thres:
             index_start=pos
             #print(index_start)
             break
@@ -339,7 +338,7 @@ def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_th
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
          #print("Pos",pos,"Cov",cov,"Matching",match)
-         if cov>cov_thres and (match/cov)>ratio_thres:
+         if cov>=cov_thres and (match/cov)>ratio_thres:
             index_end=pos
             #print("INDEX END IS:",index_end)
             break

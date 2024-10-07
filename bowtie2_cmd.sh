@@ -21,4 +21,4 @@ mv $OUTPUT.sort.bam $OUTPUT
 samtools index $OUTPUT
 
 # Remove the index-files are mapping finished
-rm $REF.bt.index.*.bt2
+rm $REF.bt.index.*bt2

@@ -94,7 +94,7 @@ def main():
     map_and_sort(r_map_in,"right_cons.fasta",r_map_out,args.threads)
 
     stitch_out = ref_name +".01.nontrimmed.cons.fasta"
-    cons_log_out = ref_name + ".cons.log.txt"
+    cons_log_out = ref_name + ".ill.cons.log.txt"
     stich_telo(chrom_out,l_map_out,r_map_out,stitch_out,logout=cons_log_out)
     print("Consensus attached to genome")
 
@@ -104,7 +104,7 @@ def main():
     trim_map = ref_name + ".01.nontrimmed.map.bam"
     qc_map_illumina(stitch_out,left_reads,right_reads,trim_map,t=args.threads)
     trim_out = ref_name + ".02.trimmed.cons.fasta"
-    trim_by_map_illumina(stitch_out,trim_map,trim_out, cons_log=cons_log_out, cov_thres=1, ratio_thres=0.7,qual_thres=20)
+    trim_by_map_illumina(stitch_out,trim_map,trim_out, cons_log=cons_log_out, cov_thres=1, ratio_thres=0.7,qual_thres=30)
     print("Consensus quality trimmed")
 
     # 3: QC and clean-up
@@ -140,10 +140,14 @@ def main():
         os.remove(left_reads)
         os.remove(right_reads)
 
+        # Check if file exists to avoid crashing when no alignment was used to produce
+        # alignment
         CONS_EXT=[".fasta",".aln"]
         for file_ext in CONS_EXT:
-            os.remove(r_cons_out+file_ext)
-            os.remove(l_cons_out+file_ext)
+            if os.path.isfile(r_cons_out+file_ext):
+                os.remove(r_cons_out+file_ext)
+            if os.path.isfile(r_cons_out+file_ext):
+                os.remove(l_cons_out+file_ext)
         
         #remove temp files not needed in the end
         os.remove(l_cons_final_out)
@@ -161,7 +165,7 @@ def main():
         shutil.move(old_name,new_name)
 
     # move qc  files to QC_folder
-    qc_path= ref_name + "_QC"
+    qc_path= ref_name + "_ill" + "_QC"
     os.mkdir(qc_path)
 
     for QC_FILE in glob.glob(ref_name+".0*"):

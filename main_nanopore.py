@@ -96,7 +96,7 @@ def main():
     map_and_sort(r_map_in,"right_cons.fasta",r_map_out,args.threads)
 
     stitch_out = ref_name +".01.nontrimmed.cons.fasta"
-    cons_log_out = ref_name + ".cons.log.txt"
+    cons_log_out = ref_name + ".np.cons.log.txt"
     stich_telo(chrom_out,l_map_out,r_map_out,stitch_out,logout=cons_log_out)
     print("Consensus attached to genome")
 
@@ -162,7 +162,7 @@ def main():
         shutil.move(old_name,new_name)
 
     # move qc  files to QC_folder
-    qc_path= ref_name + "_QC"
+    qc_path= ref_name + "_np" + "_QC"
     os.mkdir(qc_path)
 
     for QC_FILE in glob.glob(ref_name+".0*"):

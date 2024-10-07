@@ -5,6 +5,7 @@
 
 from sam_tools import revcomp
 import os
+from Bio import SeqIO
 
 
 """
@@ -54,14 +55,27 @@ def train_lastDB(fasta_name,reads,db_name, t=1):
 def generate_consensus(db_name,reads,output,flip="no"):
    """Generates a consensus fasta-file given a LAST-DB and a series of reads."""
    
-   db = db_name +".par"
-   seq = open(str(output)+".fasta","w")
-   subprocess.run(["lamassemble","--name="+output,db,reads],stdout=seq,)
-   seq.close()
+   # Check if only a single read is present before generating consensus
+   # If that is the case write just that read to consensus file
+   # This prevents issues down the line when stitching chromosome and 
+   sequence_count = 0
+   for record in SeqIO.parse(reads, "fastq"):
+      sequence_count += 1
+   if sequence_count == 1:
+      single_record = record
+      print("There are only a single read to construct a consensus from. Returning read as consensus.")
+      with open(f"{output}.fasta", "w") as seq:
+         SeqIO.write(single_record, seq, "fasta")  
+   elif sequence_count>1:
 
-   aln = open(str(output)+".aln","w") # save alignment of reads
-   subprocess.run(["lamassemble","-a",db,reads],stdout=aln)
-   seq.close()
+      db = db_name +".par"
+      seq = open(str(output)+".fasta","w")
+      subprocess.run(["lamassemble","--name="+output,db,reads],stdout=seq,)
+      seq.close()
+
+      aln = open(str(output)+".aln","w") # save alignment of reads
+      subprocess.run(["lamassemble","-a",db,reads],stdout=aln)
+      aln.close()
 
 
 # here medaka should run

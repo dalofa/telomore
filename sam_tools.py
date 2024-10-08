@@ -131,6 +131,7 @@ def revcomp(fasta_in,fasta_out):
         SeqIO.write(rev_complement_record, output_handle, "fasta")
 
 def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
+   """Writes a fasta-file extended with sequence based on a left- and right-side .bam-file."""
    # function to stitch telomeres onto the fucking reference
    # add checks for mapping positions
 

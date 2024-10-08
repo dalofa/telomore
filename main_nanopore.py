@@ -110,9 +110,9 @@ def main():
 
     # 3: QC and clean-up
     # -----------------------------------------------------------------
-    qc_out = ref_name + ".02.reads.trimmed.map.sam"
+    qc_out = ref_name + ".02.reads.trimmed.map.bam"
     qc_map(trim_out,left_reads,right_reads,qc_out,t=args.threads)
-    cons_genome_map_out = ref_name + ".02.cons.trimmed.map.sam"
+    cons_genome_map_out = ref_name + ".02.cons.trimmed.map.bam"
     cons_genome_map("left_cons.fasta","right_cons.fasta",trim_out,cons_genome_map_out,t=args.threads)
     #cons_cons_map_out=ref_name+".03.cons_vs_cons.map"
     #cons_cons_map("left_cons.fasta","right_cons.fasta",cons_cons_map_out,t=args.threads)

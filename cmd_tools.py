@@ -88,8 +88,8 @@ def generate_consensus_mafft(reads, output):
    # Run Mafft
    mafft_output=reads+".aln"
    mafft_file=open(mafft_output,"w")
-   subprocess.run(["mafft",fasta_reads],stdout=mafft_file)
-   mafft_output.close()
+   subprocess.run(["mafft","--quiet",fasta_reads],stdout=mafft_file)
+   mafft_file.close()
 
    # Generate consensus using Emboss cons
    # Plurality 1 ensures that only one reads needs to cover a position to generate consensus

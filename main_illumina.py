@@ -4,6 +4,7 @@ a de novo assembly.
 
 Main differences from main_nanopore:
 - Uses Bowtie2 to map reads
+- Uses Mafft rather than lamassemble to generate consensus
 - Use the quality of reads rather than number and ratio to trim ends ()
 """
 
@@ -15,7 +16,7 @@ import argparse
 import os
 from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map, qc_map_illumina, finalize_log
 from fasta_tools import get_chromosome, strip_fasta
-from cmd_tools import map_and_sort_illumina, train_lastDB, generate_consensus, map_and_sort
+from cmd_tools import map_and_sort_illumina, train_lastDB, generate_consensus_mafft, map_and_sort
 from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map_illumina
 import os
 import shutil
@@ -56,22 +57,20 @@ def main():
 
     # 1: Generate consensus 
     # -----------------------------------------------------------------    
-    db_out=ref_name+".db"
-    train_lastDB(chrom_out,args.fastq,db_out,args.threads)
-
+    
     # Generate left-consensus
     # To maintain anchor point for alignment, the reads are flipped
     # and the resulting consensus must then be flipped
     revcomp_reads("left_filtered.fastq","rev_left_filtered.fastq") # flip reads for 
-    l_cons_out="rev_left_cons"
-    generate_consensus(db_out,"rev_left_filtered.fastq",l_cons_out)
+    l_cons_out="rev_left_cons.fasta"
+    generate_consensus_mafft("rev_left_filtered.fastq",l_cons_out)
     l_cons_final_out="left_cons.fasta"
-    revcomp(l_cons_out+".fasta",l_cons_final_out)
+    revcomp(l_cons_out,l_cons_final_out)
 
 
     # Generate right-consensus
-    r_cons_out="right_cons"
-    generate_consensus(db_out,"right_filtered.fastq",r_cons_out)
+    r_cons_out="right_cons.fasta"
+    generate_consensus_mafft("right_filtered.fastq",r_cons_out)
     print("Consensus generated")
     
 
@@ -125,10 +124,6 @@ def main():
         for file in MAPS_TO_REMOVE:
             os.remove(file)
             os.remove(file+".bai")
-
-        DATABASE_EXT=[".bck",".des",".par",".prj",".sds",".ssp",".suf",".tis"]
-        for file_ext in DATABASE_EXT:
-            os.remove(db_out+file_ext)
 
         TERMINAL_MAP_ENDINGS=[".sam",".fastq"]
         for file_ext in TERMINAL_MAP_ENDINGS:

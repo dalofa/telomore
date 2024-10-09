@@ -19,7 +19,7 @@ import argparse
 import os
 from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map, finalize_log
 from fasta_tools import get_chromosome, strip_fasta
-from cmd_tools import map_and_sort, train_lastDB, generate_consensus, polish
+from cmd_tools import map_and_sort, train_lastDB, generate_consensus_lamassemble, polish
 from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map
 import os
 import shutil
@@ -67,14 +67,14 @@ def main():
     # and the resulting consensus must then be flipped
     revcomp_reads("left_filtered.fastq","rev_left_filtered.fastq") # flip reads for 
     l_cons_out="rev_left_cons"
-    generate_consensus(db_out,"rev_left_filtered.fastq",l_cons_out)
+    generate_consensus_lamassemble(db_out,"rev_left_filtered.fastq",l_cons_out)
     l_cons_final_out="left_cons.fasta"
     revcomp(l_cons_out+".fasta",l_cons_final_out)
 
 
     # Generate right-consensus
     r_cons_out="right_cons"
-    generate_consensus(db_out,"right_filtered.fastq",r_cons_out)
+    generate_consensus_lamassemble(db_out,"right_filtered.fastq",r_cons_out)
     print("Consensus generated")
     
 

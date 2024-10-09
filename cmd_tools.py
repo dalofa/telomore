@@ -52,8 +52,9 @@ def train_lastDB(fasta_name,reads,db_name, t=1):
    subprocess.run(["last-train","-P"+str(t),"-Qkeep",db_name,reads], stdout=file)
    file.close()
 
-def generate_consensus(db_name,reads,output,flip="no"):
-   """Generates a consensus fasta-file given a LAST-DB and a series of reads."""
+def generate_consensus_lamassemble(db_name,reads,output,flip="no"):
+   """Generates a consensus fasta-file given a LAST-DB and a series of reads. 
+   Is suitable for dissimilar reads such as nanopore"""
    
    # Check if only a single read is present before generating consensus
    # If that is the case write just that read to consensus file
@@ -65,7 +66,7 @@ def generate_consensus(db_name,reads,output,flip="no"):
       single_record = record
       print("There are only a single read to construct a consensus from. Returning read as consensus.")
       with open(f"{output}.fasta", "w") as seq:
-         SeqIO.write(single_record, seq, "fasta")  
+         SeqIO.write(single_record, seq, "fasta")
    elif sequence_count>1:
 
       db = db_name +".par"
@@ -77,14 +78,27 @@ def generate_consensus(db_name,reads,output,flip="no"):
       subprocess.run(["lamassemble","-a",db,reads],stdout=aln)
       aln.close()
 
+def generate_consensus_mafft(reads, output):
+   """Generates a consensus fasta-file given a series of reads in fasta-file. 
+   Relies on very similar reads."""
+   # Convert fastq to fasta
+   fasta_reads = reads +".fasta"
+   with open(reads, "r") as input_handle, open(fasta_reads, "w") as output_handle:
+      SeqIO.convert(input_handle, "fastq", output_handle, "fasta")
+   # Run Mafft
+   mafft_output=reads+".aln"
+   mafft_file=open(mafft_output,"w")
+   subprocess.run(["mafft",fasta_reads],stdout=mafft_file)
+   mafft_output.close()
 
-# here medaka should run
-def polish(assembly, reads, output, model="r941_min_hac_g507",threads=1):
-   """Polishes a fasta-file given reads and reference"""
-   print("Polishing with Medaka Using", str(model))
-   load_command="module load medaka"
-   polish_command= " ".join(["medaka_consensus","-d",assembly,"-i",reads,"-o",output,"-m",model,"-t",str(threads)])
-   subprocess.run(" && ".join([load_command,polish_command]),shell=True,executable="/bin/bash")
+   # Generate consensus using Emboss cons
+   # Plurality 1 ensures that only one reads needs to cover a position to generate consensus
+   # This is dangerous with dissimilar seqeunces
+   subprocess.run(["cons","-name="+output,"-plurality",str(1),"-sequence="+mafft_output,"-outseq="+output])
 
-# if __name__ == '__main__':
-#    print("Testing module functions")
+
+
+if __name__ == '__main__':
+   print("Testing module functions")
+
+   generate_consensus_mafft("left_filtered.fastq","test_cons.fasta")

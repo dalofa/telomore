@@ -19,7 +19,7 @@ import argparse
 import os
 from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map, finalize_log
 from fasta_tools import get_chromosome, strip_fasta
-from cmd_tools import map_and_sort, train_lastDB, generate_consensus_lamassemble, polish
+from cmd_tools import map_and_sort, train_lastDB, generate_consensus_lamassemble
 from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map
 import os
 import shutil

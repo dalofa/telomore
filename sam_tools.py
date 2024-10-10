@@ -379,6 +379,8 @@ def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_th
    log.close()
    SeqIO.write(trimmed_fasta,output_handle,"fasta")
 
+def generate_support_log():
+   return
 
 
 if __name__ == '__main__':

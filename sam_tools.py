@@ -215,22 +215,25 @@ def get_support_info(bam_file, genome, position, qual_threshold=1):
 
    #Set read_callback="no filter" to include secondary-mappings
    # Set quality threshold=1 to include all reads
-   coverage_count=bam_in.count_coverage("Reference_with_consensus_attached",start=position,stop=position+1,read_callback="nofilter",quality_threshold=1)
+
+   # Get reference name from BAM file
+   reference_name = bam_in.get_reference_name(0)
+   coverage_count=bam_in.count_coverage(reference_name,start=position,stop=position+1,read_callback="nofilter",quality_threshold=1)
    A_num=coverage_count[0][0]
    C_num=coverage_count[1][0]
    G_num=coverage_count[2][0]
    T_num=coverage_count[3][0]
    cov=A_num+C_num+G_num+T_num
    
-   if fasta_file.seq[position]=="N":
+   if fasta_file.seq[position].upper()=="N":
       matching_bases=0
-   elif fasta_file.seq[position]=="A":
+   elif fasta_file.seq[position].upper()=="A":
       matching_bases=A_num
-   elif fasta_file.seq[position]=="C":
+   elif fasta_file.seq[position].upper()=="C":
       matching_bases=C_num
-   elif fasta_file.seq[position]=="G":
+   elif fasta_file.seq[position].upper()=="G":
       matching_bases=G_num
-   elif fasta_file.seq[position]=="T":
+   elif fasta_file.seq[position].upper()=="T":
       matching_bases=T_num
 
    return(cov,matching_bases)
@@ -379,12 +382,36 @@ def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_th
    log.close()
    SeqIO.write(trimmed_fasta,output_handle,"fasta")
 
-def generate_support_log():
-   return
+def generate_support_log(genome, qc_bam_file, output_handle):
+   "Generates a coverage log for the ends of the genome"
+   #trim start/left-side
+   
+   fasta = SeqIO.read(genome,"fasta")
+   fasta_end = len(fasta.seq)-1 # subtract one to make it 0-indexed
+
+   # Generate log of coverage at all positions
+   with open(output_handle,"a") as log:
+
+      for pos in range(0,fasta_end):
+         
+         try:
+            cov, match = get_support_info(bam_file=qc_bam_file,
+                                          genome=genome,
+                                          position=pos,
+                                          qual_threshold=1)
+            
+            print(pos,cov,match)
+            log.write(pos,cov,match)
+         except TypeError: # if no reads are mapped
+            #print("error")
+            continue
+   
+   # Filter log for relevant positions
+
 
 
 if __name__ == '__main__':
-
-   test_map="NBC_00701.nontrimmed.map.sam.sort.bam"
-   test_fasta = "NBC_00701_genome.stitch.fasta"
-   trim_by_map(test_fasta,test_map,"test_out.fa","NBC_00701_consensus.log.txt")
+   print("testing module function")
+   generate_support_log(genome="NBC_00001.02.trimmed.cons.fasta",
+                        qc_bam_file="NBC_00001.02.reads.trimmed.map.bam",
+                        output_handle="test_log.txt")

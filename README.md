@@ -64,6 +64,17 @@ options:
                         Threads to use. Default is 1
   -k, --keep            Flag to keep intermediate files. Default is False
 ```
+### Dependencies
+Minimap, version 2.25 or higher
+Bowtie2
+Samtools
+Lamassemble
+LAST-DB
+Lamassemble
+Mafft
+Emboss tools (cons specifically)
+
+
 
 ### Python Dependencies
 Python packages nessesary to run the script (generated using pipreqs):

@@ -171,15 +171,6 @@ def main():
             shutil.move(QC_FILE, os.path.join(qc_path,QC_FILE))
 
 
-    # outcommented and replaced by the glob.glob utilizing code above
-    # QC_FILES = [qc_out,cons_genome_map_out,cons_cons_map_out]
-    # for file in QC_FILES:
-    #     mv1 = file + ".sort.bam"
-    #     mv2 = mv1 + ".bai"
-    #     shutil.move(mv1, os.path.join(qc_path,mv1))
-    #     shutil.move(mv2, os.path.join(qc_path,mv2))
-    # shutil.move(cons_log_out,os.path.join(qc_path,cons_log_out))
-
 
 def get_args():
     """Parses arguments"""

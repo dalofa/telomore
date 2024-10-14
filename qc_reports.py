@@ -16,7 +16,9 @@ def qc_map(polished_genome,left,right,output_handle,t=1):
    '''Collect terminal reads previously identified and maps them against the polished genome'''
    collect_fastq = open("all_terminal_reads.fastq","a")
    subprocess.run(["samtools","fastq","-@",str(t),left],stdout=collect_fastq)
+   print("left_reads_collected")
    subprocess.run(["samtools","fastq","-@",str(t),right],stdout=collect_fastq)
+   print("right reads collected")
    collect_fastq.close()
    map_and_sort(polished_genome,"all_terminal_reads.fastq",output_handle,t)
 
@@ -108,54 +110,6 @@ def finalize_log(log,right_fasta,left_fasta):
     #    content = f.read()
     #    f.seek(0, 0)
     #    f.write(line.rstrip('\r\n') + '\n' + content)
-
-
-def finalize_log_illumina(log,right_fasta,left_fasta):
-    """Function to finalize the log by prepending the final information about consensus added."""
-    file = open(log)
-    log_cont = file.readlines()
-    file.close()
-    # Org lengths of consensus added
-    length_lines = log_cont[3]
-    left_len = int(length_lines.split("\t")[0].split(":")[1])
-    right_len = int(length_lines.split("\t")[1].split(":")[1])
-
-    # get the number of bases trimmed off
-    trim_left = log_cont[-2].split(" ")[-1]
-    trim_right = log_cont[-1].split(" ")[-1]
-    left_seq = SeqIO.read(left_fasta,"fasta")
-    right_seq = SeqIO.read(right_fasta,"fasta")
-
-    if trim_left.rstrip() =="rejected":
-        new_left = "rejected"
-        left_seq=SeqRecord(Seq(""))
-    else:
-        new_left = left_len - int(trim_left)
-        left_seq = left_seq[int(trim_left):]
-    if trim_right.rstrip() == "rejected":
-        new_right="rejected"
-        right_seq=SeqRecord(Seq(""))
-    else:
-        new_right=right_len-int(trim_right)
-        right_seq = right_seq[0:new_right]
-
-    final_lengths ="left_cons:{}\tright_consensus:{}".format(new_left,new_right)
-
-    # write to log file
-    file = open(log,"w")
-    file.write("##############################################################################")
-    file.write("\nFINAL GENOME EXTENSION")
-    file.write("\n##############################################################################\n")
-    file.write(final_lengths)
-    file.write("\n>left_cons\n")
-    file.write(str(left_seq.seq))
-    file.write("\n>right_cons\n")
-    file.write(str(right_seq.seq))
-    file.write("\n")
-    for line in log_cont:
-        file.write(line)
-    file.write("##############################################################################\n")
-    file.close()
 
 
 if __name__ == '__main__':

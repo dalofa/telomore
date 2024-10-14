@@ -86,14 +86,13 @@ def generate_consensus_mafft(reads, output):
    #Check if only a single read is mapped and use that as the consensus if there are no others.
    sequence_count = 0
 
-
    for record in SeqIO.parse(reads, "fastq"):
       sequence_count += 1
    
    if sequence_count==0:
       print("There are no reads to construct a consensus from. Emtpy consensus returned")
       with open(f"{output}", "w") as seq:
-         empty_record = SeqRecord(Seq(""), id="empty_consensus", description="This is an empty FASTA record")
+         empty_record = SeqRecord(Seq(""), id="empty_consensus")
          SeqIO.write(empty_record, seq, "fasta")
    if sequence_count == 1:
       single_record = record

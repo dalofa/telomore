@@ -130,44 +130,82 @@ def revcomp(fasta_in,fasta_out):
         # Write the reverse complement record to the output FASTQ file
         SeqIO.write(rev_complement_record, output_handle, "fasta")
 
+def is_map_empty(file_path):
+    "Checks if a bam-file is empty by trying to fetch the first read"
+    # Open the alignment file
+    with pysam.AlignmentFile(file_path, "rb") as alignment_file:
+        # Try to fetch the first read
+        try:
+            next(alignment_file)
+            return False  # Alignment is not empty
+        except StopIteration:
+            return True  # Alignment is empty
+
+def check_for_empty_cons(file_path):
+   "Checks if a map was produced by an empty consensus"
+   with pysam.AlignmentFile(file_path, "rb") as alignment_file:
+      reads = list(alignment_file)  # Load all reads into a list
+      
+      # Check if there is exactly one read
+      if len(reads) == 1:
+         read = reads[0]
+         # Check if the read is unmapped and has no sequence
+         if read.is_unmapped and (not read.seq or read.seq == "*"):
+            return True  # Only one unmapped read with no sequence
+      return False  # Either more reads, or the read does not meet the conditions
+
+# Example usage:
+
 def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
-   """Writes a fasta-file extended with sequence based on a left- and right-side .bam-file."""
-   # function to stitch telomeres onto the fucking reference
-   # add checks for mapping positions
+   """Writes a fasta-file extended with sequence based on a left- and right-side .bam-file. 
+   Also Adds this information to a log file"""
 
-   # extract left cons-to-stich
-   l_sam_in = pysam.AlignmentFile(left_map, "r")
-   left_seqs =[]
-   start_clip = r"^(\d+)S"
+   left_log_mes=""
+   # Check if an empty left consensus was used to generate the map:
+   if check_for_empty_cons(left_map):
+      # Make an empty seq list to enable errors later on
+      left_seqs=[]
+      left_log_mes="#No consensus produced for left-side end. Likely, no reads extends the assembly. "
+   else:
+      # extract left cons-to-stich
+      l_sam_in = pysam.AlignmentFile(left_map, "r")
+      left_seqs =[]
+      start_clip = r"^(\d+)S"
+      # filter away mapping at right side
+      cons_at_left = [read for read in l_sam_in if read.reference_start<1000]
+      
+      # Get the sequence extending beyond the genome
+      for read in cons_at_left:
+         lmatch = re.match(start_clip,read.cigarstring)
+         if lmatch:
+            clip_num=int(lmatch.group(1)) # digits are retrieve via .group
+            seq = read.query_sequence[0:(clip_num-read.reference_start)] # Adjust for if more than just overhanging bases are soft-clipped
+            left_seqs.append(seq)
+      l_sam_in.close()
+   right_log_mes=""
+   # Check if an empty left consensus was used to generate the map:
+   if check_for_empty_cons(right_map):
+      right_seqs=[]
+      right_log_mes="#No consensus produced for right-side end. Likely, no reads extends the assembly."
+   else:
+      # extract right cons-to-stich
+      r_sam_in = pysam.AlignmentFile(right_map, "r")
+      seq_end = r_sam_in.lengths[0] # get length of reference
+      right_seqs = []
+      end_clip = r"(\d+)S$" # reg. exp for ending with *S[num]
 
-   # filter away mapping at right side
-   cons_at_left = [read for read in l_sam_in if read.reference_start<1000]
-   for read in cons_at_left:
-      lmatch = re.match(start_clip,read.cigarstring)
-      if lmatch:
-         clip_num=int(lmatch.group(1)) # digits are retrieve via .group
-         seq = read.query_sequence[0:(clip_num-read.reference_start)] # Adjust for if more than just overhanging bases are soft-clipped
-         left_seqs.append(seq)
-   l_sam_in.close()
+      cons_at_right = [read for read in r_sam_in if read.reference_start>1000]
+      for read in cons_at_right:
+         rmatch = re.search(end_clip,read.cigarstring)
+         if rmatch:
 
-   # extract right cons-to-stich
-   r_sam_in = pysam.AlignmentFile(right_map, "r")
-   seq_end = r_sam_in.lengths[0] # get length of reference
-   right_seqs = []
-   end_clip = r"(\d+)S$" # reg. exp for ending with *S[num]
-
-   cons_at_right = [read for read in r_sam_in if read.reference_start>1000]
-   for read in cons_at_right:
-      rmatch = re.search(end_clip,read.cigarstring)
-      if rmatch:
-
-         clip_num=int(rmatch.group(1)) # digits are retrieve via .group
-         # Adjusting for potential difference between overhang and soft-clip
-         adj = seq_end-read.reference_end
-         if clip_num+read.reference_end>seq_end:
-            seq = read.query_sequence[-(clip_num-adj):]
-            right_seqs.append(seq)
-   r_sam_in.close()
+            clip_num=int(rmatch.group(1)) # digits are retrieve via .group
+            # Adjusting for potential difference between overhang and soft-clip
+            adj = seq_end-read.reference_end
+            if clip_num+read.reference_end>seq_end:
+               seq = read.query_sequence[-(clip_num-adj):]
+               right_seqs.append(seq)
+      r_sam_in.close()
 
    # stich the fuckers toghether
    genome = SeqIO.read(ref,"fasta")
@@ -195,10 +233,12 @@ def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
    
    # Create log of consensus length
    log = open(logout,"w")
-   log.write("##############################################################################")
+   log.write("==============================================================================")
    log.write("\nINTIAL CONSENSUS")
-   log.write("\n##############################################################################")
+   log.write("\n==============================================================================")
    log_content ="\nleft_cons:{}\tright_consensus:{}".format(len(left_cons),len(right_cons))
+   comment_mes ="\n" + "\n".join([left_log_mes,right_log_mes]) 
+   log_content=log_content + comment_mes
    log.write(log_content)
    log.write("\n>left_cons\n")
    log.write(str(left_cons.seq))
@@ -302,9 +342,9 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
       trimmed_fasta.description=""
    
    log = open(cons_log,"a")
-   log.write("\n##############################################################################")
+   log.write("\n==============================================================================")
    log.write("\nCONSENSUS TRIMMING")
-   log.write("\n##############################################################################")
+   log.write("\n==============================================================================")
    log.write("\nRule: Trimmed until coverage>=5 and 70% read matching position:")
    log.write(log_message)
    log.close()
@@ -374,9 +414,9 @@ def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_th
       trimmed_fasta.description=""
    
    log = open(cons_log,"a")
-   log.write("\n##############################################################################")
+   log.write("\n==============================================================================")
    log.write("\nCONSENSUS TRIMMING")
-   log.write("\n##############################################################################")
+   log.write("\n==============================================================================")
    log.write("\nRule: Trimmed until coverage Q_score>Q30")
    log.write(log_message)
    log.close()

@@ -92,9 +92,9 @@ def finalize_log(log,right_fasta,left_fasta):
 
     # write to log file
     file = open(log,"w")
-    file.write("##############################################################################")
+    file.write("==============================================================================")
     file.write("\nFINAL GENOME EXTENSION")
-    file.write("\n##############################################################################\n")
+    file.write("\n==============================================================================\n")
     file.write(final_lengths)
     file.write("\n>left_cons\n")
     file.write(str(left_seq.seq))
@@ -103,7 +103,7 @@ def finalize_log(log,right_fasta,left_fasta):
     file.write("\n")
     for line in log_cont:
         file.write(line)
-    file.write("##############################################################################\n")
+    file.write("==============================================================================\n")
     file.close()
     
     #with open(filename, 'r+') as f:

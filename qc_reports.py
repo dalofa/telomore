@@ -11,7 +11,6 @@ import pysam
 Functions for generating useful QC metrics from the telomore script.
 """
 
-
 def qc_map(polished_genome,left,right,output_handle,t=1):
    '''Collect terminal reads previously identified and maps them against the polished genome'''
    collect_fastq = open("all_terminal_reads.fastq","a")

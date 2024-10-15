@@ -3,7 +3,7 @@
 # Find out whether all reads or all terminal reads is needed to train lastdb
 # Maybe use the
 
-from sam_tools import revcomp
+from map_tools import revcomp
 import os
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord

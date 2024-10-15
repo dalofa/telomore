@@ -1,3 +1,10 @@
+"""Telomore
+Script for finding and extracting telomeres from Nanopore OR Illumina reads, which have been excluded/missed from
+a de novo assembly.
+
+This serves as a wrapper for either the illumina or nanopore workflows.
+"""
+
 import argparse
 import subprocess
 import os

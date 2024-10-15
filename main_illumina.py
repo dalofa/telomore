@@ -17,7 +17,7 @@ import os
 from qc_reports import qc_map, cons_length, cons_genome_map, cons_cons_map, qc_map_illumina, finalize_log
 from fasta_tools import get_chromosome, strip_fasta
 from cmd_tools import map_and_sort_illumina, train_lastDB, generate_consensus_mafft, map_and_sort
-from sam_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map_illumina
+from map_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map_illumina
 import os
 import shutil
 import sys
@@ -49,6 +49,8 @@ def main():
     right_filt = "right_filtered"
 
     get_terminal_reads(map_out,left_reads,right_reads)
+
+
     get_left_soft(left_reads,left_filt,offset=500) 
     get_right_soft(right_reads,right_filt,offset=500)
     print("Terminal reads extracted")

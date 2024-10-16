@@ -6,9 +6,6 @@ import os
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
-
-
-
 import subprocess
 
 def map_and_sort(reference, fastq, output,threads=1):
@@ -24,9 +21,6 @@ def map_and_sort(reference, fastq, output,threads=1):
     # Construct the command to run the bash script using an absolute path
     cmd = " ".join(["bash", os.path.join(basedir, "..", "bash_scripts", "minimap2_cmd.sh"), reference, fastq, str(threads), output])
     subprocess.run(cmd,shell=True)
-
-
-    
 
 def map_and_sort_illumina(reference, fastq, output,threads=1):
     """Maps illumina against a reference using bowtie2 through a bash

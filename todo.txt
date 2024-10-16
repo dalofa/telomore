@@ -1,7 +1,0 @@
-### Priority list of problemns to adress
-1. Adress stiching problem | SOLVED
-2. Make a more useful logfile | SOLVED
-3. Clean-up of tmp files | SOLVED
-4. Update arg parser to take long form input "--threads" and short form "-t" | SOLVED
-5. Update arg parser to take offset as optional value
-6. Provide access to base-quality threshold in trimming function in argparser

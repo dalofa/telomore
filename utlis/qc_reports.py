@@ -12,8 +12,6 @@ import subprocess
 import csv
 import pysam
 
-
-
 def qc_map(polished_genome,left,right,output_handle,t=1):
     '''Collect terminal reads previously identified and maps them against the extended assembly'''
     with open("all_terminal_reads.fastq", "w") as fastqfile:

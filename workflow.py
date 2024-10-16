@@ -162,12 +162,23 @@ def main():
 
         # Check if file exists to avoid crashing when no alignment was used to produce
         # alignment
+        # CONS_EXT=[".fasta",".aln"]
+        # for file_ext in CONS_EXT:
+        #     if os.path.isfile(r_cons_out+file_ext):
+        #         os.remove(r_cons_out+file_ext)
+        #     if os.path.isfile(r_cons_out+file_ext):
+        #         os.remove(l_cons_out+file_ext)
+
         CONS_EXT=[".fasta",".aln"]
         for file_ext in CONS_EXT:
+            if os.path.isfile(r_cons_out):
+                os.remove(r_cons_out)
             if os.path.isfile(r_cons_out+file_ext):
                 os.remove(r_cons_out+file_ext)
-            if os.path.isfile(r_cons_out+file_ext):
+            if os.path.isfile(l_cons_out+file_ext):
                 os.remove(l_cons_out+file_ext)
+            if os.path.isfile(l_cons_out):
+                os.remove(l_cons_out)
         
         #remove temp files not needed in the end
         os.remove(l_cons_final_out)

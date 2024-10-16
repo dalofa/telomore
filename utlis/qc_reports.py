@@ -3,7 +3,8 @@ Functions for generating useful QC metrics from the telomore script.
 """
 
 from .cmd_tools import map_and_sort, map_and_sort_illumina
-from .fasta_tools import merge_fasta
+from .fasta_tools import merge_fasta, dereplicate_fastq
+from .map_tools import sam_to_fastq
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -14,22 +15,22 @@ import pysam
 
 
 def qc_map(polished_genome,left,right,output_handle,t=1):
-   '''Collect terminal reads previously identified and maps them against the polished genome'''
-   collect_fastq = open("all_terminal_reads.fastq","a")
-   subprocess.run(["samtools","fastq","-@",str(t),left],stdout=collect_fastq)
-   print("left_reads_collected")
-   subprocess.run(["samtools","fastq","-@",str(t),right],stdout=collect_fastq)
-   print("right reads collected")
-   collect_fastq.close()
-   map_and_sort(polished_genome,"all_terminal_reads.fastq",output_handle,t)
+    '''Collect terminal reads previously identified and maps them against the extended assembly'''
+    with open("all_terminal_reads.fastq", "w") as fastqfile:
+        sam_to_fastq(left, fastqfile)
+        sam_to_fastq(right, fastqfile)
+    dereplicate_fastq("all_terminal_reads.fastq","all_terminal_reads.fastq")
+    map_and_sort(polished_genome,"all_terminal_reads.fastq",output_handle,t)
 
 def qc_map_illumina(polished_genome,left,right,output_handle,t=1):
-   '''Collect terminal reads previously identified and maps them against the polished genome'''
-   collect_fastq = open("all_terminal_reads.fastq","a")
-   subprocess.run(["samtools","fastq","-@",str(t),left],stdout=collect_fastq)
-   subprocess.run(["samtools","fastq","-@",str(t),right],stdout=collect_fastq)
-   collect_fastq.close()
-   map_and_sort_illumina(polished_genome,"all_terminal_reads.fastq",output_handle,t)
+    '''Collect terminal reads previously identified and maps them against extended assembly'''
+    # Updated to sam_to_fastq instead of samtools fastq to keep
+    # # non-primary reads
+    with open("all_terminal_reads.fastq", "w") as fastqfile:
+        sam_to_fastq(left, fastqfile)
+        sam_to_fastq(right, fastqfile)
+    dereplicate_fastq("all_terminal_reads.fastq","all_terminal_reads.fastq")
+    map_and_sort_illumina(polished_genome,"all_terminal_reads.fastq",output_handle,t)
 
 def cons_genome_map(left_cons,right_cons,polished_genome,output_handle,t=1):
     '''Collect consensus and maps them against the polished genome'''

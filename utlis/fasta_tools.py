@@ -6,6 +6,22 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
+def dereplicate_fastq(fastq_in, fastq_out):
+    seen_reads = set()  # To store unique read identifiers and sequences
+    unique_reads = []
+
+    with open(fastq_in, "r") as infile:
+        for record in SeqIO.parse(infile, "fastq"):
+            # Combine read ID and sequence to ensure uniqueness by both criteria
+            read_key = (record.id, str(record.seq))
+            
+            if read_key not in seen_reads:
+                seen_reads.add(read_key)
+                unique_reads.append(record)
+
+    with open(fastq_out, "w") as outfile:
+        SeqIO.write(unique_reads, outfile, "fastq")
+
 def get_chromosome(fasta, output_handle):
     '''Returns the longest contig in a fasta-file'''
 

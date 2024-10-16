@@ -9,6 +9,19 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
+def sam_to_fastq(sam_in,fastq_out):
+   """Convert a sam-file to fastq-format, excluding unmapped reads."""
+   with pysam.AlignmentFile(sam_in, "r") as samfile:
+         for read in samfile.fetch(until_eof=True):
+               if not read.is_unmapped:
+                  name = read.query_name
+                  seq = read.query_sequence
+                  qual = read.qual
+                  if qual is None:
+                     qual = 'I' * len(seq)  # Assign a default high-quality score
+                  
+                  # Write the read in FASTQ format to the provided handle
+                  fastq_out.write(f"@{name}\n{seq}\n+\n{qual}\n")
 
 def mapped_bases(cigarstring):
    """Calculate the number of bases mapped to the reference in a given CIGAR string."""
@@ -88,10 +101,10 @@ def get_terminal_reads(sam_file,loutput_handle,routput_handle):
 
          # Compare CIGAR strings to keep the one that maps more bases
          if cigar_maps_more_bases(cigar, prior_cigar):
-               rterminal_reads[query_name] = lread
+               rterminal_reads[query_name] = rread
       else:
          
-         rterminal_reads[query_name] = lread
+         rterminal_reads[query_name] = rread
 
    # Write all fetched reads to a new file
    lterminal_file = pysam.AlignmentFile(loutput_handle,"w",template=input)
@@ -514,9 +527,3 @@ def generate_support_log(genome, qc_bam_file, output_handle):
 
 if __name__ == '__main__':
    print("testing module function")
-   #generate_support_log(genome="NBC_00001.02.trimmed.cons.fasta",
-   #                     qc_bam_file="NBC_00001.02.reads.trimmed.map.bam",
-   #                     output_handle="test_log.txt")
-   get_terminal_reads2(sam_file="NBC_00035.map.sort.bam",
-                      loutput_handle="ltest2.sam",
-                      routput_handle="rtest2.sam")

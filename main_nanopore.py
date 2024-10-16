@@ -66,19 +66,17 @@ def main():
     # To maintain anchor point for alignment, the reads are flipped
     # and the resulting consensus must then be flipped
     revcomp_reads("left_filtered.fastq","rev_left_filtered.fastq") # flip reads for 
-    l_cons_out="rev_left_cons"
+    l_cons_out="rev_left_cons.fasta"
     generate_consensus_lamassemble(db_out,"rev_left_filtered.fastq",l_cons_out)
     l_cons_final_out="left_cons.fasta"
-    revcomp(l_cons_out+".fasta",l_cons_final_out)
+    revcomp(l_cons_out,l_cons_final_out)
 
 
     # Generate right-consensus
-    r_cons_out="right_cons"
+    r_cons_out="right_cons.fasta"
     generate_consensus_lamassemble(db_out,"right_filtered.fastq",r_cons_out)
     print("Consensus generated")
     
-
-
     # Extend assembly with consensus using and mapping of the consensus
     # onto the chromosome
     # discard start or end bases that can provide alternative mapping spots for consensus
@@ -143,10 +141,14 @@ def main():
 
         CONS_EXT=[".fasta",".aln"]
         for file_ext in CONS_EXT:
+            if os.path.isfile(r_cons_out):
+                os.remove(r_cons_out)
             if os.path.isfile(r_cons_out+file_ext):
                 os.remove(r_cons_out+file_ext)
-            if os.path.isfile(r_cons_out+file_ext):
+            if os.path.isfile(l_cons_out+file_ext):
                 os.remove(l_cons_out+file_ext)
+            if os.path.isfile(l_cons_out):
+                os.remove(l_cons_out)
         
         #remove temp files not needed in the end
         os.remove(l_cons_final_out)

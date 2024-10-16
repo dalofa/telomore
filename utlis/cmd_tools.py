@@ -63,6 +63,12 @@ def generate_consensus_lamassemble(db_name,reads,output,flip="no"):
    sequence_count = 0
    for record in SeqIO.parse(reads, "fastq"):
       sequence_count += 1
+
+   if sequence_count==0:
+      print("There are no reads to construct a consensus from. Emtpy consensus returned")
+      with open(f"{output}", "w") as seq:
+         empty_record = SeqRecord(Seq(""), id="empty_consensus")
+         SeqIO.write(empty_record, seq, "fasta")
    if sequence_count == 1:
       single_record = record
       print("There are only a single read to construct a consensus from. Returning read as consensus.")
@@ -71,7 +77,7 @@ def generate_consensus_lamassemble(db_name,reads,output,flip="no"):
    elif sequence_count>1:
 
       db = db_name +".par"
-      seq = open(str(output)+".fasta","w")
+      seq = open(str(output),"w")
       subprocess.run(["lamassemble","--name="+output,db,reads],stdout=seq,)
       seq.close()
 
@@ -80,7 +86,7 @@ def generate_consensus_lamassemble(db_name,reads,output,flip="no"):
       aln.close()
 
 def generate_consensus_mafft(reads, output):
-   """Generates a consensus fasta-file given a series of reads in fasta-file. 
+   """Generates a consensus fasta-file given a series of reads in fasta-format. 
    Relies on very similar reads."""
 
    #Check if only a single read is mapped and use that as the consensus if there are no others.

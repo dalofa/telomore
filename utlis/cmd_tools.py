@@ -205,6 +205,8 @@ def generate_consensus_mafft(reads, output):
                          ,"-plurality",str(1),
                          "-sequence="+mafft_output,
                          "-outseq="+output],
+                         capture_output=True,
+                         text=True,
                          check=True)
       except subprocess.CalledProcessError as e:
       # If the bash script fails, capture the error and log the traceback

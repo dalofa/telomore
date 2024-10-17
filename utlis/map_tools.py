@@ -5,6 +5,7 @@ Functions for handling read mappings. Primarily for extracting and filtering ter
 import pysam
 import re
 import subprocess
+import logging
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -290,17 +291,17 @@ def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
    # check if no conesnsus extens beyond the reference
    if len(left_seqs)==0:
       left_cons=SeqRecord(Seq("")) # if it is empty make an empty seqrecord to avoid errors in joining later
-      print("Left cons does not extend genome")
+      logging.info("Left consensus does not extend genome")
    else:
       left_cons = SeqRecord(Seq(left_seqs[0]),id="left_cons")
-      print("left cons is", len(left_cons))
+      logging.info(f"left consensus is {len(left_cons)}")
    if len(right_seqs)==0:
       right_cons=SeqRecord(Seq("")) # if it is empty make an empty seqrecord to avoid errors in joining later
-      print("right cons does not extend genome")
+      logging.info("right cons does not extend genome")
    else:
       right_cons = SeqRecord(Seq(right_seqs[0]),id="right_cons")
    
-      print("right cons is", len(right_cons))
+      logging.info(f"right cons is {len(right_cons)}")
    new_genome = left_cons+genome+right_cons
    new_genome.id="Reference_with_consensus_attached"
    new_genome.description="" 
@@ -373,23 +374,23 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    for pos in range(0,0+left_len):
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
-         #print("Pos",pos,"Cov",cov,"Matching",match)
+
          if cov>=cov_thres and (match/cov)>ratio_thres:
             index_start=pos
-            #print(index_start)
+
             break
       except TypeError: # if no reads are mapped
          continue
    
    #trim end/right
    for pos in range(fasta_end,fasta_end-right_len,-1):
-      #print("POSITIONS IS ",pos)
+
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
-         #print("Pos",pos,"Cov",cov,"Matching",match)
+
          if cov>=cov_thres and (match/cov)>ratio_thres:
             index_end=pos
-            #print("INDEX END IS:",index_end)
+
             break
       except TypeError:
          continue
@@ -445,23 +446,23 @@ def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_th
    for pos in range(0,0+left_len):
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
-         #print("Pos",pos,"Cov",cov,"Matching",match)
+
          if cov>=cov_thres and (match/cov)>ratio_thres:
             index_start=pos
-            #print(index_start)
+
             break
       except TypeError: # if no reads are mapped
          continue
    
    #trim end/right
    for pos in range(fasta_end,fasta_end-right_len,-1):
-      #print("POSITIONS IS ",pos)
+
       try:
          cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
-         #print("Pos",pos,"Cov",cov,"Matching",match)
+
          if cov>=cov_thres and (match/cov)>ratio_thres:
             index_end=pos
-            #print("INDEX END IS:",index_end)
+
             break
       except TypeError:
          continue
@@ -520,7 +521,6 @@ def generate_support_log(genome, qc_bam_file, output_handle):
             print(pos,cov,match)
             log.write(pos,cov,match)
          except TypeError: # if no reads are mapped
-            #print("error")
             continue
    
    # Filter log for relevant positions

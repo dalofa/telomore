@@ -5,6 +5,7 @@ Utilities for handling fasta files.
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+import logging
 
 def dereplicate_fastq(fastq_in, fastq_out):
     seen_reads = set()  # To store unique read identifiers and sequences
@@ -30,7 +31,7 @@ def get_chromosome(fasta, output_handle):
         chromosome = SeqIO.read(fasta,format="fasta")
         SeqIO.write(chromosome,output_handle, format="fasta")
         message = "A single contig: {} was found and will be used for mapping".format(">"+chromosome.id)
-        print(message)
+        logging.info(message)
 
     except ValueError: # there are more than one entry
         contigs = SeqIO.parse(fasta,format="fasta")
@@ -46,7 +47,7 @@ def get_chromosome(fasta, output_handle):
         
         SeqIO.write(chromosome,output_handle, format="fasta")
         message = "The longest contig: {} has been saved as {} and will be used for mapping.".format(">"+chromosome.id,output_handle)
-        print(message)
+        logging.info(message)
 
 
 def attach_seq(left,right,chromsome,output_name,offset=0):
@@ -59,7 +60,7 @@ def attach_seq(left,right,chromsome,output_name,offset=0):
     if offset==0: # if offset is 0 offset:-offset fucks it up
         genome = chrom
     elif offset >=len(chrom.seq)/2:
-        print("Error: Offset is larger than  1/2 genome length.")
+        logging.error("Error: Offset is larger than  1/2 genome length.")
         return
     else:
         genome = chrom[offset:-offset]
@@ -102,10 +103,8 @@ def trim_to_cons(input_seq,num_base,output_handle):
                 to_write = SeqRecord(seq=r_seq[0:num_base+1],id=new_id,description="")
                 all_rec.append(to_write)
 
-
-                #print(seq[0:num_base+1])
             else:
-                print("Error: Index out of range")
+                logging.error("Error: Index out of range")
         
         if len(all_rec)>0:
             SeqIO.write(all_rec,output_handle,"fasta")
@@ -136,8 +135,5 @@ def strip_fasta(input_file, output_file, x, remove_from='start'):
 
 
 if __name__ == '__main__':
-    import os
-    #print(os.getcwd())
-    #attach_seq("left.fasta","right.fasta","middle.fasta","new3.fasta",offset=40)
     trim_to_cons("3_cons.fasta",120,"ot.boi")
     

@@ -229,8 +229,10 @@ def main():
 # Run script
 if __name__ == '__main__':
     setup_logging()
+
     try:
         main()
+    
     except Exception as e:
         logging.error("An error occurred during the workflow:")
         logging.error(traceback.format_exc()) 

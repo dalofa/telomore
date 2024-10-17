@@ -7,7 +7,12 @@ import sys
 def get_args():
     """Handles parsing of arguments"""
     parser = argparse.ArgumentParser(
-        description="Recover potential telomeric seq from Streptomyces Oxford Nanopore data")
+        description= """
+        Recover potential telomeric sequences from Streptomyces genomes using Oxford Nanopore or illumina sequence data.
+        Outputs an extended assembly to basename.02.trimmed.fasta and QC-maps basename_seqtype_QC.
+        A run-log is written to telomore.log and result-log is written to basename.ill.cons.log.txt.
+        """,
+        formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument(
         "-f", "--fastq", 

@@ -1,5 +1,7 @@
 # TELOMORE
-A pipeline for fishing out telomores trimmed off a linear genome (Streptomyces) by Flye.
+A pipeline to reconstitute telomeric sequences in *Streptomyces* genomes excluded during de novo assembly from either Oxford Nanopore or Illumina sequencing data. In brief, the tool looks for reads that extend an assembly, builds a consensus of the extending sequence and attaches it to the assembly.
+
+
 
 ## Process overview
 

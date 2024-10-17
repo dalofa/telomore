@@ -4,7 +4,6 @@ a de novo assembly.
 """
 # imports
 import glob
-import argparse
 import os
 import shutil
 import logging
@@ -25,7 +24,6 @@ from utlis.map_tools import get_terminal_reads, get_left_soft, get_right_soft, r
 
 def main():
     
-
     args = get_args()
 
     # Generate a filename stripped of the .fasta/.fna/.fa extension

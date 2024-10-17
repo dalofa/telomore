@@ -7,11 +7,11 @@ import sys
 def get_args():
     """Handles parsing of arguments"""
     parser = argparse.ArgumentParser(
-        description= """
-        Recover potential telomeric sequences from Streptomyces genomes using Oxford Nanopore or illumina sequence data.
-        Outputs an extended assembly to basename.02.trimmed.fasta and QC-maps basename_seqtype_QC.
-        A run-log is written to telomore.log and result-log is written to basename.ill.cons.log.txt.
-        """,
+        description= """Recover potential telomeric sequences from Streptomyces genomes using Oxford Nanopore or illumina sequence data.
+- OUTPUT: An extended assembly is written to basename.02.trimmed.fasta and QC-maps are written to a folder 
+  named basename_seqtype_QC.
+- LOG: A run-log is written to telomore.log and a result-log is written to basename.seqtype.cons.log.txt.
+""",
         formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument(
@@ -27,6 +27,12 @@ def get_args():
         help="Path to reference file (.fasta, .fna, or .fa)"
     )
     parser.add_argument(
+        "-m", '--mode', 
+        choices=['nanopore', 'illumina'], 
+        required=True, 
+        help="Choose which mode to run"
+    )
+    parser.add_argument(
         "-t", "--threads", 
         type=int, 
         default=1,
@@ -37,12 +43,6 @@ def get_args():
         action='store_true', 
         help="Flag to keep intermediate files. Default is False"
     ) 
-    parser.add_argument(
-        "-m", '--mode', 
-        choices=['nanopore', 'illumina'], 
-        required=True, 
-        help="Choose which mode to run"
-    )
 
     # Check if no arguments were provided
     if len(sys.argv) == 1:

@@ -80,7 +80,7 @@ def main():
 
     if args.mode=="nanopore":
             db_out=ref_name+".db"
-            train_lastDB(chrom_out,args.fastq,db_out,args.threads)
+            train_lastDB(chrom_out,args.single,db_out,args.threads)
             generate_consensus_lamassemble(db_out,"rev_left_filtered.fastq",l_cons_out)
     elif args.mode=="illumina":
             generate_consensus_mafft("rev_left_filtered.fastq",l_cons_out)

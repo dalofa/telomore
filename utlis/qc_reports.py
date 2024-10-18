@@ -3,32 +3,54 @@ Functions for generating useful QC metrics from the telomore script.
 """
 
 from .cmd_tools import map_and_sort, map_and_sort_illumina
-from .fasta_tools import merge_fasta, dereplicate_fastq
-from .map_tools import sam_to_fastq
+from .fasta_tools import merge_fasta, dereplicate_fastq, cat_and_derep_fastq
+from .map_tools import sam_to_fastq, sam_to_matepair
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import subprocess
 import csv
 import pysam
+import logging
 
-def qc_map(polished_genome,left,right,output_handle,t=1):
+def qc_map(extended_assembly,left,right,output_handle,t=1):
     '''Collect terminal reads previously identified and maps them against the extended assembly'''
     with open("all_terminal_reads.fastq", "w") as fastqfile:
         sam_to_fastq(left, fastqfile)
         sam_to_fastq(right, fastqfile)
     dereplicate_fastq("all_terminal_reads.fastq","all_terminal_reads.fastq")
-    map_and_sort(polished_genome,"all_terminal_reads.fastq",output_handle,t)
+    map_and_sort(extended_assembly,"all_terminal_reads.fastq",output_handle,t)
 
-def qc_map_illumina(polished_genome,left,right,output_handle,t=1):
-    '''Collect terminal reads previously identified and maps them against extended assembly'''
-    # Updated to sam_to_fastq instead of samtools fastq to keep
-    # # non-primary reads
-    with open("all_terminal_reads.fastq", "w") as fastqfile:
-        sam_to_fastq(left, fastqfile)
-        sam_to_fastq(right, fastqfile)
-    dereplicate_fastq("all_terminal_reads.fastq","all_terminal_reads.fastq")
-    map_and_sort_illumina(polished_genome,"all_terminal_reads.fastq",output_handle,t)
+def qc_map_illumina(extended_assembly,left_sam,right_sam,fastq_in1,fastq_in2,output_handle,t=1):
+    '''Collect terminal reads previously identified and maps them against extended assembly.'''
+    # get left matepairs
+    sam_to_matepair(sam_in=left_sam,
+                    fastq_in1=fastq_in1,
+                    fastq_in2=fastq_in2,
+                    fastq_out1="terminal_left_reads_1.fastq",
+                    fastq_out2="terminal_left_reads_2.fastq")
+    
+    # get right matepairs
+    sam_to_matepair(sam_in=right_sam,
+                fastq_in1=fastq_in1,
+                fastq_in2=fastq_in2,
+                fastq_out1="terminal_right_reads_1.fastq",
+                fastq_out2="terminal_right_reads_2.fastq")
+    
+    # collect the matepair_files:
+    cat_and_derep_fastq(fastq_in1="terminal_left_reads_1.fastq",
+                        fastq_in2="terminal_right_reads_1.fastq",
+                        fastq_out="all_terminal_reads_1.fastq")
+    
+    cat_and_derep_fastq(fastq_in1="terminal_left_reads_2.fastq",
+                        fastq_in2="terminal_right_reads_2.fastq",
+                        fastq_out="all_terminal_reads_2.fastq")
+    logging.info(f"Running bowtie to QC_map to {output_handle}")
+    map_and_sort_illumina(reference=extended_assembly,
+                          read1="all_terminal_reads_1.fastq",
+                          read2="all_terminal_reads_2.fastq",
+                          output=output_handle,
+                          threads=t)
 
 def cons_genome_map(left_cons,right_cons,polished_genome,output_handle,t=1):
     '''Collect consensus and maps them against the polished genome'''

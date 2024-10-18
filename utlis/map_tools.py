@@ -5,10 +5,35 @@ Functions for handling read mappings. Primarily for extracting and filtering ter
 import pysam
 import re
 import subprocess
+import gzip
 import logging
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+
+def sam_to_matepair(sam_in,fastq_in1, fastq_in2,fastq_out1,fastq_out2):
+   with pysam.AlignmentFile(sam_in) as samfile:
+      reads_to_grep = set() # using a set should be faster than list
+
+      # get all read names
+      for read in samfile.fetch(until_eof=True):
+         read_name = read.query_name 
+         if " " in read.query_name:
+            read_name = read_name.split(" ")[0]
+         
+         reads_to_grep.add(read_name)
+      
+      # get matepair 1
+      with gzip.open(fastq_in1,"rt") as gzip_handle, open(fastq_out1,"w") as outfile:
+         for record in SeqIO.parse(gzip_handle,"fastq"):
+            if record.id in reads_to_grep:
+               SeqIO.write(record, outfile, "fastq")
+
+      # get matepair 2
+      with gzip.open(fastq_in2,"rt") as gzip_handle, open(fastq_out2,"w") as outfile:
+         for record in SeqIO.parse(gzip_handle,"fastq"):
+            if record.id in reads_to_grep:
+               SeqIO.write(record, outfile, "fastq")
 
 def sam_to_fastq(sam_in,fastq_out):
    """Convert a sam-file to fastq-format, excluding unmapped reads."""
@@ -294,14 +319,14 @@ def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
       logging.info("Left consensus does not extend genome")
    else:
       left_cons = SeqRecord(Seq(left_seqs[0]),id="left_cons")
-      logging.info(f"left consensus is {len(left_cons)}")
+      logging.info(f"Left consensus is {len(left_cons)}")
    if len(right_seqs)==0:
       right_cons=SeqRecord(Seq("")) # if it is empty make an empty seqrecord to avoid errors in joining later
-      logging.info("right cons does not extend genome")
+      logging.info("Right cons does not extend genome")
    else:
       right_cons = SeqRecord(Seq(right_seqs[0]),id="right_cons")
    
-      logging.info(f"right cons is {len(right_cons)}")
+      logging.info(f"Right consensus is {len(right_cons)}")
    new_genome = left_cons+genome+right_cons
    new_genome.id="Reference_with_consensus_attached"
    new_genome.description="" 
@@ -527,3 +552,10 @@ def generate_support_log(genome, qc_bam_file, output_handle):
 
 if __name__ == '__main__':
    print("testing module function")
+   sam_to_matepair("test_files/left.sam",
+                   "test_files/NBC_00001_FDMS210417786-1a_HMWN2DSX2_L3_1.fq.gz",
+                   "test_files/NBC_00001_FDMS210417786-1a_HMWN2DSX2_L3_2.fq.gz",
+                   "test_out1.fq",
+                   "test_out2.fq")
+   
+   

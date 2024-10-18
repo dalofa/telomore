@@ -15,22 +15,31 @@ def get_args():
         formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument(
-        "-f", "--fastq", 
-        type=str,
+        "-m", '--mode', 
+        choices=['nanopore', 'illumina'], 
         required=True, 
-        help="Path to gzipped fastq-file",
+        help="Choose which mode to run"
+    )
+    parser.add_argument(
+        "--single", 
+        type=str,
+        help="Path to a single gzipped nanopore fastq-file",
+    )
+    parser.add_argument(
+        "--read1", 
+        type=str,
+        help="Path to gzipped illumina mate1 fastq-file",
+    )
+    parser.add_argument(
+        "--read2", 
+        type=str,
+        help="Path to gzipped illumina mate2 fastq-file",
     )
     parser.add_argument(
         "-r", "--reference", 
         type=str, 
         required=True, 
         help="Path to reference file (.fasta, .fna, or .fa)"
-    )
-    parser.add_argument(
-        "-m", '--mode', 
-        choices=['nanopore', 'illumina'], 
-        required=True, 
-        help="Choose which mode to run"
     )
     parser.add_argument(
         "-t", "--threads", 
@@ -51,7 +60,14 @@ def get_args():
 
     args = parser.parse_args()
     
+    if args.mode == 'illumina':
+        if not (args.read1 and args.read2):
+            parser.error('Illumina mode requires two FASTQ files, specified by --read1 and --read2')
+    elif args.mode == 'nanopore':
+        if not args.single:
+            parser.error('Nanopore mode takes one collected FASTQ file, specified by --single')
     return args
+
 
 def setup_logging(log_file="telomore.log"):
     """Set-up logging"""

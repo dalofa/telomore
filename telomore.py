@@ -46,9 +46,9 @@ def main():
     if not map_out in folder_content:
 
         if args.mode=="nanopore":
-            map_and_sort(chrom_out, args.fastq , map_out , args.threads)
+            map_and_sort(chrom_out, args.single , map_out , args.threads)
         elif args.mode=="illumina":
-            map_and_sort_illumina(chrom_out, args.fastq , map_out , args.threads)
+            map_and_sort_illumina(chrom_out, args.read1, args.read2, map_out , args.threads)
     else:
         logging.info(f"Using already identified .bam-file {map_out}")
 
@@ -128,11 +128,19 @@ def main():
     
     trim_map = ref_name + ".01.nontrimmed.map.bam"
     trim_out = ref_name + ".02.trimmed.cons.fasta"
+
     if args.mode=="nanopore":
          qc_map(stitch_out,left_reads,right_reads,trim_map,t=args.threads)
          trim_by_map(stitch_out,trim_map,trim_out, cons_log=cons_log_out, cov_thres=5, ratio_thres=0.7,qual_thres=5)
     elif args.mode=="illumina": 
-        qc_map_illumina(stitch_out,left_reads,right_reads,trim_map,t=args.threads)
+        qc_map_illumina(stitch_out,
+                        left_sam=left_reads,
+                        right_sam=right_reads,
+                        fastq_in1=args.read1,
+                        fastq_in2=args.read2,
+                        output_handle=trim_map,
+                        t=args.threads)
+        logging.info(f"Finished QC made to {trim_out}")
         trim_by_map_illumina(stitch_out,trim_map,trim_out,cons_log=cons_log_out, cov_thres=1, ratio_thres=0.7,qual_thres=30)
 
     # 4: Generate QC files
@@ -143,7 +151,13 @@ def main():
     if args.mode=="nanopore":
          qc_map(trim_out,left_reads,right_reads,qc_out,t=args.threads)
     elif args.mode=="illumina":
-        qc_map_illumina(trim_out,left_reads,right_reads,qc_out,t=args.threads)
+        qc_map_illumina(extended_assembly=trim_out,
+                        left_sam=left_reads,
+                        right_sam=right_reads,
+                        fastq_in1=args.read1,
+                        fastq_in2=args.read2,
+                        output_handle= qc_out,
+                        t=args.threads)
     
     cons_genome_map_out = ref_name + ".02.cons.trimmed.map.bam"
     cons_genome_map("left_cons.fasta","right_cons.fasta",trim_out,cons_genome_map_out,t=args.threads)

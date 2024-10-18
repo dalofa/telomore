@@ -44,21 +44,23 @@ def map_and_sort(reference, fastq, output,threads=1):
       logging.error(f"Script stderr: {e.stderr}")
       logging.error(traceback.format_exc())
 
-def map_and_sort_illumina(reference, fastq, output,threads=1):
+def map_and_sort_illumina(reference, read1,read2, output,threads=1):
     """Maps illumina against a reference using bowtie2 through a bash
     script and returns a sorted and index bam-file"""
-
+   
     # input check
     assert type(threads)==int, "threads must be an integer"
     assert os.path.isfile(reference), "the reference file specified does not exist"
-    assert os.path.isfile(fastq), "the fastx-file specified does not exist"
+    assert os.path.isfile(read1), "the fastx-file specified does not exist"
+    assert os.path.isfile(read2), "the fastx-file specified does not exist"
     
     # run bash script
     basedir = os.path.dirname(os.path.abspath(__file__)) # nessesary to find the location of the bash script
     cmd = " ".join(["bash",
                     os.path.join(basedir,"..","bash_scripts","bowtie2_cmd.sh")
                     ,reference ,
-                    fastq ,
+                    read1,
+                    read2,
                     str(threads),
                     output])
     try:
@@ -69,7 +71,9 @@ def map_and_sort_illumina(reference, fastq, output,threads=1):
                                    check=True)
       # Saves the bowtie2-log to the run-log
       #if bowtie2_run.stderr:
-         #logging.warning(f"Minimap2_log:\n{minimap2_run.stderr}")
+         #logging.warning(f"Minimap2_log:\n{bowtie2_run.stderr}")
+      #else:
+         #logging.info(bowtie2_run.stderr)
 
     except subprocess.CalledProcessError as e:
       # If the bash script fails, capture the error and log the traceback

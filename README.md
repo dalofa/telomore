@@ -3,7 +3,7 @@ A pipeline to reconstitute telomeric sequences in *Streptomyces* genomes exclude
 
 ## Usage
 ```
-usage: telomore.py [-h] -f FASTQ -r REFERENCE -m {nanopore,illumina} [-t THREADS] [-k]
+usage: telomore.py [-h] -m {nanopore,illumina} [--single SINGLE] [--read1 READ1] [--read2 READ2] -r REFERENCE [-t THREADS] [-k]
 
 Recover potential telomeric sequences from Streptomyces genomes using Oxford Nanopore or illumina sequence data.
 - OUTPUT: An extended assembly is written to basename.02.trimmed.fasta and QC-maps are written to a folder
@@ -12,15 +12,19 @@ Recover potential telomeric sequences from Streptomyces genomes using Oxford Nan
 
 options:
   -h, --help            show this help message and exit
-  -f FASTQ, --fastq FASTQ
-                        Path to gzipped fastq-file
+  -m {nanopore,illumina}, --mode {nanopore,illumina}
+                        Choose which mode to run.
+                                --mode=nanopore takes a single read-file, specified using --single
+                                --mode=illumina-mode takes two read-files with one mate-pair in each, specified using --read1 and --read2
+  --single SINGLE       Path to a single gzipped nanopore fastq-file
+  --read1 READ1         Path to gzipped illumina mate1 fastq-file
+  --read2 READ2         Path to gzipped illumina mate2 fastq-file
   -r REFERENCE, --reference REFERENCE
                         Path to reference file (.fasta, .fna, or .fa)
-  -m {nanopore,illumina}, --mode {nanopore,illumina}
-                        Choose which mode to run
   -t THREADS, --threads THREADS
                         Threads to use. Default is 1
   -k, --keep            Flag to keep intermediate files. Default is False
+
 ```
 
 

@@ -18,7 +18,9 @@ def get_args():
         "-m", '--mode', 
         choices=['nanopore', 'illumina'], 
         required=True, 
-        help="Choose which mode to run"
+        help="""Choose which mode to run.
+        --mode=nanopore takes a single read-file, specified using --single
+        --mode=illumina-mode takes two read-files with one mate-pair in each, specified using --read1 and --read2"""
     )
     parser.add_argument(
         "--single", 

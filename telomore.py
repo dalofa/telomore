@@ -216,8 +216,16 @@ def main():
         os.remove(r_map_in)
         os.remove("tmp.left.fasta")
         os.remove("tmp.right.fasta")
-        os.remove("all_terminal_reads.fastq")
-        #os.remove(stitch_out)
+
+        if args.mode=="nanopore":
+            os.remove("all_terminal_reads.fastq")
+        elif args.mode=="illumina":
+             os.remove("terminal_left_reads_1.fastq")
+             os.remove("terminal_left_reads_2.fastq")
+             os.remove("terminal_right_reads_1.fastq")
+             os.remove("terminal_right_reads_2.fastq")
+             os.remove("all_terminal_reads_1.fastq")
+             os.remove("all_terminal_reads_2.fastq")
 
     # simplify all mapping names
     for file_name in glob.glob("*map.sam.sort*"):

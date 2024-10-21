@@ -10,7 +10,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-def sam_to_matepair(sam_in,fastq_in1, fastq_in2,fastq_out1,fastq_out2):
+def sam_to_readpair(sam_in,fastq_in1, fastq_in2,fastq_out1,fastq_out2):
    with pysam.AlignmentFile(sam_in) as samfile:
       reads_to_grep = set() # using a set should be faster than list
 
@@ -22,13 +22,13 @@ def sam_to_matepair(sam_in,fastq_in1, fastq_in2,fastq_out1,fastq_out2):
          
          reads_to_grep.add(read_name)
       
-      # get matepair 1
+      # get read 1
       with gzip.open(fastq_in1,"rt") as gzip_handle, open(fastq_out1,"w") as outfile:
          for record in SeqIO.parse(gzip_handle,"fastq"):
             if record.id in reads_to_grep:
                SeqIO.write(record, outfile, "fastq")
 
-      # get matepair 2
+      # get read 2
       with gzip.open(fastq_in2,"rt") as gzip_handle, open(fastq_out2,"w") as outfile:
          for record in SeqIO.parse(gzip_handle,"fastq"):
             if record.id in reads_to_grep:
@@ -551,7 +551,7 @@ def generate_support_log(genome, qc_bam_file, output_handle):
 
 if __name__ == '__main__':
    print("testing module function")
-   sam_to_matepair("test_files/left.sam",
+   sam_to_readpair("test_files/left.sam",
                    "test_files/NBC_00001_FDMS210417786-1a_HMWN2DSX2_L3_1.fq.gz",
                    "test_files/NBC_00001_FDMS210417786-1a_HMWN2DSX2_L3_2.fq.gz",
                    "test_out1.fq",

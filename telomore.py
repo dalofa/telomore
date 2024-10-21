@@ -11,15 +11,15 @@ import traceback
 from arg_parser import get_args, setup_logging
 
 # Nanopore-sepcific imports
-from utlis.cmd_tools import map_and_sort, generate_consensus_lamassemble, train_lastDB
-from utlis.qc_reports import qc_map
-from utlis.map_tools import trim_by_map
+from utils.cmd_tools import map_and_sort, generate_consensus_lamassemble, train_lastDB
+from utils.qc_reports import qc_map
+from utils.map_tools import trim_by_map
 
 # Illumina-specific imports
-from utlis.qc_reports import cons_genome_map, qc_map_illumina, finalize_log
-from utlis.fasta_tools import get_chromosome, strip_fasta
-from utlis.cmd_tools import map_and_sort_illumina, generate_consensus_mafft
-from utlis.map_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map_illumina
+from utils.qc_reports import cons_genome_map, qc_map_illumina, finalize_log
+from utils.fasta_tools import get_chromosome, strip_fasta
+from utils.cmd_tools import map_and_sort_illumina, generate_consensus_mafft
+from utils.map_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map_illumina
 
 
 def main():

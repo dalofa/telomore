@@ -1,7 +1,6 @@
 """
 Functions for running CLI-tools to map reads and geneate consensus.
 """
-from .map_tools import revcomp
 import os
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord

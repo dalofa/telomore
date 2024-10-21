@@ -4,7 +4,6 @@ Functions for handling read mappings. Primarily for extracting and filtering ter
 
 import pysam
 import re
-import subprocess
 import gzip
 import logging
 from Bio import SeqIO

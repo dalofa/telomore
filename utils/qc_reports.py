@@ -8,7 +8,6 @@ from .map_tools import sam_to_fastq, sam_to_matepair
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-import subprocess
 import csv
 import pysam
 import logging

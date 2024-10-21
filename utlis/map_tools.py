@@ -86,8 +86,8 @@ def get_terminal_reads(sam_file,loutput_handle,routput_handle):
    # Fetch all reads aligned at start or end of reference
    seq_end = input.lengths[0]
    ref_name = input.get_reference_name(0)
-   left_reads = input.fetch(ref_name,start=0, stop=1)
-   right_reads = input.fetch(ref_name,seq_end-1,seq_end)
+   left_reads = input.fetch(ref_name,start=0, stop=20)
+   right_reads = input.fetch(ref_name,seq_end-20,seq_end)
 
    # dict to store best mapped read from each end
    lterminal_reads={}

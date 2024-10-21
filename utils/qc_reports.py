@@ -4,7 +4,7 @@ Functions for generating useful QC metrics from the telomore script.
 
 from .cmd_tools import map_and_sort, map_and_sort_illumina
 from .fasta_tools import merge_fasta, dereplicate_fastq, cat_and_derep_fastq
-from .map_tools import sam_to_fastq, sam_to_matepair
+from .map_tools import sam_to_fastq, sam_to_readpair
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -23,14 +23,14 @@ def qc_map(extended_assembly,left,right,output_handle,t=1):
 def qc_map_illumina(extended_assembly,left_sam,right_sam,fastq_in1,fastq_in2,output_handle,t=1):
     '''Collect terminal reads previously identified and maps them against extended assembly.'''
     # get left matepairs
-    sam_to_matepair(sam_in=left_sam,
+    sam_to_readpair(sam_in=left_sam,
                     fastq_in1=fastq_in1,
                     fastq_in2=fastq_in2,
                     fastq_out1="terminal_left_reads_1.fastq",
                     fastq_out2="terminal_left_reads_2.fastq")
     
     # get right matepairs
-    sam_to_matepair(sam_in=right_sam,
+    sam_to_readpair(sam_in=right_sam,
                 fastq_in1=fastq_in1,
                 fastq_in2=fastq_in2,
                 fastq_out1="terminal_right_reads_1.fastq",

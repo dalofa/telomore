@@ -10,6 +10,10 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
+def map_to_contig(bam_in,contig_name):
+   """Takes a .bam file for multiple contigs and extracts the mapping for the contig"""
+   return
+
 def sam_to_readpair(sam_in,fastq_in1, fastq_in2,fastq_out1,fastq_out2):
    with pysam.AlignmentFile(sam_in) as samfile:
       reads_to_grep = set() # using a set should be faster than list

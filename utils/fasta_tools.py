@@ -7,7 +7,6 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import logging
 
-
 def dereplicate_fastq(fastq_in, fastq_out):
     seen_reads = set()  # To store unique read identifiers and sequences
     unique_reads = []

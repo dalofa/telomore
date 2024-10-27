@@ -132,7 +132,7 @@ def generate_consensus_lamassemble(db_name,reads,output,flip="no"):
    if sequence_count == 1:
       single_record = record
       logging.info("There are only a single read to construct a consensus from. Returning read as consensus.")
-      with open(f"{output}.fasta", "w") as seq:
+      with open(f"{output}", "w") as seq:
          SeqIO.write(single_record, seq, "fasta")
    elif sequence_count>1:
       db = db_name +".par"

@@ -8,7 +8,7 @@ import os
 import shutil
 import logging
 import traceback
-from arg_parser import get_args, setup_logging
+from utils.arg_parser import get_args, setup_logging
 
 # Nanopore-sepcific imports
 from utils.cmd_tools import map_and_sort, generate_consensus_lamassemble, train_lastDB
@@ -41,7 +41,7 @@ def main():
 
     logging.info("Mapping reads to chromsome")
 
-    map_out = ref_name+".map.sort.bam"
+    map_out = ref_name+"_map.bam"
 
     if not map_out in folder_content:
 
@@ -113,11 +113,11 @@ def main():
     map_and_sort(r_map_in,"right_cons.fasta",r_map_out,args.threads)
 
     # Extend the assembly using the map
-    stitch_out = ref_name +".01.nontrimmed.cons.fasta"
+    stitch_out = ref_name +"_telomore_untrimmed.fasta"
     if args.mode=="nanopore":
-         cons_log_out= ref_name + ".np.cons.log.txt"
+         cons_log_out= ref_name + "_telomore_ext_np.log"
     elif args.mode=="illumina":
-        cons_log_out = ref_name + ".ill.cons.log.txt"
+        cons_log_out = ref_name + "_telomore_ill_ext.log"
     
     stich_telo(chrom_out,l_map_out,r_map_out,stitch_out,logout=cons_log_out)
 
@@ -126,8 +126,8 @@ def main():
     # ----------------------------------------------------------------- 
     logging.info("Trimming consensus based on read support")
     
-    trim_map = ref_name + ".01.nontrimmed.map.bam"
-    trim_out = ref_name + ".02.trimmed.cons.fasta"
+    trim_map = ref_name + "_telomore_untrimmed.bam"
+    trim_out = ref_name + "_telomore_extended.fasta"
 
     if args.mode=="nanopore":
          qc_map(stitch_out,left_reads,right_reads,trim_map,t=args.threads)
@@ -140,14 +140,13 @@ def main():
                         fastq_in2=args.read2,
                         output_handle=trim_map,
                         t=args.threads)
-        logging.info(f"Finished QC made to {trim_out}")
         trim_by_map_illumina(stitch_out,trim_map,trim_out,cons_log=cons_log_out, cov_thres=1, ratio_thres=0.7,qual_thres=30)
 
     # 4: Generate QC files
     # -----------------------------------------------------------------
     logging.info("Generating QC map and finalizing result-log")
     
-    qc_out = ref_name + ".02.reads.trimmed.map.bam"
+    qc_out = ref_name + "_telomore_QC.bam"
     if args.mode=="nanopore":
          qc_map(trim_out,left_reads,right_reads,qc_out,t=args.threads)
     elif args.mode=="illumina":
@@ -158,9 +157,7 @@ def main():
                         fastq_in2=args.read2,
                         output_handle= qc_out,
                         t=args.threads)
-    
-    cons_genome_map_out = ref_name + ".02.cons.trimmed.map.bam"
-    cons_genome_map("left_cons.fasta","right_cons.fasta",trim_out,cons_genome_map_out,t=args.threads)
+
     finalize_log(cons_log_out,"tmp.right.fasta","tmp.left.fasta")
     
     # 5: Clean-up
@@ -227,24 +224,31 @@ def main():
              os.remove("all_terminal_reads_1.fastq")
              os.remove("all_terminal_reads_2.fastq")
 
-    # simplify all mapping names
-    for file_name in glob.glob("*map.sam.sort*"):
-        old_name = file_name
-        new_name = file_name.split("map.sam.sort.")[0]+file_name.split("map.sam.sort.")[1]
-        shutil.move(old_name,new_name)
-
     # move qc  files to QC_folder
     if args.mode=="nanopore":
-        qc_path=ref_name + "_np_QC"
+        telo_folder=ref_name + "_np_telomore"
     elif args.mode=="illumina":
-        qc_path=ref_name + "_ill_QC"
-    os.mkdir(qc_path)
+        telo_folder=ref_name + "_ill_telomore"
 
-    for QC_FILE in glob.glob(ref_name+".0*"):
-        if "02.trimmed.cons.fasta" in QC_FILE:
-            shutil.copyfile(QC_FILE,os.path.join(qc_path,QC_FILE))
-        else:
-            shutil.move(QC_FILE, os.path.join(qc_path,QC_FILE))
+    # make sure you dont have to move the folder each time
+    while os.path.isdir(telo_folder):
+         counter=0
+
+         telo_folder = telo_folder.split("_")[0]
+         telo_folder = telo_folder + "_" + str(counter)
+         
+    os.mkdir(telo_folder)
+
+    process_files = [trim_map, stitch_out, trim_map + ".bai"]
+
+    for file in process_files:
+         os.remove(file)
+
+    output_files = [qc_out,trim_out,cons_log_out, qc_out + ".bai"]
+
+    for file in output_files:
+         shutil.move(file,os.path.join(telo_folder))
+    logging.info(f"Output files moved to {telo_folder}")
 
 # Run script
 if __name__ == '__main__':

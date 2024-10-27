@@ -22,21 +22,21 @@ def qc_map(extended_assembly,left,right,output_handle,t=1):
 
 def qc_map_illumina(extended_assembly,left_sam,right_sam,fastq_in1,fastq_in2,output_handle,t=1):
     '''Collect terminal reads previously identified and maps them against extended assembly.'''
-    # get left matepairs
+    # get left paired read
     sam_to_readpair(sam_in=left_sam,
                     fastq_in1=fastq_in1,
                     fastq_in2=fastq_in2,
                     fastq_out1="terminal_left_reads_1.fastq",
                     fastq_out2="terminal_left_reads_2.fastq")
     
-    # get right matepairs
+    # get right paired read
     sam_to_readpair(sam_in=right_sam,
                 fastq_in1=fastq_in1,
                 fastq_in2=fastq_in2,
                 fastq_out1="terminal_right_reads_1.fastq",
                 fastq_out2="terminal_right_reads_2.fastq")
     
-    # collect the matepair_files:
+    # collect the paired read files:
     cat_and_derep_fastq(fastq_in1="terminal_left_reads_1.fastq",
                         fastq_in2="terminal_right_reads_1.fastq",
                         fastq_out="all_terminal_reads_1.fastq")

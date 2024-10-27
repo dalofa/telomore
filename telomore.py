@@ -17,7 +17,7 @@ from utils.map_tools import trim_by_map
 
 # Illumina-specific imports
 from utils.qc_reports import cons_genome_map, qc_map_illumina, finalize_log
-from utils.fasta_tools import get_chromosome, strip_fasta
+from utils.fasta_tools import get_chromosome, strip_fasta, get_fasta_length
 from utils.cmd_tools import map_and_sort_illumina, generate_consensus_mafft
 from utils.map_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map_illumina
 
@@ -103,8 +103,10 @@ def main():
     # for the consensus to map to. Streptomyces typically have TIRs.
     l_map_in= ref_name + ".chrom.left.fa"
     r_map_in = ref_name + ".chrom.right.fa"
-    strip_fasta(chrom_out,l_map_in,500,"end")
-    strip_fasta(chrom_out,r_map_in ,500,"start")
+    
+    strip_size=int(get_fasta_length(chrom_out)/2)
+    strip_fasta(chrom_out,l_map_in,strip_size,"end")
+    strip_fasta(chrom_out,r_map_in ,strip_size,"start")
 
     # Map onto reduced references
     l_map_out = "left.map.sort.bam"

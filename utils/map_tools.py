@@ -146,7 +146,7 @@ def get_terminal_reads(sam_file,loutput_handle,routput_handle):
       rterminal_file.write(read)
    rterminal_file.close()
 
-def get_left_soft(sam_file,left_out,offset=0,):
+def get_left_soft(sam_file,left_out,offset=0):
     """A function that retrieves reads soft-clipped at 5'-end
     It returns the reads as a sam file and only soft-clipped part as fastq-file"""
     sam_in = pysam.AlignmentFile(sam_file, "r")

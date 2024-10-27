@@ -7,6 +7,12 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import logging
 
+def get_fasta_length(fasta_file):
+    "Returns the length of a fasta record"
+    for record in SeqIO.parse(fasta_file, "fasta"):
+        length = len(record.seq)
+        return(length)
+
 def dereplicate_fastq(fastq_in, fastq_out):
     seen_reads = set()  # To store unique read identifiers and sequences
     unique_reads = []
@@ -132,8 +138,9 @@ def strip_fasta(input_file, output_file, x, remove_from='start'):
     """
     Modify sequences in a FASTA file by removing the first or last x bases.
     """
-
+    
     assert type(x)==int
+    
     records = []
     
     for record in SeqIO.parse(input_file, "fasta"):

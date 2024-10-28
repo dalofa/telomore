@@ -10,9 +10,29 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-def map_to_contig(bam_in,contig_name):
+def get_contig_map(bam_in, contig_name, output_path):
    """Takes a .bam file for multiple contigs and extracts the mapping for the contig"""
-   return
+
+   
+   # Iterate over reads mapped to contig (contig=contig_name) and write to map file
+   with pysam.AlignmentFile(bam_in, "rb") as bam_file:
+
+      # Update the header for the BAM map
+      bam_header = bam_file.header.to_dict()
+      bam_header["SQ"] = [sq for sq in bam_header['SQ'] if sq['SN'] == contig_name] # remove SQ list for removed reads
+      new_pg_entry = {
+
+         "ID": "get_contig_map",
+         "PN": "get_contig_map",
+         "VN": "X",
+         "CL": f"get_contig_map from {bam_in} for contig {contig_name}"}
+         # Append to the existing PG tags
+      bam_header.setdefault("PG", []).append(new_pg_entry)
+
+      # 
+      with pysam.AlignmentFile(output_path, "wb", header=bam_header) as output_bam:
+            for read in bam_file.fetch(contig=contig_name):
+               output_bam.write(read)
 
 def sam_to_readpair(sam_in,fastq_in1, fastq_in2,fastq_out1,fastq_out2):
    with pysam.AlignmentFile(sam_in) as samfile:
@@ -555,10 +575,8 @@ def generate_support_log(genome, qc_bam_file, output_handle):
 
 if __name__ == '__main__':
    print("testing module function")
-   sam_to_readpair("test_files/left.sam",
-                   "test_files/NBC_00001_FDMS210417786-1a_HMWN2DSX2_L3_1.fq.gz",
-                   "test_files/NBC_00001_FDMS210417786-1a_HMWN2DSX2_L3_2.fq.gz",
-                   "test_out1.fq",
-                   "test_out2.fq")
+   get_contig_map(bam_in="test_files/contig.map.test.sort.bam",
+                  contig_name="CP108318",
+                  output_path="test_files/contig.test.out.bam")
    
    

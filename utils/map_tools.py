@@ -3,6 +3,7 @@ Functions for handling read mappings. Primarily for extracting and filtering ter
 """
 
 import pysam
+import os
 import re
 import gzip
 import logging
@@ -11,15 +12,15 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 def get_contig_map(bam_in, contig_name, output_path):
-   """Takes a .bam file for multiple contigs and extracts the mapping for the contig"""
+   """Takes a .bam file for multiple contigs and returns a sorted and indexed map for just that contig"""
 
-   
+   tmp_output = "nonsort_" + output_path
    # Iterate over reads mapped to contig (contig=contig_name) and write to map file
    with pysam.AlignmentFile(bam_in, "rb") as bam_file:
-
+      
       # Update the header for the BAM map
       bam_header = bam_file.header.to_dict()
-      bam_header["SQ"] = [sq for sq in bam_header['SQ'] if sq['SN'] == contig_name] # remove SQ list for removed reads
+      #bam_header["SQ"] = [sq for sq in bam_header['SQ'] if sq['SN'] == contig_name] # remove SQ list for removed reads
       new_pg_entry = {
 
          "ID": "get_contig_map",
@@ -30,9 +31,14 @@ def get_contig_map(bam_in, contig_name, output_path):
       bam_header.setdefault("PG", []).append(new_pg_entry)
 
       # 
-      with pysam.AlignmentFile(output_path, "wb", header=bam_header) as output_bam:
+      with pysam.AlignmentFile(tmp_output, "wb", header=bam_header) as output_bam:
             for read in bam_file.fetch(contig=contig_name):
                output_bam.write(read)
+   
+   # Sort and index map file
+   pysam.sort("-o", output_path, tmp_output)
+   pysam.index(output_path)
+   os.remove(tmp_output)
 
 def sam_to_readpair(sam_in,fastq_in1, fastq_in2,fastq_out1,fastq_out2):
    with pysam.AlignmentFile(sam_in) as samfile:

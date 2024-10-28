@@ -7,6 +7,16 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import logging
 
+def get_linear_elements(fasta_file):
+    "Returns a list of contigs that have linear in their header description"
+
+    linear_list = []
+    for record in SeqIO.parse(fasta_file, "fasta"):
+        if "linear" in record.description:
+            linear_list.append(record.id)
+    return linear_list
+    
+
 def get_fasta_length(fasta_file):
     "Returns the length of a fasta record"
     for record in SeqIO.parse(fasta_file, "fasta"):
@@ -159,5 +169,5 @@ def strip_fasta(input_file, output_file, x, remove_from='start'):
 
 
 if __name__ == '__main__':
-    trim_to_cons("3_cons.fasta",120,"ot.boi")
-    
+    #trim_to_cons("3_cons.fasta",120,"ot.boi")
+    print(get_linear_elements("test_files/test.fasta"))

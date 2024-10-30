@@ -18,7 +18,7 @@ from utils.map_tools import trim_by_map
 # Illumina-specific imports
 from utils.qc_reports import cons_genome_map, qc_map_illumina, finalize_log
 from utils.fasta_tools import get_chromosome, strip_fasta, get_fasta_length
-from utils.cmd_tools import map_and_sort_illumina, generate_consensus_mafft
+from utils.cmd_tools import map_and_sort_illumina, generate_consensus_mafft, map_and_sort_illumina_cons
 from utils.map_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, trim_by_map_illumina
 
 
@@ -109,10 +109,16 @@ def main():
     strip_fasta(chrom_out,r_map_in ,strip_size,"start")
 
     # Map onto reduced references
-    l_map_out = "left.map.sort.bam"
-    map_and_sort(l_map_in,"left_cons.fasta",l_map_out,args.threads,)
-    r_map_out = "right.map.sort.bam"
-    map_and_sort(r_map_in,"right_cons.fasta",r_map_out,args.threads)
+    if args.mode=="nanopore":
+        l_map_out = "left.map.sort.bam"
+        map_and_sort(l_map_in,"left_cons.fasta",l_map_out,args.threads,)
+        r_map_out = "right.map.sort.bam"
+        map_and_sort(r_map_in,"right_cons.fasta",r_map_out,args.threads)
+    elif args.mode=="illumina":
+        l_map_out = "left.map.sort.bam"
+        map_and_sort_illumina_cons(l_map_in,"left_cons.fasta",l_map_out,args.threads,)
+        r_map_out = "right.map.sort.bam"
+        map_and_sort_illumina_cons(r_map_in,"right_cons.fasta",r_map_out,args.threads)         
 
     # Extend the assembly using the map
     stitch_out = ref_name +"_telomore_untrimmed.fasta"

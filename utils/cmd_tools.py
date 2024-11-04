@@ -80,6 +80,37 @@ def map_and_sort_illumina(reference, read1,read2, output,threads=1):
       logging.error(f"Script stderr: {e.stderr}")
       logging.error(traceback.format_exc())
 
+def map_and_sort_illumina_cons(reference, consensus_fasta, output,threads=1):
+    """Maps consensus against a reference using bowtie2 through a bash
+    script and returns a sorted and index bam-file"""
+
+    # input check
+    assert type(threads)==int, "threads must be an integer"
+    assert os.path.isfile(reference), "the reference file specified does not exist"
+    assert os.path.isfile(consensus_fasta), "the fastx-file specified does not exist"
+
+    try:
+      # run bash script
+      basedir = os.path.dirname(os.path.abspath(__file__))
+      # Construct the command to run the bash script using an absolute path
+      cmd = " ".join(["bash", 
+                     os.path.join(basedir, "..", "bash_scripts", "bowtie2_cons_cmd.sh"),
+                     reference,
+                     consensus_fasta,
+                     str(threads),
+                     output])
+      bowtie2_cons_run = subprocess.run(cmd,
+                                    shell=True,
+                                    capture_output=True,
+                                    text=True,
+                                    check=True)
+
+    except subprocess.CalledProcessError as e:
+      # If the bash script fails, capture the error and log the traceback
+      logging.error(f"map_and_sort_illumina_cons failed with error: {e}")
+      logging.error(f"Script stderr: {e.stderr}")
+      logging.error(traceback.format_exc())
+   
 def train_lastDB(fasta_name,reads,db_name, t=1):
    '''Trains and lastDB database using a reference and long-reads'''
    # index fasta file

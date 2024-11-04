@@ -41,6 +41,7 @@ def get_contig_map(bam_in, contig_name, output_path):
    os.remove(tmp_output)
 
 def sam_to_readpair(sam_in,fastq_in1, fastq_in2,fastq_out1,fastq_out2):
+   "Extract both reads from paired-end fastq-files if one of the reads is in sam-file"
    with pysam.AlignmentFile(sam_in) as samfile:
       reads_to_grep = set() # using a set should be faster than list
 
@@ -198,12 +199,12 @@ def get_left_soft(sam_file,left_out,offset=0):
     lclip.close()
     lfastq.close()
 
-def get_right_soft(sam_file,left_out,offset=0,):
+def get_right_soft(sam_file,right_out,offset=0,):
     """A function that retrieves reads soft-clipped at 3'-end
     It returns the reads as a sam file and only soft-clipped part as fastq-file"""
     sam_in = pysam.AlignmentFile(sam_file, "r")
-    rclip = pysam.AlignmentFile(left_out+".sam","w",template=sam_in)
-    rfastq = open(left_out+".fastq","w")
+    rclip = pysam.AlignmentFile(right_out+".sam","w",template=sam_in)
+    rfastq = open(right_out+".fastq","w")
     seq_end = sam_in.lengths[0] # get length of reference
     end_clip = r"(\d+)S$"
     for read in sam_in:
@@ -263,18 +264,33 @@ def revcomp(fasta_in,fasta_out):
         SeqIO.write(rev_complement_record, output_handle, "fasta")
 
 def is_map_empty(file_path):
-    "Checks if a bam-file is empty by trying to fetch the first read"
-    # Open the alignment file
-    with pysam.AlignmentFile(file_path, "rb") as alignment_file:
-        # Try to fetch the first read
-        try:
-            next(alignment_file)
-            return False  # Alignment is not empty
-        except StopIteration:
-            return True  # Alignment is empty
+   """Checks if a bam-file is empty by trying to fetch the first read"""
+   # Open the alignment file
+   with pysam.AlignmentFile(file_path, "rb") as alignment_file:
+      # Try to fetch the first read
+      try:
+         next(alignment_file)
+         return False  # Alignment is not empty
+      except StopIteration:
+         return True  # Alignment is empty
+        
+def is_consensus_unmapped(file_path):
+   """Checks if a map contains only unmapped reads"""
+   with pysam.AlignmentFile(file_path, "rb") as alignment_file:
+      reads = list(alignment_file) # get reads
+      
+      is_unmapped=True # s
 
-def check_for_empty_cons(file_path):
-   "Checks if a map was produced by an empty consensus"
+      if len(reads)>0:
+         for read in reads:
+            if not read.is_unmapped:
+               is_unmapped=False
+               return is_unmapped
+      
+      return is_unmapped
+
+def is_consensus_empty(file_path):
+   """Checks if a map was produced by an empty consensus"""
    with pysam.AlignmentFile(file_path, "rb") as alignment_file:
       reads = list(alignment_file)  # Load all reads into a list
       
@@ -288,16 +304,19 @@ def check_for_empty_cons(file_path):
 
 # Example usage:
 
-def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
+def stich_telo(ref, left_map ,right_map ,outfile, logout, tmp_left,tmp_right ):
    """Writes a fasta-file extended with sequence based on a left- and right-side .bam-file. 
    Also Adds this information to a log file"""
 
    left_log_mes=""
    # Check if an empty left consensus was used to generate the map:
-   if check_for_empty_cons(left_map):
+   if is_consensus_empty(left_map):
       # Make an empty seq list to enable errors later on
       left_seqs=[]
       left_log_mes="#No consensus produced for left-side end. Likely, no reads extends the assembly. "
+   elif is_consensus_unmapped(left_map):
+      left_seqs=[]
+      left_log_mes=f"#The consensus produced for the left-side does not map to left-side of {ref}"
    else:
       # extract left cons-to-stich
       l_sam_in = pysam.AlignmentFile(left_map, "r")
@@ -314,11 +333,17 @@ def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
             seq = read.query_sequence[0:(clip_num-read.reference_start)] # Adjust for if more than just overhanging bases are soft-clipped
             left_seqs.append(seq)
       l_sam_in.close()
+   
+
    right_log_mes=""
+
    # Check if an empty left consensus was used to generate the map:
-   if check_for_empty_cons(right_map):
+   if is_consensus_empty(right_map):
       right_seqs=[]
       right_log_mes="#No consensus produced for right-side end. Likely, no reads extends the assembly."
+   elif is_consensus_unmapped(right_map):
+      right_seqs=[]
+      right_log_mes=f"#The consensus produced for the right-side does not map to the right-side of {ref}"
    else:
       # extract right cons-to-stich
       r_sam_in = pysam.AlignmentFile(right_map, "r")
@@ -360,9 +385,10 @@ def stich_telo(ref,left_map,right_map,outfile,logout="consensus.log.txt"):
    new_genome.id="Reference_with_consensus_attached"
    new_genome.description="" 
    SeqIO.write(new_genome,outfile,"fasta")
-   SeqIO.write(right_cons,"tmp.right.fasta","fasta")
-   SeqIO.write(left_cons,"tmp.left.fasta","fasta")
+   SeqIO.write(left_cons, tmp_left,"fasta")
+   SeqIO.write(right_cons, tmp_right,"fasta")
    
+
    # Create log of consensus length
    log = open(logout,"w")
    log.write("==============================================================================")
@@ -390,7 +416,7 @@ def get_support_info(bam_file, genome, position, qual_threshold=1):
 
    # Get reference name from BAM file
    reference_name = bam_in.get_reference_name(0)
-   coverage_count=bam_in.count_coverage(reference_name,start=position,stop=position+1,read_callback="nofilter",quality_threshold=1)
+   coverage_count=bam_in.count_coverage(reference_name,start=position,stop=position+1,read_callback="nofilter",quality_threshold=qual_threshold)
    A_num=coverage_count[0][0]
    C_num=coverage_count[1][0]
    G_num=coverage_count[2][0]
@@ -410,10 +436,10 @@ def get_support_info(bam_file, genome, position, qual_threshold=1):
 
    return(cov,matching_bases)
 
-def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,ratio_thres=0.7, qual_thres=0):
+def trim_by_map(untrimmed_assembly, sorted_bam_file, output_handle,cons_log, cov_thres=5,ratio_thres=0.7, qual_thres=0):
    """Trims the ends of a genome using an alignment of reads at the ends."""
    # load genome
-   fasta = SeqIO.read(genome,"fasta")
+   fasta = SeqIO.read(untrimmed_assembly,"fasta")
    fasta_end = len(fasta.seq)-1 # subtract one to make it 0-indexed
    txt = open(cons_log,"r")
    txt_lines = txt.readlines()[3]
@@ -427,7 +453,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    #trim start/left-side
    for pos in range(0,0+left_len):
       try:
-         cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
+         cov, match = get_support_info(sorted_bam_file,untrimmed_assembly,pos,qual_thres)
 
          if cov>=cov_thres and (match/cov)>ratio_thres:
             index_start=pos
@@ -440,7 +466,7 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    for pos in range(fasta_end,fasta_end-right_len,-1):
 
       try:
-         cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
+         cov, match = get_support_info(sorted_bam_file,untrimmed_assembly,pos,qual_thres)
 
          if cov>=cov_thres and (match/cov)>ratio_thres:
             index_end=pos
@@ -482,10 +508,10 @@ def trim_by_map(genome, sorted_bam_file, output_handle,cons_log, cov_thres=5,rat
    log.close()
    SeqIO.write(trimmed_fasta,output_handle,"fasta")
 
-def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_thres=1,ratio_thres=0.7, qual_thres=30):
+def trim_by_map_illumina(untrimmed_assembly, sorted_bam_file, output_handle,cons_log, cov_thres=1,ratio_thres=0.7, qual_thres=30):
    """Trims the ends of a genome using an alignment of reads at the ends."""
    # load genome
-   fasta = SeqIO.read(genome,"fasta")
+   fasta = SeqIO.read(untrimmed_assembly,"fasta")
    fasta_end = len(fasta.seq)-1 # subtract one to make it 0-indexed
    txt = open(cons_log,"r")
    txt_lines = txt.readlines()[3]
@@ -499,7 +525,7 @@ def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_th
    #trim start/left-side
    for pos in range(0,0+left_len):
       try:
-         cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
+         cov, match = get_support_info(sorted_bam_file,untrimmed_assembly,pos,qual_thres)
 
          if cov>=cov_thres and (match/cov)>ratio_thres:
             index_start=pos
@@ -512,7 +538,7 @@ def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_th
    for pos in range(fasta_end,fasta_end-right_len,-1):
 
       try:
-         cov, match = get_support_info(sorted_bam_file,genome,pos,qual_thres)
+         cov, match = get_support_info(sorted_bam_file,untrimmed_assembly,pos,qual_thres)
 
          if cov>=cov_thres and (match/cov)>ratio_thres:
             index_end=pos
@@ -555,7 +581,7 @@ def trim_by_map_illumina(genome, sorted_bam_file, output_handle,cons_log, cov_th
    SeqIO.write(trimmed_fasta,output_handle,"fasta")
 
 def generate_support_log(genome, qc_bam_file, output_handle):
-   "Generates a coverage log for the ends of the genome"
+   """Generates a coverage log for the ends of the genome"""
    #trim start/left-side
    
    fasta = SeqIO.read(genome,"fasta")

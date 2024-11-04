@@ -8,7 +8,7 @@ from Bio.SeqRecord import SeqRecord
 import logging
 
 def get_linear_elements(fasta_file):
-    "Returns a list of contigs that have linear in their header description"
+    """Returns a list of contigs that have linear in their header description"""
 
     linear_list = []
     for record in SeqIO.parse(fasta_file, "fasta"):
@@ -16,14 +16,28 @@ def get_linear_elements(fasta_file):
             linear_list.append(record.id)
     return linear_list
     
+def extract_contig(fasta_in,contig_name,fasta_out):
+    """Returns a fasta file of a specified contig"""
+    for record in SeqIO.parse(fasta_in, "fasta"):
+        if record.id==contig_name:
+            contig = record
+            with open(fasta_out,"w") as fq_file:
+                SeqIO.write(sequences= contig,
+                            handle= fasta_out,
+                            format="fasta")
 
-def get_fasta_length(fasta_file):
-    "Returns the length of a fasta record"
+        
+
+
+def get_fasta_length(fasta_file,contig_name):
+    """Returns the length of a fasta record specified by the user"""
     for record in SeqIO.parse(fasta_file, "fasta"):
-        length = len(record.seq)
-        return(length)
+        if record.id==contig_name:
+            length = len(record.seq)
+            return(length)
 
 def dereplicate_fastq(fastq_in, fastq_out):
+    """Dereplicates a fastq file by read-name and sequence"""
     seen_reads = set()  # To store unique read identifiers and sequences
     unique_reads = []
 
@@ -40,7 +54,7 @@ def dereplicate_fastq(fastq_in, fastq_out):
         SeqIO.write(unique_reads, outfile, "fastq")
 
 def cat_and_derep_fastq(fastq_in1,fastq_in2,fastq_out):
-    "Concatanates two fastq-files and dereplicates it"
+    """Concatanates two fastq-files and dereplicates it"""
     with open(fastq_out, "w") as outfile:
     
         # concat 
@@ -57,7 +71,7 @@ def cat_and_derep_fastq(fastq_in1,fastq_in2,fastq_out):
 
 
 def get_chromosome(fasta, output_handle):
-    '''Returns the longest contig in a fasta-file'''
+    """Returns the longest contig in a fasta-file"""
 
     # test if there are a single entry in the fasta file
     try: # there is a single entry
@@ -84,7 +98,7 @@ def get_chromosome(fasta, output_handle):
 
 
 def attach_seq(left,right,chromsome,output_name,offset=0):
-    '''Attaches a left and right fasta sequence to a cromosome'''
+    """Attaches a left and right fasta sequence to a cromosome"""
 
     l = SeqIO.read(left,"fasta")
     r = SeqIO.read(right,"fasta")
@@ -104,7 +118,7 @@ def attach_seq(left,right,chromsome,output_name,offset=0):
 
 # A function to merge fasta files
 def merge_fasta(input_file1, input_file2, output_file):
-    '''Merges two fasta files into one'''
+    """Merges two fasta files into one"""
     # Read sequences from input_file1 and input_file2
     sequences1 = list(SeqIO.parse(input_file1, "fasta"))
     sequences2 = list(SeqIO.parse(input_file2, "fasta"))
@@ -119,7 +133,7 @@ def merge_fasta(input_file1, input_file2, output_file):
 ### ADD OPTION TO TRIM FROM START OR END
 
 def trim_to_cons(input_seq,num_base,output_handle):
-    "Trims fasta file to the first x_num of bases in it"
+    """Trims fasta file to the first x_num of bases in it"""
     
     # load file
     with open(input_seq) as fasta_file:
@@ -145,9 +159,7 @@ def trim_to_cons(input_seq,num_base,output_handle):
 
 
 def strip_fasta(input_file, output_file, x, remove_from='start'):
-    """
-    Modify sequences in a FASTA file by removing the first or last x bases.
-    """
+    """Strip FASTA-file of the first of last x-bases."""
     
     assert type(x)==int
     

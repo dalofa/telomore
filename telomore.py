@@ -31,7 +31,6 @@ def main():
 
     # Generate a filename stripped of the .fasta/.fna/.fa extension
     ref_name = os.path.splitext(os.path.basename(args.reference))[0]
-    print(ref_name)
     folder_content = os.listdir()
 
     logging.info(f"Running Telomore: 0.3 in {args.mode} mode")

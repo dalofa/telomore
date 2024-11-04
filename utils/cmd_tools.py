@@ -110,7 +110,8 @@ def map_and_sort_illumina_cons(reference, consensus_fasta, output,threads=1):
       logging.error(f"map_and_sort_illumina_cons failed with error: {e}")
       logging.error(f"Script stderr: {e.stderr}")
       logging.error(traceback.format_exc())
-   
+      
+
 def train_lastDB(fasta_name,reads,db_name, t=1):
    '''Trains and lastDB database using a reference and long-reads'''
    # index fasta file
@@ -251,4 +252,7 @@ def generate_consensus_mafft(reads, output):
 if __name__ == '__main__':
    print("Testing module functions")
 
-   generate_consensus_mafft("left_filtered.fastq","test_cons.fasta")
+   map_and_sort_illumina_cons(reference="NBC_00357_telomore_extended.chrom.left.fa",
+                              consensus_fasta="left_cons.fasta", 
+                              threads=16,
+                              output="blahhh")

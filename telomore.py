@@ -296,7 +296,7 @@ def main():
                              fastq_in2=args.read2,
                              output_handle=qc_out,
                              t=args.threads)
-        
+            
         finalize_log(log = cons_log_out,
                      right_fasta = tmp_cons_left,
                      left_fasta = tmp_cons_right)

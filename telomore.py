@@ -72,13 +72,14 @@ def main():
                        output_path = contig_map_out) 
         # save files produced to dict
         replicon_dict[replicon]["map"]=map_out
+        replicon_dict[replicon]["contig_map"]=map_out
     logging.info("Extracting terminal reads")
 
     # Extract extending terminal reads for each contig via the contig-specific map
     
     for replicon in replicon_dict.keys():
          logging.info(f"\tContig {replicon}")
-         map = replicon_dict[replicon]["map"]
+         map = replicon_dict[replicon]["map"] # should be contig_map?
 
          left_sam = replicon + "_left.sam"
          right_sam = replicon + "_right.sam"
@@ -296,28 +297,21 @@ def main():
                              output_handle=qc_out,
                              t=args.threads)
         
-        # finalize_log(log = cons_log_out,
-        #              right_fasta = tmp_cons_left,
-        #              left_fasta = tmp_cons_right)
-    
-    
-    # get format:
-    # for replicon in replicon_dict.keys():
-    #      file_out = replicon + ".json"
-
-    #      with open (file_out, "w") as json_file:
-    #         json.dump(replicon_dict[replicon],
-    #                   fp=json_file)
-    
+        finalize_log(log = cons_log_out,
+                     right_fasta = tmp_cons_left,
+                     left_fasta = tmp_cons_right)
+        # add to dict
+        replicon_dict[replicon]["qc_out"]=qc_out
+        
     # 5: Clean-up
     # -----------------------------------------------------------------
     logging.info("Removing temporary files")
     
     # move qc  files to QC_folder
     if args.mode=="nanopore":
-        telo_folder=ref_name + "_np_telomore"
+        telo_folder=ref_name + "_np_telomore_0"
     elif args.mode=="illumina":
-        telo_folder=ref_name + "_ill_telomore"
+        telo_folder=ref_name + "_ill_telomore_0"
 
     # make sure you dont have to move the folder each time
     counter=0
@@ -337,24 +331,39 @@ def main():
 
         input_files = ["org_file"]
 
-        
         for key in replicon_feat.keys():
             if key in keys_to_save:
                 file_path = replicon_dict[replicon][key]
                 shutil.move(src = file_path,
                             dst = os.path.join(telo_folder,file_path))
+                if key=="qc_out":
+                    map_index = replicon_dict[replicon][key] +".bai"
+                    shutil.move(src = map_index,
+                            dst = os.path.join(telo_folder,map_index))
             elif key in input_files:
-                 continue
-            elif key=="last_db" and args.keep==False:
+                continue
+            elif "map" in key and args.keep==False: #rm map-indices
+                file_path = replicon_dict[replicon][key]
+                map_index = file_path + ".bai"
+                if os.path.isfile(file_path):
+                     os.remove(file_path)
+                if os.path.isfile(map_index):
+                     os.remove(map_index)
+            elif "cons" in key and args.keep==False: #rm map-indices
+                file_path = replicon_dict[replicon][key]
+                alignment = file_path + ".aln"
+                if os.path.isfile(file_path):
+                     os.remove(file_path)
+                if os.path.isfile( alignment):
+                     os.remove(alignment)
+            elif key=="last_db" and args.keep==False: #rm all LAST dbs
                 DATABASE_EXT=[".bck",".des",".par",".prj",".sds",".ssp",".suf",".tis"]
-
                 for extension in DATABASE_EXT:
                      file_path = replicon_dict[replicon][key]+extension
                      if os.path.isfile(file_path):
                         os.remove(file_path)
             elif args.keep==False:
                 file_path = replicon_dict[replicon][key]
-                print(f"removing file {file_path}")
                 if os.path.isfile(file_path):
                     os.remove(file_path)
 

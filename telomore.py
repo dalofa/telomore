@@ -72,14 +72,14 @@ def main():
                        output_path = contig_map_out) 
         # save files produced to dict
         replicon_dict[replicon]["map"]=map_out
-        replicon_dict[replicon]["contig_map"]=map_out
+        replicon_dict[replicon]["contig_map"]=contig_map_out
     logging.info("Extracting terminal reads")
 
     # Extract extending terminal reads for each contig via the contig-specific map
     
     for replicon in replicon_dict.keys():
          logging.info(f"\tContig {replicon}")
-         map = replicon_dict[replicon]["map"] # should be contig_map?
+         map = replicon_dict[replicon]["contig_map"] # should be contig_map?
 
          left_sam = replicon + "_left.sam"
          right_sam = replicon + "_right.sam"

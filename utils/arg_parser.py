@@ -8,6 +8,7 @@ def get_args():
     """Handles parsing of arguments"""
     parser = argparse.ArgumentParser(
         description= """Recover potential telomeric sequences from Streptomyces genomes using Oxford Nanopore or illumina sequence data.
+- INPUT: Takes a fasta file with linear contigs tagged "linear" in the fasta_header and sequencing reads in fq.gz format.
 - OUTPUT: An extended assembly is written to basename.02.trimmed.fasta and QC-maps are written to a folder 
   named basename_seqtype_QC.
 - LOG: A run-log is written to telomore.log and a result-log is written to basename.seqtype.cons.log.txt.

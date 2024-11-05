@@ -1,11 +1,15 @@
 # TELOMORE
 A pipeline to reconstitute telomeric sequences in *Streptomyces* genomes excluded during de novo assembly from either Oxford Nanopore or Illumina sequencing data. In brief, the tool looks for reads that extend an assembly, builds a consensus of the extending sequence and attaches it to the assembly.
 
+Telomore does not check contigs for circularity but instead relies on the user to tag contigs as "linear" in the fasta_header.
+
 ## Usage
 ```
 usage: telomore.py [-h] -m {nanopore,illumina} [--single SINGLE] [--read1 READ1] [--read2 READ2] -r REFERENCE [-t THREADS] [-k]
 
 Recover potential telomeric sequences from Streptomyces genomes using Oxford Nanopore or illumina sequence data.
+
+- INPUT: Takes a fasta file with linear contigs tagged "linear" in the fasta_header and sequencing reads in fq.gz format.
 - OUTPUT: An extended assembly is written to basename.02.trimmed.fasta and QC-maps are written to a folder
   named basename_seqtype_QC.
 - LOG: A run-log is written to telomore.log and a result-log is written to basename.seqtype.cons.log.txt.

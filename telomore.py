@@ -265,7 +265,7 @@ def main():
                         output_handle=trim_out,
                         cons_log=cons_log_out,
                         ratio_thres=0.7,
-                        qual_thres=5)
+                        qual_thres=10)
               
         elif args.mode=="illumina":
             qc_map_illumina(extended_assembly=untrimmed_fasta,

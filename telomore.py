@@ -21,7 +21,7 @@ from utils.map_tools import trim_by_map
 
 # Illumina-specific imports
 from utils.qc_reports import qc_map_illumina
-from utils.cmd_tools import map_and_sort_illumina, generate_consensus_mafft
+from utils.cmd_tools import map_and_sort_illumina, generate_consensus_mafft, map_and_sort_illumina_cons
 from utils.map_tools import trim_by_map_illumina
 
 
@@ -106,9 +106,11 @@ def main():
     # -----------------------------------------------------------------    
     logging.info("Generating consensus")
 
-    # Generate left-consensus
+    # Generate consensus
     for replicon in replicon_dict.keys():
         logging.info(f"\tContig {replicon}")
+
+        # GENERATE LEFT CONSENSUS
         # To maintain alignment anchor point, the reads are flipped
         # And the resulting consensus must then be flipped again
         left_filt_reads = replicon_dict[replicon]["left_filt_fq"]
@@ -135,8 +137,7 @@ def main():
         replicon_dict[replicon]["l_cons_out"]=l_cons_out
         replicon_dict[replicon]["l_cons_final_out"]=l_cons_final_out
 
-    for replicon in replicon_dict.keys():
-        
+        # GENERATE LEFT CONSENSUS
         # The right reads are already oriented with the anchor point
         # left-most and does therefore not need to be flipped
         right_filt_reads = replicon_dict[replicon]["right_filt_fq"]
@@ -176,19 +177,36 @@ def main():
         strip_size=int(get_fasta_length(contig_fasta_out,replicon)/2)
         strip_fasta(contig_fasta_out,l_map_in,strip_size,"end")
         strip_fasta(contig_fasta_out,r_map_in ,strip_size,"start")
-        
-        # Map onto reduced reference
-        l_map_out = replicon + "_left_map.bam"
-        map_and_sort(reference = l_map_in,
-                     fastq = rep_left_cons,
-                     output = l_map_out,
-                     threads = args.threads)
-        
-        r_map_out = replicon + "_right_map.bam"
-        map_and_sort(reference = r_map_in,
-                     fastq = rep_right_cons,
-                     output = r_map_out,
-                     threads = args.threads)
+
+        if args.mode=="nanopore":
+             
+            # Map onto reduced reference
+            l_map_out = replicon + "_left_map.bam"
+            map_and_sort(reference = l_map_in,
+                        fastq = rep_left_cons,
+                        output = l_map_out,
+                        threads = args.threads)
+            
+            r_map_out = replicon + "_right_map.bam"
+            map_and_sort(reference = r_map_in,
+                        fastq = rep_right_cons,
+                        output = r_map_out,
+                        threads = args.threads)
+            
+        elif args.mode=="illumina":
+            # Map onto reduced reference using bowtie2
+            l_map_out = replicon + "_left_map.bam"
+            map_and_sort_illumina_cons(reference = l_map_in,
+                        fastq = rep_left_cons,
+                        output = l_map_out,
+                        threads = args.threads)
+            
+            r_map_out = replicon + "_right_map.bam"
+            map_and_sort_illumina_cons(reference = r_map_in,
+                        fastq = rep_right_cons,
+                        output = r_map_out,
+                        threads = args.threads)
+             
         
         # Extend the assembly using the map
         stitch_out = replicon +"_telomore_untrimmed.fasta"
@@ -197,7 +215,7 @@ def main():
                 cons_log_out= replicon + "_telomore_ext_np.log"
         elif args.mode=="illumina":
             cons_log_out = replicon + "_telomore_ill_ext.log"
-
+        
         stich_telo(ref = contig_fasta_out,
                    left_map = l_map_out,
                    right_map = r_map_out,
@@ -235,7 +253,6 @@ def main():
 
         trim_map = replicon + "_telomore_untrimmed.bam"
         trim_out = replicon + "_telomore_extended.fasta"
-
 
         if args.mode=="nanopore":
             qc_map(extended_assembly=untrimmed_fasta,
@@ -278,6 +295,9 @@ def main():
         qc_out = replicon + "_telomore_QC.bam"
         tmp_cons_left = replicon_dict[replicon]["tmp_cons_left"]
         tmp_cons_right = replicon_dict[replicon]["tmp_cons_left"]
+
+        org_left_map = replicon_dict[replicon]["left_sam"]
+        org_right_map = replicon_dict[replicon]["right_sam"]
         
         final_assembly = replicon_dict[replicon]["final_assembly"]
         cons_log_out = replicon_dict[replicon]["cons_log_out"]

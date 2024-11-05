@@ -157,13 +157,13 @@ def generate_consensus_lamassemble(db_name,reads,output,flip="no"):
       sequence_count += 1
 
    if sequence_count==0:
-      logging.info("There are no reads to construct a consensus from. Emtpy consensus returned")
+      logging.info(f"There are no reads to construct a consensus from. Emtpy consensus returned to {output}")
       with open(f"{output}", "w") as seq:
          empty_record = SeqRecord(Seq(""), id="empty_consensus")
          SeqIO.write(empty_record, seq, "fasta")
    if sequence_count == 1:
       single_record = record
-      logging.info("There are only a single read to construct a consensus from. Returning read as consensus.")
+      logging.info(f"There are only a single read to construct a consensus from. Returning read as consensus to {output}")
       with open(f"{output}", "w") as seq:
          SeqIO.write(single_record, seq, "fasta")
    elif sequence_count>1:
@@ -198,14 +198,14 @@ def generate_consensus_mafft(reads, output):
       sequence_count += 1
 
    if sequence_count==0:
-      logging.info("There are no reads to construct a consensus from. Emtpy consensus returned")
+      logging.info(f"There are no reads to construct a consensus from. Emtpy consensus returned to {output}")
       with open(f"{output}", "w") as seq:
          empty_record = SeqRecord(Seq(""), id="empty_consensus")
          SeqIO.write(empty_record, seq, "fasta")
    
    if sequence_count == 1:
       single_record = record
-      logging.info("There are only a single read to construct a consensus from. Returning read as consensus.")
+      logging.info(f"There are only a single read to construct a consensus from. Returning read as consensus to {output}")
       with open(f"{output}", "w") as seq:
          SeqIO.write(single_record, seq, "fasta")
    

@@ -346,6 +346,9 @@ def main(args):
     
     os.mkdir(telo_folder)
 
+    shutil.move(src=finished_fasta,
+                dst = os.path.join(telo_folder,finished_fasta))
+
     for replicon, replicon_feat in replicon_dict.items():
         # Note the non-tmp files
         # Delete everything else

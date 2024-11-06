@@ -44,7 +44,6 @@ def qc_map_illumina(extended_assembly,left_sam,right_sam,fastq_in1,fastq_in2,out
     cat_and_derep_fastq(fastq_in1="terminal_left_reads_2.fastq",
                         fastq_in2="terminal_right_reads_2.fastq",
                         fastq_out="all_terminal_reads_2.fastq")
-    logging.info(f"Running bowtie to QC_map to {output_handle}")
     map_and_sort_illumina(reference=extended_assembly,
                           read1="all_terminal_reads_1.fastq",
                           read2="all_terminal_reads_2.fastq",

@@ -179,6 +179,24 @@ def strip_fasta(input_file, output_file, x, remove_from='start'):
     SeqIO.write(records, output_file, "fasta")
 
 
+def build_extended_fasta(org_fasta:str, linear_elements: list, replicon_dict:dict,output_handle:str):
+    """Rejoins extended contigs in the order of the original fasta"""
+    
+    seq_rec_list = [] # list of seqrecord to write to newfile
+
+    for record in SeqIO.parse(org_fasta, "fasta"):
+        if record.id in linear_elements:
+            path_to_telomore_rec = replicon_dict[record.id]["final_assembly"]
+            telomore_rec = SeqIO.read(path_to_telomore_rec,format="fasta")
+            seq_rec_list.append(telomore_rec)
+        else:
+            seq_rec_list.append(record)
+    
+    SeqIO.write(sequences=seq_rec_list,
+                handle=output_handle,
+                format="fasta")
+
+
 
 if __name__ == '__main__':
     #trim_to_cons("3_cons.fasta",120,"ot.boi")

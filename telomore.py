@@ -10,7 +10,7 @@ import shutil
 import logging
 import traceback
 from utils.arg_parser import get_args, setup_logging
-from utils.fasta_tools import strip_fasta,get_fasta_length,get_linear_elements, extract_contig
+from utils.fasta_tools import strip_fasta,get_fasta_length,get_linear_elements, extract_contig, build_extended_fasta
 from utils.map_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, get_contig_map
 from utils.qc_reports import finalize_log
 
@@ -24,10 +24,9 @@ from utils.qc_reports import qc_map_illumina
 from utils.cmd_tools import map_and_sort_illumina, generate_consensus_mafft, map_and_sort_illumina_cons
 from utils.map_tools import trim_by_map_illumina
 
-
-def main():
+def main(args):
     
-    args = get_args()
+    
 
     # Generate a filename stripped of the .fasta/.fna/.fa extension
     ref_name = os.path.splitext(os.path.basename(args.reference))[0]
@@ -197,13 +196,13 @@ def main():
             # Map onto reduced reference using bowtie2
             l_map_out = replicon + "_left_map.bam"
             map_and_sort_illumina_cons(reference = l_map_in,
-                        fastq = rep_left_cons,
+                        consensus_fasta= rep_left_cons,
                         output = l_map_out,
                         threads = args.threads)
             
             r_map_out = replicon + "_right_map.bam"
             map_and_sort_illumina_cons(reference = r_map_in,
-                        fastq = rep_right_cons,
+                        consensus_fasta = rep_right_cons,
                         output = r_map_out,
                         threads = args.threads)
              
@@ -240,8 +239,6 @@ def main():
     # ----------------------------------------------------------------- 
     logging.info("Trimming consensus based on read support")
     
-
-
     for replicon in replicon_dict.keys():
         logging.info(f"\tContig {replicon}")
         untrimmed_fasta = replicon_dict[replicon]["stitch_out"]
@@ -269,18 +266,19 @@ def main():
               
         elif args.mode=="illumina":
             qc_map_illumina(extended_assembly=untrimmed_fasta,
-                             left=org_left_map,
-                             right=org_right_map,
+                             left_sam=org_left_map,
+                             right_sam=org_right_map,
                              fastq_in1=args.read1,
                              fastq_in2=args.read2,
                              output_handle=trim_map,
                              t=args.threads)
             trim_by_map_illumina(untrimmed_assembly=untrimmed_fasta,
                                  sorted_bam_file = trim_map,
+                                 output_handle=trim_out,
                                  cons_log = cons_log_out,
                                  cov_thres=1,
                                  ratio_thres=0.7,
-                                 qual_threshold=30)
+                                 qual_thres=30)
         # Add file to dict
         replicon_dict[replicon]["trim_map"]=trim_map
         replicon_dict[replicon]["final_assembly"]=trim_out
@@ -310,8 +308,8 @@ def main():
                             t=args.threads)
         if args.mode=="illumina":
             qc_map_illumina(extended_assembly=final_assembly,
-                             left=org_left_map,
-                             right=org_right_map,
+                             left_sam=org_left_map,
+                             right_sam=org_right_map,
                              fastq_in1=args.read1,
                              fastq_in2=args.read2,
                              output_handle=qc_out,
@@ -326,6 +324,12 @@ def main():
     # 5: Clean-up
     # -----------------------------------------------------------------
     logging.info("Removing temporary files")
+
+    finished_fasta=ref_name+"_telomore.fasta"
+    build_extended_fasta(org_fasta=args.reference,
+                         linear_elements=linear_elements,
+                         replicon_dict=replicon_dict,
+                         output_handle=finished_fasta)
     
     # move qc  files to QC_folder
     if args.mode=="nanopore":
@@ -391,10 +395,13 @@ def main():
 
 # Run script
 if __name__ == '__main__':
-    setup_logging()
+    
+    args = get_args() # Get arguments
+
+    setup_logging(log_file="telomore.log",quiet=args.quiet) # setup logging
 
     try:
-        main()
+        main(args)
     
     except Exception as e:
         logging.error("An error occurred during the workflow:")

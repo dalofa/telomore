@@ -54,6 +54,11 @@ def get_args():
         "-k", "--keep", 
         action='store_true', 
         help="Flag to keep intermediate files. Default is False"
+    )
+    parser.add_argument(
+        "-q", "--quiet", 
+        action='store_true', 
+        help="Set logging to quiet."
     ) 
 
     # Check if no arguments were provided
@@ -72,13 +77,20 @@ def get_args():
     return args
 
 
-def setup_logging(log_file="telomore.log"):
+def setup_logging(log_file="telomore.log",quiet:bool=False):
     """Set-up logging"""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(message)s",
-        handlers=[
+
+    if quiet==True:
+        handlers_to_use =[
+            logging.FileHandler(log_file),  # Log file
+        ]
+    else:
+        handlers_to_use =[
             logging.FileHandler(log_file),  # Log file
             logging.StreamHandler(sys.stdout)  # Print to console
         ]
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(message)s",
+        handlers=handlers_to_use
     )

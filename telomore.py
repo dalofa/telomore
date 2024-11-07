@@ -26,13 +26,24 @@ from utils.map_tools import trim_by_map_illumina
 
 def main(args):
     
-    
-
     # Generate a filename stripped of the .fasta/.fna/.fa extension
     ref_name = os.path.splitext(os.path.basename(args.reference))[0]
     folder_content = os.listdir()
 
     logging.info(f"Running Telomore: 0.3 in {args.mode} mode")
+
+    # move qc  files to QC_folder
+    if args.mode=="nanopore":
+        telo_folder=ref_name + "_np_telomore"
+    elif args.mode=="illumina":
+        telo_folder=ref_name + "_ill_telomore"
+
+    if os.path.isdir(telo_folder):
+         logging.info(f"Output folder {telo_folder} already exsists.")
+         exit()
+    
+    # Make output folder
+    os.mkdir(telo_folder)
 
     # Identify linear elements
     linear_elements = get_linear_elements(args.reference)
@@ -331,20 +342,7 @@ def main(args):
                          replicon_dict=replicon_dict,
                          output_handle=finished_fasta)
     
-    # move qc  files to QC_folder
-    if args.mode=="nanopore":
-        telo_folder=ref_name + "_np_telomore_0"
-    elif args.mode=="illumina":
-        telo_folder=ref_name + "_ill_telomore_0"
 
-    # make sure you dont have to move the folder each time
-    counter=0
-    while os.path.isdir(telo_folder):
-        telo_folder = "_".join(telo_folder.split("_")[:-1])
-        telo_folder = telo_folder + "_" + str(counter)
-        counter+=1
-    
-    os.mkdir(telo_folder)
 
     shutil.move(src=finished_fasta,
                 dst = os.path.join(telo_folder,finished_fasta))

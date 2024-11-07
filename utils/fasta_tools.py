@@ -158,7 +158,7 @@ def trim_to_cons(input_seq,num_base,output_handle):
 
 
 
-def strip_fasta(input_file, output_file, x, remove_from='start'):
+def strip_fasta(input_file:str, output_file:str, x:int, remove_from:str='start'):
     """Strip FASTA-file of the first of last x-bases."""
     
     assert type(x)==int
@@ -188,6 +188,7 @@ def build_extended_fasta(org_fasta:str, linear_elements: list, replicon_dict:dic
         if record.id in linear_elements:
             path_to_telomore_rec = replicon_dict[record.id]["final_assembly"]
             telomore_rec = SeqIO.read(path_to_telomore_rec,format="fasta")
+            telomore_rec.description= "[linear]"
             seq_rec_list.append(telomore_rec)
         else:
             seq_rec_list.append(record)

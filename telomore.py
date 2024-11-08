@@ -79,7 +79,8 @@ def main(args):
 
         get_contig_map(bam_in=map_out,
                        contig_name=replicon,
-                       output_path = contig_map_out) 
+                       output_path = contig_map_out,
+                       threads = args.threads) 
         # save files produced to dict
         replicon_dict[replicon]["map"]=map_out
         replicon_dict[replicon]["contig_map"]=contig_map_out
@@ -342,8 +343,6 @@ def main(args):
                          replicon_dict=replicon_dict,
                          output_handle=finished_fasta)
     
-
-
     shutil.move(src=finished_fasta,
                 dst = os.path.join(telo_folder,finished_fasta))
 

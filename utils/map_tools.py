@@ -11,34 +11,39 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-def get_contig_map(bam_in, contig_name, output_path):
-   """Takes a .bam file for multiple contigs and returns a sorted and indexed map for just that contig"""
+def get_contig_map(bam_in, contig_name, output_path, threads=4):
+    """Filters a BAM file for a specific contig, updates reference_id, then sorts and indexes the result."""
+    
+    tmp_output = "nonsort_" + output_path
+    
+    # Open input BAM file and prepare a header specific to the contig
+    with pysam.AlignmentFile(bam_in, "rb") as bam_file:
+         bam_header = bam_file.header.to_dict()
 
-   tmp_output = "nonsort_" + output_path
-   # Iterate over reads mapped to contig (contig=contig_name) and write to map file
-   with pysam.AlignmentFile(bam_in, "rb") as bam_file:
-      
-      # Update the header for the BAM map
-      bam_header = bam_file.header.to_dict()
-      #bam_header["SQ"] = [sq for sq in bam_header['SQ'] if sq['SN'] == contig_name] # remove SQ list for removed reads
-      new_pg_entry = {
-
-         "ID": "get_contig_map",
-         "PN": "get_contig_map",
-         "VN": "X",
-         "CL": f"get_contig_map from {bam_in} for contig {contig_name}"}
+         # Filter the header to include only the specific contig
+         # amd update program-entry
+         bam_header["SQ"] = [sq for sq in bam_header['SQ'] if sq['SN'] == contig_name]
+         new_pg_entry = {"ID": "get_contig_map",
+                        "PN": "get_contig_map",
+                        "VN": "X",
+                        "CL": f"get_contig_map from {bam_in} for contig {contig_name}"}
          # Append to the existing PG tags
-      bam_header.setdefault("PG", []).append(new_pg_entry)
+         bam_header.setdefault("PG", []).append(new_pg_entry)
 
-      # 
-      with pysam.AlignmentFile(tmp_output, "wb", header=bam_header) as output_bam:
+         # Write only the reads for the specified contig to a temp file with the filtered header
+         with pysam.AlignmentFile(tmp_output, "wb", header=bam_header) as output_bam:
             for read in bam_file.fetch(contig=contig_name):
-               output_bam.write(read)
-   
-   # Sort and index map file
-   pysam.sort("-o", output_path, tmp_output)
-   pysam.index(output_path)
-   os.remove(tmp_output)
+
+                     # Explicitly set the reference id to 0, to avoid aligned seqment error
+                     read.reference_id = 0
+                     output_bam.write(read)
+
+    # Sort and index the filtered BAM file using multiple threads
+    pysam.sort("-@", str(threads), "-o", output_path, tmp_output)
+    pysam.index("-@", str(threads),output_path)
+
+    # Clean up temporary file
+    os.remove(tmp_output)
 
 def sam_to_readpair(sam_in,fastq_in1, fastq_in2,fastq_out1,fastq_out2):
    "Extract both reads from paired-end fastq-files if one of the reads is in sam-file"
@@ -108,10 +113,10 @@ def cigar_maps_more_bases(cigar1, cigar2):
    elif bases1 < bases2:
       return False
 
-def get_terminal_reads(sam_file,loutput_handle,routput_handle):
+def get_terminal_reads(sorted_bam_file,loutput_handle,routput_handle):
    """A function that retrieves all reads mapping at the very start or end of a reference"""
    
-   input = pysam.AlignmentFile(sam_file, "r")
+   input = pysam.AlignmentFile(sorted_bam_file, "r")
    
    # Fetch all reads aligned at start or end of reference
    seq_end = input.lengths[0]
@@ -607,8 +612,7 @@ def generate_support_log(genome, qc_bam_file, output_handle):
 
 if __name__ == '__main__':
    print("testing module function")
-   get_contig_map(bam_in="test_files/contig.map.test.sort.bam",
-                  contig_name="CP108318",
-                  output_path="test_files/contig.test.out.bam")
-   
+   get_terminal_reads(sorted_bam_file="../test_files/CP108219_map.bam",
+                      loutput_handle="../test_files/contig_test_l.sam",
+                      routput_handle="../contig_test_r.sam")
    

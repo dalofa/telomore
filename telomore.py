@@ -73,31 +73,18 @@ def main(args):
     else:
         logging.info(f"Using already identified .bam-file {map_out}")
 
-    # get map for each contig
-    for replicon in linear_elements:
-        contig_map_out = replicon + "_map.bam"
-
-        get_contig_map(bam_in=map_out,
-                       contig_name=replicon,
-                       output_path = contig_map_out,
-                       threads = args.threads) 
-        # save files produced to dict
-        replicon_dict[replicon]["map"]=map_out
-        replicon_dict[replicon]["contig_map"]=contig_map_out
-    logging.info("Extracting terminal reads")
-
-    # Extract extending terminal reads for each contig via the contig-specific map
     
     for replicon in replicon_dict.keys():
          logging.info(f"\tContig {replicon}")
-         map = replicon_dict[replicon]["contig_map"] # should be contig_map?
-
          left_sam = replicon + "_left.sam"
          right_sam = replicon + "_right.sam"
          left_filt = replicon + "_left_filtered"
          right_filt = replicon + "_right_filtered"
 
-         get_terminal_reads(map,left_sam,right_sam)
+         get_terminal_reads(sorted_bam_file=map_out,
+                            contig=replicon,
+                            loutput_handle=left_sam,
+                            routput_handle=right_sam)
          get_left_soft(sam_file = left_sam,
                        left_out = left_filt,
                        offset=500)

@@ -113,14 +113,14 @@ def cigar_maps_more_bases(cigar1, cigar2):
    elif bases1 < bases2:
       return False
 
-def get_terminal_reads(sorted_bam_file,loutput_handle,routput_handle):
+def get_terminal_reads(sorted_bam_file,contig,loutput_handle,routput_handle):
    """A function that retrieves all reads mapping at the very start or end of a reference"""
    
    input = pysam.AlignmentFile(sorted_bam_file, "r")
    
    # Fetch all reads aligned at start or end of reference
    seq_end = input.lengths[0]
-   ref_name = input.get_reference_name(0)
+   ref_name = contig
    left_reads = input.fetch(ref_name,start=0, stop=20)
    right_reads = input.fetch(ref_name,seq_end-20,seq_end)
 

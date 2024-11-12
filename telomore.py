@@ -135,7 +135,7 @@ def main(args):
         replicon_dict[replicon]["l_cons_out"]=l_cons_out
         replicon_dict[replicon]["l_cons_final_out"]=l_cons_final_out
 
-        # GENERATE LEFT CONSENSUS
+        # GENERATE RIGHT CONSENSUS
         # The right reads are already oriented with the anchor point
         # left-most and does therefore not need to be flipped
         right_filt_reads = replicon_dict[replicon]["right_filt_fq"]
@@ -291,7 +291,7 @@ def main(args):
         logging.info(f"\tContig {replicon}")
         qc_out = replicon + "_telomore_QC.bam"
         tmp_cons_left = replicon_dict[replicon]["tmp_cons_left"]
-        tmp_cons_right = replicon_dict[replicon]["tmp_cons_left"]
+        tmp_cons_right = replicon_dict[replicon]["tmp_cons_right"]
 
         org_left_map = replicon_dict[replicon]["left_sam"]
         org_right_map = replicon_dict[replicon]["right_sam"]

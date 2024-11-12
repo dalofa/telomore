@@ -1,6 +1,6 @@
 """Telomore
-Script for finding and extracting telomeres from nanopore or illumina reads, which have been excluded from
-a de novo assembly.
+Script for finding and extracting telomeres from nanopore or illumina reads, which have been 
+excluded from a de novo assembly.
 """
 # imports
 import json
@@ -11,7 +11,7 @@ import logging
 import traceback
 from utils.arg_parser import get_args, setup_logging
 from utils.fasta_tools import strip_fasta,get_fasta_length,get_linear_elements, extract_contig, build_extended_fasta
-from utils.map_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo, get_contig_map
+from utils.map_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo
 from utils.qc_reports import finalize_log
 
 # Nanopore-sepcific imports
@@ -25,7 +25,6 @@ from utils.cmd_tools import map_and_sort_illumina, generate_consensus_mafft, map
 from utils.map_tools import trim_by_map_illumina
 
 def main(args):
-    
     # Generate a filename stripped of the .fasta/.fna/.fa extension
     ref_name = os.path.splitext(os.path.basename(args.reference))[0]
     folder_content = os.listdir()
@@ -39,9 +38,8 @@ def main(args):
         telo_folder=ref_name + "_ill_telomore"
 
     if os.path.isdir(telo_folder):
-         logging.info(f"Output folder {telo_folder} already exsists.")
-         exit()
-    
+        logging.info(f"Output folder {telo_folder} already exsists.")
+        exit()
     # Make output folder
     os.mkdir(telo_folder)
 
@@ -89,8 +87,9 @@ def main(args):
                        left_out = left_filt,
                        offset=500)
          get_right_soft(sam_file = right_sam,
-                       right_out = right_filt,
-                       offset=500)
+                        contig=replicon,
+                        right_out = right_filt,
+                        offset=500)
          
          # add files to dict to keep track of them
          replicon_dict[replicon]["left_sam"]=left_sam

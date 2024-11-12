@@ -113,16 +113,16 @@ def cigar_maps_more_bases(cigar1, cigar2):
    elif bases1 < bases2:
       return False
 
-def get_terminal_reads(sorted_bam_file,contig,loutput_handle,routput_handle):
+def get_terminal_reads(sorted_bam_file:str,contig:str,loutput_handle:str,routput_handle:str) -> None:
    """A function that retrieves all reads mapping at the very start or end of a reference"""
    
    input = pysam.AlignmentFile(sorted_bam_file, "r")
    
    # Fetch all reads aligned at start or end of reference
-   seq_end = input.lengths[0]
+   seq_end = input.get_reference_length(contig)
    ref_name = contig
    left_reads = input.fetch(ref_name,start=0, stop=20)
-   right_reads = input.fetch(ref_name,seq_end-20,seq_end)
+   right_reads = input.fetch(ref_name,start = (seq_end-20),stop = seq_end)
 
    # dict to store best mapped read from each end
    lterminal_reads={}
@@ -178,7 +178,7 @@ def get_terminal_reads(sorted_bam_file,contig,loutput_handle,routput_handle):
       rterminal_file.write(read)
    rterminal_file.close()
 
-def get_left_soft(sam_file,left_out,offset=0):
+def get_left_soft(sam_file:str, left_out:str, offset:int=0) -> None:
     """A function that retrieves reads soft-clipped at 5'-end
     It returns the reads as a sam file and only soft-clipped part as fastq-file"""
     sam_in = pysam.AlignmentFile(sam_file, "r")
@@ -204,13 +204,13 @@ def get_left_soft(sam_file,left_out,offset=0):
     lclip.close()
     lfastq.close()
 
-def get_right_soft(sam_file,right_out,offset=0,):
+def get_right_soft(sam_file:str, contig:str ,right_out:str ,offset:int=0) -> None:
     """A function that retrieves reads soft-clipped at 3'-end
     It returns the reads as a sam file and only soft-clipped part as fastq-file"""
     sam_in = pysam.AlignmentFile(sam_file, "r")
     rclip = pysam.AlignmentFile(right_out+".sam","w",template=sam_in)
     rfastq = open(right_out+".fastq","w")
-    seq_end = sam_in.lengths[0] # get length of reference
+    seq_end = sam_in.get_reference_length(contig) # get length of reference
     end_clip = r"(\d+)S$"
     for read in sam_in:
         rmatch = re.search(end_clip,read.cigarstring)

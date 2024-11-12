@@ -9,7 +9,7 @@ import subprocess
 import logging
 import traceback
 
-def map_and_sort(reference, fastq, output,threads=1):
+def map_and_sort(reference: str, fastq: str, output:str,threads:int=1) ->None:
     """Maps long-reads against a reference using minimap2 through a bash
     script and returns a sorted and index bam-file"""
 

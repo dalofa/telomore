@@ -314,8 +314,8 @@ def main(args):
                              t=args.threads)
             
         finalize_log(log = cons_log_out,
-                     right_fasta = tmp_cons_left,
-                     left_fasta = tmp_cons_right)
+                     right_fasta = tmp_cons_right,
+                     left_fasta = tmp_cons_left)
         # add to dict
         replicon_dict[replicon]["qc_out"]=qc_out
         

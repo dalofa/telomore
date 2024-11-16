@@ -3,7 +3,7 @@ Functions for handling read mappings. Primarily for extracting and filtering ter
 """
 
 import pysam
-import os
+from pathlib import Path
 import re
 import gzip
 import logging
@@ -11,41 +11,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-def get_contig_map(bam_in, contig_name, output_path, threads=4):
-    """Filters a BAM file for a specific contig, updates reference_id, then sorts and indexes the result."""
-    
-    tmp_output = "nonsort_" + output_path
-    
-    # Open input BAM file and prepare a header specific to the contig
-    with pysam.AlignmentFile(bam_in, "rb") as bam_file:
-         bam_header = bam_file.header.to_dict()
-
-         # Filter the header to include only the specific contig
-         # amd update program-entry
-         bam_header["SQ"] = [sq for sq in bam_header['SQ'] if sq['SN'] == contig_name]
-         new_pg_entry = {"ID": "get_contig_map",
-                        "PN": "get_contig_map",
-                        "VN": "X",
-                        "CL": f"get_contig_map from {bam_in} for contig {contig_name}"}
-         # Append to the existing PG tags
-         bam_header.setdefault("PG", []).append(new_pg_entry)
-
-         # Write only the reads for the specified contig to a temp file with the filtered header
-         with pysam.AlignmentFile(tmp_output, "wb", header=bam_header) as output_bam:
-            for read in bam_file.fetch(contig=contig_name):
-
-                     # Explicitly set the reference id to 0, to avoid aligned seqment error
-                     read.reference_id = 0
-                     output_bam.write(read)
-
-    # Sort and index the filtered BAM file using multiple threads
-    pysam.sort("-@", str(threads), "-o", output_path, tmp_output)
-    pysam.index("-@", str(threads),output_path)
-
-    # Clean up temporary file
-    os.remove(tmp_output)
-
-def sam_to_readpair(sam_in,fastq_in1, fastq_in2,fastq_out1,fastq_out2):
+def sam_to_readpair(sam_in: Path,fastq_in1: Path, fastq_in2: Path,fastq_out1: Path,fastq_out2: Path) -> None:
    "Extract both reads from paired-end fastq-files if one of the reads is in sam-file"
    with pysam.AlignmentFile(sam_in) as samfile:
       reads_to_grep = set() # using a set should be faster than list
@@ -70,7 +36,7 @@ def sam_to_readpair(sam_in,fastq_in1, fastq_in2,fastq_out1,fastq_out2):
             if record.id in reads_to_grep:
                SeqIO.write(record, outfile, "fastq")
 
-def sam_to_fastq(sam_in,fastq_out):
+def sam_to_fastq(sam_in: Path, fastq_out:Path) -> None:
    """Convert a sam-file to fastq-format, excluding unmapped reads."""
    with pysam.AlignmentFile(sam_in, "r") as samfile:
          for read in samfile.fetch(until_eof=True):
@@ -84,7 +50,7 @@ def sam_to_fastq(sam_in,fastq_out):
                   # Write the read in FASTQ format to the provided handle
                   fastq_out.write(f"@{name}\n{seq}\n+\n{qual}\n")
 
-def mapped_bases(cigarstring):
+def mapped_bases(cigarstring:str) -> int:
    """Calculate the number of bases mapped to the reference in a given CIGAR string."""
    # Define operations that consume reference bases
    consuming_operations = "MDNX="
@@ -103,7 +69,7 @@ def mapped_bases(cigarstring):
    
    return mapped_bases_count
 
-def cigar_maps_more_bases(cigar1, cigar2):
+def cigar_maps_more_bases(cigar1:str, cigar2:str) -> bool:
    """Compare two CIGAR strings and determine which one maps to more bases."""
    bases1 = mapped_bases(cigar1)
    bases2 = mapped_bases(cigar2)
@@ -113,7 +79,7 @@ def cigar_maps_more_bases(cigar1, cigar2):
    elif bases1 < bases2:
       return False
 
-def get_terminal_reads(sorted_bam_file:str,contig:str,loutput_handle:str,routput_handle:str) -> None:
+def get_terminal_reads(sorted_bam_file:Path,contig:Path,loutput_handle:Path,routput_handle:Path) -> None:
    """A function that retrieves all reads mapping at the very start or end of a reference"""
    
    input = pysam.AlignmentFile(sorted_bam_file, "r")
@@ -229,6 +195,11 @@ def get_right_soft(sam_file:str, contig:str ,right_out:str ,offset:int=0) -> Non
     sam_in.close()
     rclip.close()
     rfastq.close()
+
+def get_terminal_extending_reads():
+   return
+
+
 
 def revcomp_reads(reads_in,reads_out):
    """A function that takes in fastq reads and retunrs their reverse complement"""

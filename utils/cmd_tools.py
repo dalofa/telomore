@@ -215,7 +215,7 @@ def generate_consensus_mafft(reads, output):
       with open(reads, "r") as input_handle, open(fasta_reads, "w") as output_handle:
          SeqIO.convert(input_handle, "fastq", output_handle, "fasta")
       # Run Mafft
-      mafft_output=reads+".aln"
+      mafft_output=output+".aln"
       try:
          mafft_file=open(mafft_output,"w")
          mafft_run = subprocess.run(["mafft","--quiet",
@@ -223,6 +223,7 @@ def generate_consensus_mafft(reads, output):
                                   stdout=mafft_file,
                                   check=True)
          mafft_file.close()
+         os.remove(fasta_reads)
       
       except subprocess.CalledProcessError as e:
       # If the bash script fails, capture the error and log the traceback

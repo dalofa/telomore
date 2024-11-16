@@ -1,10 +1,8 @@
-"""Telomore
-Script for finding and extracting telomeres from nanopore or illumina reads, which have been 
+"""
+Telomore: Script for finding and extracting telomeres from nanopore or illumina reads, which have been 
 excluded from a de novo assembly.
 """
 # imports
-import json
-import glob
 import os
 import shutil
 import logging
@@ -24,6 +22,14 @@ from utils.qc_reports import qc_map_illumina
 from utils.cmd_tools import map_and_sort_illumina, generate_consensus_mafft, map_and_sort_illumina_cons
 from utils.map_tools import trim_by_map_illumina
 
+ill_tmp_files = ["terminal_left_reads_1.fastq",
+                 "terminal_left_reads_2.fastq",
+                 "terminal_right_reads_1.fastq",
+                 "terminal_right_reads_2.fastq",
+                 "all_terminal_reads_1.fastq",
+                 "all_terminal_reads_2.fastq"]
+NP_tmp_files = ["all_terminal_reads.fastq"]
+
 def main(args):
     # Generate a filename stripped of the .fasta/.fna/.fa extension
     ref_name = os.path.splitext(os.path.basename(args.reference))[0]
@@ -31,7 +37,7 @@ def main(args):
 
     logging.info(f"Running Telomore: 0.3 in {args.mode} mode")
 
-    # move qc  files to QC_folder
+    # Create output folder
     if args.mode=="nanopore":
         telo_folder=ref_name + "_np_telomore"
     elif args.mode=="illumina":
@@ -40,37 +46,37 @@ def main(args):
     if os.path.isdir(telo_folder):
         logging.info(f"Output folder {telo_folder} already exsists.")
         exit()
-    # Make output folder
     os.mkdir(telo_folder)
 
     # Identify linear elements
     linear_elements = get_linear_elements(args.reference)
-    
-    # check if no linear element
     if not linear_elements:
          logging.info("No tagged linear elements identified")
          exit()
-
-    # Intialize dict for keeping track of files associated with each replicon
-    replicon_dict = {replicon: {"org_file": args.reference,} for replicon in linear_elements}
-
     logging.info(f"Identified the following tagged linear elements {linear_elements}")
+    # Intialize dict for keeping track of files associated with each replicon
+    replicon_dict = {replicon: {"org_file": args.reference} for replicon in linear_elements}
+
     # 0: Map reads and extract terminally-extending sequence
     # -----------------------------------------------------------------
-
     logging.info("Mapping reads to assembly")
 
     map_out = ref_name+"_map.bam"
 
-    if not map_out in folder_content:
-
-        if args.mode=="nanopore":
-            map_and_sort(args.reference, args.single , map_out , args.threads)
-        elif args.mode=="illumina":
-            map_and_sort_illumina(args.reference, args.read1, args.read2, map_out , args.threads)
-    else:
-        logging.info(f"Using already identified .bam-file {map_out}")
-
+    # Use already existing map
+    if map_out in folder_content:
+         logging.info(f"Using already identified .bam-file {map_out}")
+    elif args.mode=="nanopore":
+         map_and_sort(reference= args.reference, 
+                      fastq = args.single,
+                      output = map_out,
+                      threads = args.threads)
+    elif args.mode=="illumina":
+         map_and_sort_illumina(reference = args.reference,
+                               read1 = args.read1,
+                               read2 = args.read2,
+                               output=map_out,
+                               threads = args.threads)
     
     for replicon in replicon_dict.keys():
          logging.info(f"\tContig {replicon}")
@@ -98,6 +104,8 @@ def main(args):
          replicon_dict[replicon]["left_filt_sam"]=left_filt +".sam"
          replicon_dict[replicon]["right_filt_fq"]=right_filt + ".fastq"
          replicon_dict[replicon]["left_filt_fq"]=left_filt +".fastq"
+         replicon_dict[replicon]["org_map"]=map_out
+         replicon_dict[replicon]["org_map_index"]=map_out + ".bai"
 
     # 1: Generate consensus
     # -----------------------------------------------------------------    
@@ -121,17 +129,25 @@ def main(args):
                 db_out=ref_name+".db"
                 train_lastDB(args.reference,args.single,db_out,args.threads) # train on entire reference
                 generate_consensus_lamassemble(db_out,revcomp_out,l_cons_out)
-                replicon_dict[replicon]["last_db"]=db_out
+                
+                last_db_ext=[".bck",".des",".par",".prj",".sds",".ssp",".suf",".tis"]
+                count = 0
+                # add all the DBs to the dict
+                for db_ext in last_db_ext:
+                    last_db = "last_db_"+ str(count)
+                    replicon_dict[replicon][last_db]=db_out + db_ext
+                    count+=1
 
         elif args.mode=="illumina":
                 generate_consensus_mafft(revcomp_out,l_cons_out)
-
+        print(replicon_dict)
         # flip consensus to match original orientation
         revcomp(l_cons_out,l_cons_final_out)
 
         # add files to dict
         replicon_dict[replicon]["revcomp_out"]=revcomp_out
         replicon_dict[replicon]["l_cons_out"]=l_cons_out
+        replicon_dict[replicon]["l_cons_alignment"]=l_cons_out + ".aln"
         replicon_dict[replicon]["l_cons_final_out"]=l_cons_final_out
 
         # GENERATE RIGHT CONSENSUS
@@ -142,12 +158,16 @@ def main(args):
         
         if args.mode=="nanopore":
                 # A last-db should aldready exist from the left-consensus
-                generate_consensus_lamassemble(db_out,right_filt_reads,r_cons_final_out)
+                generate_consensus_lamassemble(db_name = db_out,
+                                               reads = right_filt_reads,
+                                               output = r_cons_final_out)
         elif args.mode=="illumina":
-                generate_consensus_mafft(right_filt_reads,r_cons_final_out)
+                generate_consensus_mafft(reads = right_filt_reads,
+                                         output = r_cons_final_out)
 
         # add files to dict
         replicon_dict[replicon]["r_cons_final_out"]=r_cons_final_out
+        replicon_dict[replicon]["r_cons_alignment"]=r_cons_final_out + ".aln"
     
     # 2: Extend assembly with consensus by mapping onto chromsome
     # -----------------------------------------------------------------    
@@ -164,7 +184,7 @@ def main(args):
         tmp_cons_right= replicon + "_right.fasta"
         contig_fasta_out = replicon + ".fasta"
         extract_contig(fasta_in = org_fasta,
-                       contig_name=replicon,
+                       contig_name = replicon,
                        fasta_out=contig_fasta_out)
         # Discard bases that provide alternative mapping sites
         # For the consensus to map to as Streptomyces have TIRs.
@@ -228,7 +248,9 @@ def main(args):
         replicon_dict[replicon]["cons_log_out"]=cons_log_out
         replicon_dict[replicon]["contig_fasta_out"]=contig_fasta_out
         replicon_dict[replicon]["l_map_out"]=l_map_out
+        replicon_dict[replicon]["l_map_out_index"]=l_map_out + ".bai"
         replicon_dict[replicon]["r_map_out"]=r_map_out
+        replicon_dict[replicon]["r_map_out_index"]=r_map_out + ".bai"
         replicon_dict[replicon]["tmp_cons_left"]=tmp_cons_left
         replicon_dict[replicon]["tmp_cons_right"]=tmp_cons_right
         
@@ -279,6 +301,7 @@ def main(args):
                                  qual_thres=30)
         # Add file to dict
         replicon_dict[replicon]["trim_map"]=trim_map
+        replicon_dict[replicon]["trim_map_index"]=trim_map + ".bai"
         replicon_dict[replicon]["final_assembly"]=trim_out
 
     
@@ -318,6 +341,7 @@ def main(args):
                      left_fasta = tmp_cons_left)
         # add to dict
         replicon_dict[replicon]["qc_out"]=qc_out
+        replicon_dict[replicon]["qc_out_index"]=qc_out + ".bai"
         
     # 5: Clean-up
     # -----------------------------------------------------------------
@@ -331,51 +355,46 @@ def main(args):
     
     shutil.move(src=finished_fasta,
                 dst = os.path.join(telo_folder,finished_fasta))
-
+    
+    if args.mode=="nanopore":
+        for file in NP_tmp_files:
+            os.remove(file)
+    elif args.mode=="illumina":
+        for file in ill_tmp_files:
+            os.remove(file)
+            
     for replicon, replicon_feat in replicon_dict.items():
-        # Note the non-tmp files
-        # Delete everything else
         keys_to_save = ["final_assembly",
         "cons_log_out",
-        "qc_out"]
-
+        "qc_out",
+        "qc_out_index"]
         input_files = ["org_file"]
 
+        # Save and move result files
         for key in replicon_feat.keys():
-            if key in keys_to_save:
+            # Save input files and move result-files
+            if key in input_files:
+                 continue
+            elif key in keys_to_save:
                 file_path = replicon_dict[replicon][key]
                 shutil.move(src = file_path,
                             dst = os.path.join(telo_folder,file_path))
-                if key=="qc_out":
-                    map_index = replicon_dict[replicon][key] +".bai"
-                    shutil.move(src = map_index,
-                            dst = os.path.join(telo_folder,map_index))
-            elif key in input_files:
-                continue
-            elif "map" in key and args.keep==False: #rm map-indices
-                file_path = replicon_dict[replicon][key]
-                map_index = file_path + ".bai"
-                if os.path.isfile(file_path):
-                     os.remove(file_path)
-                if os.path.isfile(map_index):
-                     os.remove(map_index)
-            elif "cons" in key and args.keep==False: #rm map-indices
-                file_path = replicon_dict[replicon][key]
-                alignment = file_path + ".aln"
-                if os.path.isfile(file_path):
-                     os.remove(file_path)
-                if os.path.isfile( alignment):
-                     os.remove(alignment)
-            elif key=="last_db" and args.keep==False: #rm all LAST dbs
-                DATABASE_EXT=[".bck",".des",".par",".prj",".sds",".ssp",".suf",".tis"]
-                for extension in DATABASE_EXT:
-                     file_path = replicon_dict[replicon][key]+extension
-                     if os.path.isfile(file_path):
-                        os.remove(file_path)
-            elif args.keep==False:
+                
+            # Don't delete any files args.keeps is false
+            elif args.keep==True:
+                 continue  
+            # Delete tmp-files
+            elif "org_map" in key: # the original map can only be removed once
                 file_path = replicon_dict[replicon][key]
                 if os.path.isfile(file_path):
                     os.remove(file_path)
+            elif "last_db" in key: # can only remove last_db once
+                file_path = replicon_dict[replicon][key]
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            else:
+                file_path = replicon_dict[replicon][key]
+                os.remove(file_path)
 
     logging.info(f"Output files moved to {telo_folder}")
 

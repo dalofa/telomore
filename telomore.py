@@ -394,7 +394,8 @@ def main(args):
                     os.remove(file_path)
             else:
                 file_path = replicon_dict[replicon][key]
-                os.remove(file_path)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
 
     logging.info(f"Output files moved to {telo_folder}")
 

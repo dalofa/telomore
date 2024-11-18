@@ -144,7 +144,7 @@ def get_terminal_reads(sorted_bam_file:Path,contig:Path,loutput_handle:Path,rout
       rterminal_file.write(read)
    rterminal_file.close()
 
-def get_left_soft(sam_file:str, left_out:str, offset:int=0) -> None:
+def get_left_soft(sam_file:Path, left_out:Path, offset:int=0) -> None:
     """A function that retrieves reads soft-clipped at 5'-end
     It returns the reads as a sam file and only soft-clipped part as fastq-file"""
     sam_in = pysam.AlignmentFile(sam_file, "r")
@@ -170,7 +170,7 @@ def get_left_soft(sam_file:str, left_out:str, offset:int=0) -> None:
     lclip.close()
     lfastq.close()
 
-def get_right_soft(sam_file:str, contig:str ,right_out:str ,offset:int=0) -> None:
+def get_right_soft(sam_file:Path, contig:Path ,right_out:Path ,offset:int=0) -> None:
     """A function that retrieves reads soft-clipped at 3'-end
     It returns the reads as a sam file and only soft-clipped part as fastq-file"""
     sam_in = pysam.AlignmentFile(sam_file, "r")
@@ -195,11 +195,6 @@ def get_right_soft(sam_file:str, contig:str ,right_out:str ,offset:int=0) -> Non
     sam_in.close()
     rclip.close()
     rfastq.close()
-
-def get_terminal_extending_reads():
-   return
-
-
 
 def revcomp_reads(reads_in,reads_out):
    """A function that takes in fastq reads and retunrs their reverse complement"""
@@ -277,8 +272,6 @@ def is_consensus_empty(file_path):
          if read.is_unmapped and (not read.seq or read.seq == "*"):
             return True  # Only one unmapped read with no sequence
       return False  # Either more reads, or the read does not meet the conditions
-
-# Example usage:
 
 def stich_telo(ref, left_map ,right_map ,outfile, logout, tmp_left,tmp_right ):
    """Writes a fasta-file extended with sequence based on a left- and right-side .bam-file. 

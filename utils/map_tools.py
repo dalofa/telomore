@@ -299,8 +299,14 @@ def stich_telo(ref, left_map ,right_map ,outfile, logout, tmp_left,tmp_right ):
          lmatch = re.match(start_clip,read.cigarstring)
          if lmatch:
             clip_num=int(lmatch.group(1)) # digits are retrieve via .group
-            seq = read.query_sequence[0:(clip_num-read.reference_start)] # Adjust for if more than just overhanging bases are soft-clipped
-            left_seqs.append(seq)
+            
+            # check if the clipped sequence extends beyond genome
+            if clip_num-read.reference_start<=0:
+               left_log_mes=f"#The consensus produced for the left-side does extend beyond the start of {ref}"
+               left_seqs = []
+            else:
+               seq = read.query_sequence[0:(clip_num-read.reference_start)] # Adjust for if more than just overhanging bases are soft-clipped
+               left_seqs.append(seq)
       l_sam_in.close()
    
 
@@ -576,7 +582,11 @@ def generate_support_log(genome, qc_bam_file, output_handle):
 
 if __name__ == '__main__':
    print("testing module function")
-   get_terminal_reads(sorted_bam_file="../test_files/CP108219_map.bam",
-                      loutput_handle="../test_files/contig_test_l.sam",
-                      routput_handle="../contig_test_r.sam")
-   
+
+   stich_telo(ref = "/bigdata/dalofa/telomore/test_files/NBC_00522/NBC_00522.fasta", 
+              left_map="test_files/NBC_00522/CP108325_linear_telomore_extended_with_trimmed_consensus_attached_left_map.bam",
+              right_map="/bigdata/dalofa/telomore/test_files/NBC_00522/CP108325_linear_telomore_extended_with_trimmed_consensus_attached_right_map.bam",
+              outfile="test_boi_three.fasta",
+              logout="weh",
+              tmp_left="/bigdata/dalofa/telomore/test_files/NBC_00522/CP108325_linear_telomore_extended_with_trimmed_consensus_attached_left.fasta",
+              tmp_right="/bigdata/dalofa/telomore/test_files/NBC_00522/CP108325_linear_telomore_extended_with_trimmed_consensus_attached_right.fasta")

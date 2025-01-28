@@ -349,8 +349,6 @@ def main(args):
                      right_fasta = replicon.stitch_right_fasta,
                      left_fasta = replicon.stitch_left_fasta)
     
-    exit()
-        
     # 5: Clean-up
     # -----------------------------------------------------------------
     logging.info("Removing temporary files")
@@ -358,7 +356,7 @@ def main(args):
     finished_fasta=ref_name+"_telomore.fasta"
     build_extended_fasta(org_fasta=args.reference,
                          linear_elements=linear_elements,
-                         replicon_dict=replicon_dict,
+                         replicon_list = replicon_list,
                          output_handle=finished_fasta)
     
     shutil.move(src=finished_fasta,

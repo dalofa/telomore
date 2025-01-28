@@ -179,14 +179,16 @@ def strip_fasta(input_file:str, output_file:str, x:int, remove_from:str='start')
     SeqIO.write(records, output_file, "fasta")
 
 
-def build_extended_fasta(org_fasta:str, linear_elements: list, replicon_dict:dict,output_handle:str):
+def build_extended_fasta(org_fasta:str, linear_elements: list, replicon_list:list,output_handle:str):
     """Rejoins extended contigs in the order of the original fasta"""
     
     seq_rec_list = [] # list of seqrecord to write to newfile
 
     for record in SeqIO.parse(org_fasta, "fasta"):
         if record.id in linear_elements:
-            path_to_telomore_rec = replicon_dict[record.id]["final_assembly"]
+            for replicon in replicon_list:
+                if replicon.name==record.id:
+                    path_to_telomore_rec = replicon.trim_out
             telomore_rec = SeqIO.read(path_to_telomore_rec,format="fasta")
             telomore_rec.description= "[linear]"
             seq_rec_list.append(telomore_rec)

@@ -71,6 +71,10 @@ class Replicon:
         self.stitch_left_fasta = f"{self.name}_left.fasta"
         self.stitch_right_fasta = f"{self.name}_right.fasta"
         
+    # Trim files
+        self.trim_map = f"{self.name}_telomore_untrimmed.bam"
+        self.trim_map_index = f"{self.trim_map}.bai"
+        self.trim_out = f"{self.name}_telomore_extended.fasta"
 
 ill_tmp_files = ["terminal_left_reads_1.fastq",
                  "terminal_left_reads_2.fastq",
@@ -258,58 +262,55 @@ def main(args):
                    logout=cons_log_out,
                    tmp_left=replicon.stitch_left_fasta,
                    tmp_right=replicon.stitch_right_fasta)
-    exit()
+
     # 3: Trim consensus using a map of terminal reads onto extended
     # assembly
     # ----------------------------------------------------------------- 
     logging.info("Trimming consensus based on read support")
     
-    for replicon in replicon_dict.keys():
-        logging.info(f"\tContig {replicon}")
-        untrimmed_fasta = replicon_dict[replicon]["stitch_out"]
-        cons_log_out = replicon_dict[replicon]["cons_log_out"]
+    for replicon in replicon_list:
+        logging.info(f"\tContig {replicon.name}")
+        # untrimmed_fasta = replicon_dict[replicon]["stitch_out"]
+        # cons_log_out = replicon_dict[replicon]["cons_log_out"]
         
-        org_left_map = replicon_dict[replicon]["left_sam"]
-        org_right_map = replicon_dict[replicon]["right_sam"]
+        # org_left_map = replicon_dict[replicon]["left_sam"]
+        # org_right_map = replicon_dict[replicon]["right_sam"]
         
 
-        trim_map = replicon + "_telomore_untrimmed.bam"
-        trim_out = replicon + "_telomore_extended.fasta"
+        # trim_map = replicon + "_telomore_untrimmed.bam"
+        # trim_out = replicon + "_telomore_extended.fasta"
 
         if args.mode=="nanopore":
-            qc_map(extended_assembly=untrimmed_fasta,
-                   left = org_left_map,
-                   right= org_right_map,
-                   output_handle=trim_map,
-                   t=args.threads)  
-            trim_by_map(untrimmed_assembly=untrimmed_fasta,
-                        sorted_bam_file=trim_map,
-                        output_handle=trim_out,
+            qc_map(extended_assembly= replicon.stitch_out,
+                   left = replicon.left_sam,
+                   right= replicon.right_sam,
+                   output_handle=replicon.trim_map,
+                   t=args.threads)
+            
+            trim_by_map(untrimmed_assembly=replicon.stitch_out,
+                        sorted_bam_file=replicon.trim_map,
+                        output_handle=replicon.trim_out,
                         cons_log=cons_log_out,
                         ratio_thres=0.7,
                         qual_thres=10)
               
         elif args.mode=="illumina":
-            qc_map_illumina(extended_assembly=untrimmed_fasta,
+            qc_map_illumina(extended_assembly=replicon.stitch_out,
                              left_sam=org_left_map,
                              right_sam=org_right_map,
                              fastq_in1=args.read1,
                              fastq_in2=args.read2,
                              output_handle=trim_map,
                              t=args.threads)
-            trim_by_map_illumina(untrimmed_assembly=untrimmed_fasta,
-                                 sorted_bam_file = trim_map,
-                                 output_handle=trim_out,
+            trim_by_map_illumina(untrimmed_assembly=replicon.stitch_out,
+                                 sorted_bam_file = replicon.trim_map,
+                                 output_handle=replicon.trim_out,
                                  cons_log = cons_log_out,
                                  cov_thres=1,
                                  ratio_thres=0.7,
                                  qual_thres=30)
-        # Add file to dict
-        replicon_dict[replicon]["trim_map"]=trim_map
-        replicon_dict[replicon]["trim_map_index"]=trim_map + ".bai"
-        replicon_dict[replicon]["final_assembly"]=trim_out
 
-    
+    exit()
     # 4: Generate QC files
     # -----------------------------------------------------------------
     logging.info("Generating QC map and finalizing result-log")

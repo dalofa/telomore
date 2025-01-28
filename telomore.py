@@ -27,8 +27,9 @@ from utils.map_tools import trim_by_map_illumina
 #from dataclasses import dataclass
 
 class Replicon:
-    def __init__(self, name: str):
+    def __init__(self, name: str, org_fasta):
         self.name = name
+        self.org_fasta = org_fasta
     
     # Map files
         self.org_map = f"{self.name}_map.bam"
@@ -54,7 +55,22 @@ class Replicon:
         # right
         self.r_cons_final_out = f"{self.name}_right_cons.fasta"
         
-
+    # Extension files
+        self.contig_fasta = f"{name}.fasta"
+        
+        # Truncated contig which discard alternative mapping points
+        self.trunc_left_fasta = f"{self.name}_trunc_left.fa"
+        self.trunc_right_fasta = f"{self.name}_trunc_right.fa"
+        
+        # Maps on trunc fasta
+        self.l_map_out = f"{self.name}_left_map.bam"
+        self.r_map_out = f"{self.name}_right_map.bam"
+        
+        # Extended assembly
+        self.stitch_out = f"{self.name}_telomore_untrimmed.fasta"
+        self.stitch_left_fasta = f"{self.name}_left.fasta"
+        self.stitch_right_fasta = f"{self.name}_right.fasta"
+        
 
 ill_tmp_files = ["terminal_left_reads_1.fastq",
                  "terminal_left_reads_2.fastq",
@@ -92,7 +108,7 @@ def main(args):
     # Assuming linear_elements is defined as a list of strings
 
     # Create a list of replicon instances
-    replicon_list = [Replicon(element) for element in linear_elements]   
+    replicon_list = [Replicon(element, args.reference) for element in linear_elements]   
 
     # 0: Map reads and extract terminally-extending sequence
     # -----------------------------------------------------------------
@@ -173,92 +189,76 @@ def main(args):
         elif args.mode=="illumina":
                 generate_consensus_mafft(reads = replicon.right_filt_fq,
                                          output = replicon.r_cons_final_out)
-    exit()
     # 2: Extend assembly with consensus by mapping onto chromsome
     # -----------------------------------------------------------------    
     logging.info("Extending assembly")
     
-    for replicon in replicon_dict.keys():
-        logging.info(f"\tContig {replicon}")
+    for replicon in replicon_list:
+        logging.info(f"\tContig {replicon.name}")
+        
         # Produce fasta file of just the contig to be extended
-        org_fasta = replicon_dict[replicon]["org_file"]
-        rep_left_cons = replicon_dict[replicon]["l_cons_final_out"]
-        rep_right_cons = replicon_dict[replicon]["r_cons_final_out"]
+        # rep_left_cons = replicon_dict[replicon]["l_cons_final_out"]
+        # rep_right_cons = replicon_dict[replicon]["r_cons_final_out"]
 
-        tmp_cons_left= replicon + "_left.fasta"
-        tmp_cons_right= replicon + "_right.fasta"
-        contig_fasta_out = replicon + ".fasta"
-        extract_contig(fasta_in = org_fasta,
-                       contig_name = replicon,
-                       fasta_out=contig_fasta_out)
+        # tmp_cons_left= replicon + "_left.fasta"
+        # tmp_cons_right= replicon + "_right.fasta"
+        extract_contig(fasta_in = replicon.org_fasta,
+                       contig_name = replicon.name,
+                       fasta_out=replicon.contig_fasta)
+        
         # Discard bases that provide alternative mapping sites
         # For the consensus to map to as Streptomyces have TIRs.
-        l_map_in = replicon + "_left.fa"
-        r_map_in = replicon + "_right.fa"
         # discard half the contig
-        strip_size=int(get_fasta_length(contig_fasta_out,replicon)/2)
-        strip_fasta(contig_fasta_out,l_map_in,strip_size,"end")
-        strip_fasta(contig_fasta_out,r_map_in ,strip_size,"start")
-
+        
+        strip_size=int(get_fasta_length(fasta_file = replicon.contig_fasta,
+                                        contig_name = replicon.name)/2)
+        strip_fasta(input_file = replicon.contig_fasta,
+                    output_file=replicon.trunc_left_fasta,
+                    x = strip_size,
+                    remove_from= "end")
+        strip_fasta(input_file = replicon.contig_fasta,
+                    output_file = replicon.trunc_right_fasta,
+                    x = strip_size,
+                    remove_from="start")
         if args.mode=="nanopore":
-             
             # Map onto reduced reference
-            l_map_out = replicon + "_left_map.bam"
-            map_and_sort(reference = l_map_in,
-                        fastq = rep_left_cons,
-                        output = l_map_out,
+            map_and_sort(reference = replicon.trunc_left_fasta,
+                        fastq = replicon.l_cons_final_out,
+                        output = replicon.l_map_out,
                         threads = args.threads)
             
-            r_map_out = replicon + "_right_map.bam"
-            map_and_sort(reference = r_map_in,
-                        fastq = rep_right_cons,
-                        output = r_map_out,
+            map_and_sort(reference = replicon.trunc_right_fasta,
+                        fastq = replicon.r_cons_final_out,
+                        output = replicon.r_map_out,
                         threads = args.threads)
             
         elif args.mode=="illumina":
             # Map onto reduced reference using bowtie2
-            l_map_out = replicon + "_left_map.bam"
-            map_and_sort_illumina_cons(reference = l_map_in,
-                        consensus_fasta= rep_left_cons,
-                        output = l_map_out,
+            map_and_sort_illumina_cons(reference = replicon.trunc_left_fasta,
+                        consensus_fasta= replicon.l_cons_final_out,
+                        output = replicon.l_map_out,
                         threads = args.threads)
             
-            r_map_out = replicon + "_right_map.bam"
-            map_and_sort_illumina_cons(reference = r_map_in,
-                        consensus_fasta = rep_right_cons,
-                        output = r_map_out,
+            map_and_sort_illumina_cons(reference = replicon.trunc_right_fasta,
+                        consensus_fasta = replicon.r_cons_final_out,
+                        output = replicon.r_map_out,
                         threads = args.threads)
              
         
         # Extend the assembly using the map
-        stitch_out = replicon +"_telomore_untrimmed.fasta"
-        
         if args.mode=="nanopore":
-                cons_log_out= replicon + "_telomore_ext_np.log"
+                cons_log_out= replicon.name + "_telomore_ext_np.log"
         elif args.mode=="illumina":
-            cons_log_out = replicon + "_telomore_ill_ext.log"
+            cons_log_out = replicon.name + "_telomore_ill_ext.log"
         
-        stich_telo(ref = contig_fasta_out,
-                   left_map = l_map_out,
-                   right_map = r_map_out,
-                   outfile = stitch_out,
+        stich_telo(ref = replicon.contig_fasta,
+                   left_map = replicon.l_map_out,
+                   right_map = replicon.r_map_out,
+                   outfile = replicon.stitch_out,
                    logout=cons_log_out,
-                   tmp_left=tmp_cons_left,
-                   tmp_right=tmp_cons_right)
-
-        # Add files to dict
-        replicon_dict[replicon]["l_map_in"]=l_map_in
-        replicon_dict[replicon]["r_map_in"]=r_map_in
-        replicon_dict[replicon]["stitch_out"]=stitch_out
-        replicon_dict[replicon]["cons_log_out"]=cons_log_out
-        replicon_dict[replicon]["contig_fasta_out"]=contig_fasta_out
-        replicon_dict[replicon]["l_map_out"]=l_map_out
-        replicon_dict[replicon]["l_map_out_index"]=l_map_out + ".bai"
-        replicon_dict[replicon]["r_map_out"]=r_map_out
-        replicon_dict[replicon]["r_map_out_index"]=r_map_out + ".bai"
-        replicon_dict[replicon]["tmp_cons_left"]=tmp_cons_left
-        replicon_dict[replicon]["tmp_cons_right"]=tmp_cons_right
-        
+                   tmp_left=replicon.stitch_left_fasta,
+                   tmp_right=replicon.stitch_right_fasta)
+    exit()
     # 3: Trim consensus using a map of terminal reads onto extended
     # assembly
     # ----------------------------------------------------------------- 

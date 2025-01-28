@@ -22,6 +22,30 @@ from utils.qc_reports import qc_map_illumina
 from utils.cmd_tools import map_and_sort_illumina, generate_consensus_mafft, map_and_sort_illumina_cons
 from utils.map_tools import trim_by_map_illumina
 
+# Class 
+# Replicon class
+#from dataclasses import dataclass
+
+class Replicon:
+    def __init__(self, name: str):
+        self.name = name
+    
+    # bam_file
+        self.org_map = f"{name}_map.bam"
+        self.org_map_index = f"{name}_map.bam.bai"
+        
+        # Filtered files
+        self.left_sam = f"{name}_left.sam"
+        self.left_filt = f"{name}_left_filtered"
+        self.left_filt_sam = f"{name}_left_filtered.sam"
+        self.left_filt_fq = f"{name}_left_filtered.fastq"
+        
+        self.right_sam = f"{name}_right.sam"
+        self.right_filt = f"{name}_right_filtered"
+        self.right_filt_sam = f"{name}_right_filtered.sam"
+        self.right_filt_fq = f"{name}_right_filtered.fastq"
+
+
 ill_tmp_files = ["terminal_left_reads_1.fastq",
                  "terminal_left_reads_2.fastq",
                  "terminal_right_reads_1.fastq",
@@ -36,7 +60,7 @@ def main(args):
     folder_content = os.listdir()
 
     logging.info(f"Running Telomore: 0.3 in {args.mode} mode")
-
+    
     # Create output folder
     if args.mode=="nanopore":
         telo_folder=ref_name + "_np_telomore"
@@ -55,7 +79,10 @@ def main(args):
          exit()
     logging.info(f"Identified the following tagged linear elements {linear_elements}")
     # Intialize dict for keeping track of files associated with each replicon
-    replicon_dict = {replicon: {"org_file": args.reference} for replicon in linear_elements}
+    # Assuming linear_elements is defined as a list of strings
+
+    # Create a list of replicon instances
+    replicon_list = [Replicon(element) for element in linear_elements]    
 
     # 0: Map reads and extract terminally-extending sequence
     # -----------------------------------------------------------------
@@ -78,35 +105,22 @@ def main(args):
                                output=map_out,
                                threads = args.threads)
     
-    for replicon in replicon_dict.keys():
-         logging.info(f"\tContig {replicon}")
-         left_sam = replicon + "_left.sam"
-         right_sam = replicon + "_right.sam"
-         left_filt = replicon + "_left_filtered"
-         right_filt = replicon + "_right_filtered"
+    for replicon in replicon_list:
+
+         logging.info(f"\tContig {replicon.name}")
 
          get_terminal_reads(sorted_bam_file=map_out,
-                            contig=replicon,
-                            loutput_handle=left_sam,
-                            routput_handle=right_sam)
-         get_left_soft(sam_file = left_sam,
-                       left_out = left_filt,
+                            contig=replicon.name,
+                            loutput_handle=replicon.left_sam,
+                            routput_handle=replicon.right_sam)
+         get_left_soft(sam_file = replicon.left_sam,
+                       left_out = replicon.left_filt,
                        offset=500)
-         get_right_soft(sam_file = right_sam,
-                        contig=replicon,
-                        right_out = right_filt,
+         get_right_soft(sam_file = replicon.right_sam,
+                        contig=replicon.name,
+                        right_out = replicon.right_filt,
                         offset=500)
          
-         # add files to dict to keep track of them
-         replicon_dict[replicon]["left_sam"]=left_sam
-         replicon_dict[replicon]["right_sam"]=right_sam
-         replicon_dict[replicon]["right_filt_sam"]=right_filt + ".sam"
-         replicon_dict[replicon]["left_filt_sam"]=left_filt +".sam"
-         replicon_dict[replicon]["right_filt_fq"]=right_filt + ".fastq"
-         replicon_dict[replicon]["left_filt_fq"]=left_filt +".fastq"
-         replicon_dict[replicon]["org_map"]=map_out
-         replicon_dict[replicon]["org_map_index"]=map_out + ".bai"
-
     # 1: Generate consensus
     # -----------------------------------------------------------------    
     logging.info("Generating consensus")

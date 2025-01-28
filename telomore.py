@@ -30,20 +30,30 @@ class Replicon:
     def __init__(self, name: str):
         self.name = name
     
-    # bam_file
-        self.org_map = f"{name}_map.bam"
-        self.org_map_index = f"{name}_map.bam.bai"
+    # Map files
+        self.org_map = f"{self.name}_map.bam"
+        self.org_map_index = f"{self.name}_map.bam.bai"
         
         # Filtered files
-        self.left_sam = f"{name}_left.sam"
-        self.left_filt = f"{name}_left_filtered"
-        self.left_filt_sam = f"{name}_left_filtered.sam"
-        self.left_filt_fq = f"{name}_left_filtered.fastq"
+        self.left_sam = f"{self.name}_left.sam"
+        self.left_filt = f"{self.name}_left_filtered"
+        self.left_filt_sam = f"{self.name}_left_filtered.sam"
+        self.left_filt_fq = f"{self.name}_left_filtered.fastq"
         
-        self.right_sam = f"{name}_right.sam"
-        self.right_filt = f"{name}_right_filtered"
-        self.right_filt_sam = f"{name}_right_filtered.sam"
-        self.right_filt_fq = f"{name}_right_filtered.fastq"
+        self.right_sam = f"{self.name}_right.sam"
+        self.right_filt = f"{self.name}_right_filtered"
+        self.right_filt_sam = f"{self.name}_right_filtered.sam"
+        self.right_filt_fq = f"{self.name}_right_filtered.fastq"
+    
+    # Consensus files
+        # left
+        self.l_cons_out =f"rev_{self.name}_left_cons.fasta"
+        self.l_cons_final_out = f"{self.name}_left_cons.fasta"
+        self.l_cons_alignment=f"{self.l_cons_out}.aln"
+        self.revcomp_out = f"rev_{self.left_filt_fq}"
+        # right
+        self.r_cons_final_out = f"{self.name}_right_cons.fasta"
+        
 
 
 ill_tmp_files = ["terminal_left_reads_1.fastq",
@@ -82,7 +92,7 @@ def main(args):
     # Assuming linear_elements is defined as a list of strings
 
     # Create a list of replicon instances
-    replicon_list = [Replicon(element) for element in linear_elements]    
+    replicon_list = [Replicon(element) for element in linear_elements]   
 
     # 0: Map reads and extract terminally-extending sequence
     # -----------------------------------------------------------------
@@ -126,63 +136,44 @@ def main(args):
     logging.info("Generating consensus")
 
     # Generate consensus
-    for replicon in replicon_dict.keys():
-        logging.info(f"\tContig {replicon}")
+    for replicon in replicon_list:
+        logging.info(f"\tContig {replicon.name}")
 
         # GENERATE LEFT CONSENSUS
         # To maintain alignment anchor point, the reads are flipped
         # And the resulting consensus must then be flipped again
-        left_filt_reads = replicon_dict[replicon]["left_filt_fq"]
-        revcomp_out = "rev_" + left_filt_reads
-        revcomp_reads(left_filt_reads, revcomp_out)
-
-        l_cons_out ="rev_" + replicon + "_left_cons.fasta"
-        l_cons_final_out = replicon + "_left_cons.fasta"
+        revcomp_reads(reads_in = replicon.left_filt_fq,
+                      reads_out = replicon.revcomp_out)
         
         if args.mode=="nanopore":
                 db_out=ref_name+".db"
-                train_lastDB(args.reference,args.single,db_out,args.threads) # train on entire reference
-                generate_consensus_lamassemble(db_out,revcomp_out,l_cons_out)
-                
-                last_db_ext=[".bck",".des",".par",".prj",".sds",".ssp",".suf",".tis"]
-                count = 0
-                # add all the DBs to the dict
-                for db_ext in last_db_ext:
-                    last_db = "last_db_"+ str(count)
-                    replicon_dict[replicon][last_db]=db_out + db_ext
-                    count+=1
+                train_lastDB(args.reference,
+                             args.single,
+                             db_out,
+                             args.threads) # train on entire reference
+                generate_consensus_lamassemble(db_name = db_out,
+                                               reads = replicon.revcomp_out,
+                                               output = replicon.l_cons_out)
 
         elif args.mode=="illumina":
-                generate_consensus_mafft(revcomp_out,l_cons_out)
-        print(replicon_dict)
+                generate_consensus_mafft(reads = replicon.revcomp_out,
+                                         output = replicon.l_cons_out)
         # flip consensus to match original orientation
-        revcomp(l_cons_out,l_cons_final_out)
-
-        # add files to dict
-        replicon_dict[replicon]["revcomp_out"]=revcomp_out
-        replicon_dict[replicon]["l_cons_out"]=l_cons_out
-        replicon_dict[replicon]["l_cons_alignment"]=l_cons_out + ".aln"
-        replicon_dict[replicon]["l_cons_final_out"]=l_cons_final_out
+        revcomp(fasta_in = replicon.l_cons_out,
+                fasta_out = replicon.l_cons_final_out)
 
         # GENERATE RIGHT CONSENSUS
         # The right reads are already oriented with the anchor point
         # left-most and does therefore not need to be flipped
-        right_filt_reads = replicon_dict[replicon]["right_filt_fq"]
-        r_cons_final_out = replicon + "_right_cons.fasta"
-        
         if args.mode=="nanopore":
                 # A last-db should aldready exist from the left-consensus
                 generate_consensus_lamassemble(db_name = db_out,
-                                               reads = right_filt_reads,
-                                               output = r_cons_final_out)
+                                               reads = replicon.right_filt_fq,
+                                               output = replicon.r_cons_final_out)
         elif args.mode=="illumina":
-                generate_consensus_mafft(reads = right_filt_reads,
-                                         output = r_cons_final_out)
-
-        # add files to dict
-        replicon_dict[replicon]["r_cons_final_out"]=r_cons_final_out
-        replicon_dict[replicon]["r_cons_alignment"]=r_cons_final_out + ".aln"
-    
+                generate_consensus_mafft(reads = replicon.right_filt_fq,
+                                         output = replicon.r_cons_final_out)
+    exit()
     # 2: Extend assembly with consensus by mapping onto chromsome
     # -----------------------------------------------------------------    
     logging.info("Extending assembly")

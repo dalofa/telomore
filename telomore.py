@@ -76,6 +76,11 @@ class Replicon:
         self.trim_map_index = f"{self.trim_map}.bai"
         self.trim_out = f"{self.name}_telomore_extended.fasta"
 
+    # QC_files
+        self.qc_out = f"{self.name}_telomore_QC.bam"
+        self.qc_out_index = f"{self.qc_out}.bai"
+        
+        
 ill_tmp_files = ["terminal_left_reads_1.fastq",
                  "terminal_left_reads_2.fastq",
                  "terminal_right_reads_1.fastq",
@@ -296,11 +301,11 @@ def main(args):
               
         elif args.mode=="illumina":
             qc_map_illumina(extended_assembly=replicon.stitch_out,
-                             left_sam=org_left_map,
-                             right_sam=org_right_map,
+                             left_sam=replicon.left_sam,
+                             right_sam=replicon.right_sam,
                              fastq_in1=args.read1,
                              fastq_in2=args.read2,
-                             output_handle=trim_map,
+                             output_handle=replicon.trim_map,
                              t=args.threads)
             trim_by_map_illumina(untrimmed_assembly=replicon.stitch_out,
                                  sorted_bam_file = replicon.trim_map,
@@ -309,45 +314,42 @@ def main(args):
                                  cov_thres=1,
                                  ratio_thres=0.7,
                                  qual_thres=30)
-
-    exit()
     # 4: Generate QC files
     # -----------------------------------------------------------------
     logging.info("Generating QC map and finalizing result-log")
 
-    for replicon in replicon_dict.keys():
-        logging.info(f"\tContig {replicon}")
-        qc_out = replicon + "_telomore_QC.bam"
-        tmp_cons_left = replicon_dict[replicon]["tmp_cons_left"]
-        tmp_cons_right = replicon_dict[replicon]["tmp_cons_right"]
+    for replicon in replicon_list:
+        logging.info(f"\tContig {replicon.name}")
+        # qc_out = replicon + "_telomore_QC.bam"
+        # tmp_cons_left = replicon_dict[replicon]["tmp_cons_left"]
+        # tmp_cons_right = replicon_dict[replicon]["tmp_cons_right"]
 
-        org_left_map = replicon_dict[replicon]["left_sam"]
-        org_right_map = replicon_dict[replicon]["right_sam"]
+        # org_left_map = replicon_dict[replicon]["left_sam"]
+        # org_right_map = replicon_dict[replicon]["right_sam"]
         
-        final_assembly = replicon_dict[replicon]["final_assembly"]
-        cons_log_out = replicon_dict[replicon]["cons_log_out"]
+        # final_assembly = replicon_dict[replicon]["final_assembly"]
+        # cons_log_out = replicon_dict[replicon]["cons_log_out"]
 
         if args.mode=="nanopore":
-            qc_map(extended_assembly=final_assembly,
-                            left=org_left_map,
-                            right=org_right_map,
-                            output_handle=qc_out,
+            qc_map(extended_assembly=replicon.trim_out,
+                            left=replicon.left_sam,
+                            right=replicon.right_sam,
+                            output_handle=replicon.qc_out,
                             t=args.threads)
         if args.mode=="illumina":
-            qc_map_illumina(extended_assembly=final_assembly,
-                             left_sam=org_left_map,
-                             right_sam=org_right_map,
+            qc_map_illumina(extended_assembly=replicon.trim_out,
+                             left_sam=replicon.left_sam,
+                             right_sam=replicon.right_sam,
                              fastq_in1=args.read1,
                              fastq_in2=args.read2,
-                             output_handle=qc_out,
+                             output_handle=replicon.qc_out,
                              t=args.threads)
             
         finalize_log(log = cons_log_out,
-                     right_fasta = tmp_cons_right,
-                     left_fasta = tmp_cons_left)
-        # add to dict
-        replicon_dict[replicon]["qc_out"]=qc_out
-        replicon_dict[replicon]["qc_out_index"]=qc_out + ".bai"
+                     right_fasta = replicon.stitch_right_fasta,
+                     left_fasta = replicon.stitch_left_fasta)
+    
+    exit()
         
     # 5: Clean-up
     # -----------------------------------------------------------------

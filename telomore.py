@@ -284,40 +284,6 @@ def main(args):
         # remove map
         os.remove(map_out) # map
         os.remove(f"{map_out}.bai") # index
-        
-    # for replicon, replicon_feat in replicon_dict.items():
-    #     keys_to_save = ["final_assembly",
-    #     "cons_log_out",
-    #     "qc_out",
-    #     "qc_out_index"]
-    #     input_files = ["org_file"]
-
-    #     # Save and move result files
-    #     for key in replicon_feat.keys():
-    #         # Save input files and move result-files
-    #         if key in input_files:
-    #              continue
-    #         elif key in keys_to_save:
-    #             file_path = replicon_dict[replicon][key]
-    #             shutil.move(src = file_path,
-    #                         dst = os.path.join(telo_folder,file_path))
-                
-    #         # Don't delete any files args.keeps is false
-    #         elif args.keep==True:
-    #              continue  
-    #         # Delete tmp-files
-    #         elif "org_map" in key: # the original map can only be removed once
-    #             file_path = replicon_dict[replicon][key]
-    #             if os.path.isfile(file_path):
-    #                 os.remove(file_path)
-    #         elif "last_db" in key: # can only remove last_db once
-    #             file_path = replicon_dict[replicon][key]
-    #             if os.path.isfile(file_path):
-    #                 os.remove(file_path)
-    #         else:
-    #             file_path = replicon_dict[replicon][key]
-    #             if os.path.isfile(file_path):
-    #                 os.remove(file_path)
 
     logging.info(f"Output files moved to {telo_folder}")
 

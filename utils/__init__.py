@@ -4,4 +4,4 @@ from .fasta_tools import *
 from .map_tools import *
 from .qc_reports import *
 from .arg_parser import *
-from . replicon_class import *
+from .classes_and_small_func import *

@@ -1,6 +1,9 @@
 """Class for handling files related to each replicon in a file"""
 import os
 import shutil
+from git import Repo
+
+
 # Class 
 # Replicon class
 class Replicon:
@@ -109,3 +112,10 @@ class Replicon:
         elif mode=="illumina":
             shutil.move(src=self.cons_log_ill_out,
             dst=os.path.join(folder,self.cons_log_ill_out))
+            
+            
+def get_git_commit_hash():
+    basedir = os.path.dirname(os.path.abspath(__file__))
+    repo = Repo(basedir,search_parent_directories=True)
+    
+    return repo.git.rev_parse("--short", "HEAD")

@@ -24,8 +24,6 @@ from utils.map_tools import trim_by_map_illumina
 
 # Class 
 # Replicon class
-#from dataclasses import dataclass
-
 class Replicon:
     def __init__(self, name: str, org_fasta):
         self.name = name
@@ -54,9 +52,13 @@ class Replicon:
         self.revcomp_out = f"rev_{self.left_filt_fq}"
         # right
         self.r_cons_final_out = f"{self.name}_right_cons.fasta"
+        self.r_cons_alignment=f"{self.r_cons_final_out}.aln"
         
     # Extension files
         self.contig_fasta = f"{name}.fasta"
+        
+        self.cons_log_np_out= f"{self.name}_telomore_ext_np.log"
+        self.cons_log_ill_out = f"{self.name}_telomore_ill_ext.log"
         
         # Truncated contig which discard alternative mapping points
         self.trunc_left_fasta = f"{self.name}_trunc_left.fa"
@@ -65,6 +67,8 @@ class Replicon:
         # Maps on trunc fasta
         self.l_map_out = f"{self.name}_left_map.bam"
         self.r_map_out = f"{self.name}_right_map.bam"
+        self.l_map_out_index = f"{self.l_map_out}.bai"
+        self.r_map_out_index = f"{self.r_map_out}.bai"
         
         # Extended assembly
         self.stitch_out = f"{self.name}_telomore_untrimmed.fasta"
@@ -79,15 +83,54 @@ class Replicon:
     # QC_files
         self.qc_out = f"{self.name}_telomore_QC.bam"
         self.qc_out_index = f"{self.qc_out}.bai"
+    
+    def cleanup_tmp_files(self):    
+        tmp_files=[self.org_map,
+                   self.org_map_index,
+                   self.left_sam,
+                   self.left_filt_sam,
+                   self.left_filt_fq,
+                   self.right_sam,
+                   self.right_filt_sam,
+                   self.right_filt_fq,
+                   self.l_cons_out,
+                   self.l_cons_final_out,
+                   self.l_cons_alignment,
+                   self.revcomp_out,
+                   self.r_cons_final_out,
+                   self.r_cons_alignment,
+                   self.contig_fasta,
+                   self.trunc_left_fasta,
+                   self.trunc_right_fasta,
+                   self.l_map_out,
+                   self.l_map_out_index,
+                   self.r_map_out_index,
+                   self.r_map_out,
+                   self.stitch_left_fasta,
+                   self.stitch_right_fasta,
+                   self.trim_map,
+                   self.trim_map_index
+        ]
+        for path in tmp_files:
+            if os.path.exists(path):
+                os.remove(path)
+    
+    def mv_files(self,folder,mode):
+        keep_files= [self.stitch_out,
+                     self.trim_out,
+                     self.qc_out,
+                     self.qc_out_index]
         
+        for file in keep_files:
+            shutil.move(src=file,
+            dst = os.path.join(folder,file))
+        if mode=="nanopore":
+            shutil.move(src=self.cons_log_np_out,
+                        dst=os.path.join(folder,self.cons_log_np_out))
+        elif mode=="illumina":
+            shutil.move(src=self.cons_log_ill_out,
+            dst=os.path.join(folder,self.cons_log_ill_out))
         
-ill_tmp_files = ["terminal_left_reads_1.fastq",
-                 "terminal_left_reads_2.fastq",
-                 "terminal_right_reads_1.fastq",
-                 "terminal_right_reads_2.fastq",
-                 "all_terminal_reads_1.fastq",
-                 "all_terminal_reads_2.fastq"]
-NP_tmp_files = ["all_terminal_reads.fastq"]
 
 def main(args):
     # Generate a filename stripped of the .fasta/.fna/.fa extension
@@ -256,9 +299,9 @@ def main(args):
         
         # Extend the assembly using the map
         if args.mode=="nanopore":
-                cons_log_out= replicon.name + "_telomore_ext_np.log"
+            cons_log_out= replicon.cons_log_np_out
         elif args.mode=="illumina":
-            cons_log_out = replicon.name + "_telomore_ill_ext.log"
+            cons_log_out= replicon.cons_log_ill_out
         
         stich_telo(ref = replicon.contig_fasta,
                    left_map = replicon.l_map_out,
@@ -275,15 +318,6 @@ def main(args):
     
     for replicon in replicon_list:
         logging.info(f"\tContig {replicon.name}")
-        # untrimmed_fasta = replicon_dict[replicon]["stitch_out"]
-        # cons_log_out = replicon_dict[replicon]["cons_log_out"]
-        
-        # org_left_map = replicon_dict[replicon]["left_sam"]
-        # org_right_map = replicon_dict[replicon]["right_sam"]
-        
-
-        # trim_map = replicon + "_telomore_untrimmed.bam"
-        # trim_out = replicon + "_telomore_extended.fasta"
 
         if args.mode=="nanopore":
             qc_map(extended_assembly= replicon.stitch_out,
@@ -320,15 +354,6 @@ def main(args):
 
     for replicon in replicon_list:
         logging.info(f"\tContig {replicon.name}")
-        # qc_out = replicon + "_telomore_QC.bam"
-        # tmp_cons_left = replicon_dict[replicon]["tmp_cons_left"]
-        # tmp_cons_right = replicon_dict[replicon]["tmp_cons_right"]
-
-        # org_left_map = replicon_dict[replicon]["left_sam"]
-        # org_right_map = replicon_dict[replicon]["right_sam"]
-        
-        # final_assembly = replicon_dict[replicon]["final_assembly"]
-        # cons_log_out = replicon_dict[replicon]["cons_log_out"]
 
         if args.mode=="nanopore":
             qc_map(extended_assembly=replicon.trim_out,
@@ -362,47 +387,60 @@ def main(args):
     shutil.move(src=finished_fasta,
                 dst = os.path.join(telo_folder,finished_fasta))
     
-    # rm temp files
-    if args.mode=="nanopore":
-        for file in NP_tmp_files:
-            os.remove(file)
-    elif args.mode=="illumina":
-        for file in ill_tmp_files:
-            os.remove(file)
-            
-    for replicon, replicon_feat in replicon_dict.items():
-        keys_to_save = ["final_assembly",
-        "cons_log_out",
-        "qc_out",
-        "qc_out_index"]
-        input_files = ["org_file"]
+    
+    for replicon in replicon_list:
+        replicon.mv_files(telo_folder,args.mode)
+    
+    if args.keep==False:
+        
+        # rmv tmp files
+        for replicon in replicon_list:
+            replicon.cleanup_tmp_files()     
+        
+        # rmv lastdb
+        last_db_ext=[".bck",".des",".par",".prj",".sds",".ssp",".suf",".tis"]
+        
+        for ext in last_db_ext:
+            db_file = f"{db_out}{ext}"
+            os.remove(db_file)
+        
+        # remove map
+        os.remove(map_out) # map
+        os.remove(f"{map_out}.bai") # index
+        
+    # for replicon, replicon_feat in replicon_dict.items():
+    #     keys_to_save = ["final_assembly",
+    #     "cons_log_out",
+    #     "qc_out",
+    #     "qc_out_index"]
+    #     input_files = ["org_file"]
 
-        # Save and move result files
-        for key in replicon_feat.keys():
-            # Save input files and move result-files
-            if key in input_files:
-                 continue
-            elif key in keys_to_save:
-                file_path = replicon_dict[replicon][key]
-                shutil.move(src = file_path,
-                            dst = os.path.join(telo_folder,file_path))
+    #     # Save and move result files
+    #     for key in replicon_feat.keys():
+    #         # Save input files and move result-files
+    #         if key in input_files:
+    #              continue
+    #         elif key in keys_to_save:
+    #             file_path = replicon_dict[replicon][key]
+    #             shutil.move(src = file_path,
+    #                         dst = os.path.join(telo_folder,file_path))
                 
-            # Don't delete any files args.keeps is false
-            elif args.keep==True:
-                 continue  
-            # Delete tmp-files
-            elif "org_map" in key: # the original map can only be removed once
-                file_path = replicon_dict[replicon][key]
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-            elif "last_db" in key: # can only remove last_db once
-                file_path = replicon_dict[replicon][key]
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-            else:
-                file_path = replicon_dict[replicon][key]
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
+    #         # Don't delete any files args.keeps is false
+    #         elif args.keep==True:
+    #              continue  
+    #         # Delete tmp-files
+    #         elif "org_map" in key: # the original map can only be removed once
+    #             file_path = replicon_dict[replicon][key]
+    #             if os.path.isfile(file_path):
+    #                 os.remove(file_path)
+    #         elif "last_db" in key: # can only remove last_db once
+    #             file_path = replicon_dict[replicon][key]
+    #             if os.path.isfile(file_path):
+    #                 os.remove(file_path)
+    #         else:
+    #             file_path = replicon_dict[replicon][key]
+    #             if os.path.isfile(file_path):
+    #                 os.remove(file_path)
 
     logging.info(f"Output files moved to {telo_folder}")
 

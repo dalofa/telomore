@@ -7,20 +7,7 @@ import os
 import shutil
 import logging
 import traceback
-from utils.arg_parser import get_args, setup_logging
-from utils.fasta_tools import strip_fasta,get_fasta_length,get_linear_elements, extract_contig, build_extended_fasta
-from utils.map_tools import get_terminal_reads, get_left_soft, get_right_soft, revcomp_reads, revcomp, stich_telo
-from utils.qc_reports import finalize_log
-
-# Nanopore-sepcific imports
-from utils.cmd_tools import map_and_sort, generate_consensus_lamassemble, train_lastDB
-from utils.qc_reports import qc_map
-from utils.map_tools import trim_by_map
-
-# Illumina-specific imports
-from utils.qc_reports import qc_map_illumina
-from utils.cmd_tools import map_and_sort_illumina, generate_consensus_mafft, map_and_sort_illumina_cons
-from utils.map_tools import trim_by_map_illumina
+from utils import *
 
 # Class 
 # Replicon class

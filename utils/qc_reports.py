@@ -11,44 +11,66 @@ from Bio.SeqRecord import SeqRecord
 import csv
 import pysam
 import logging
+import tempfile
+import os
 
-def qc_map(extended_assembly,left,right,output_handle,t=1):
-    '''Collect terminal reads previously identified and maps them against the extended assembly'''
-    with open("all_terminal_reads.fastq", "w") as fastqfile:
-        sam_to_fastq(left, fastqfile)
-        sam_to_fastq(right, fastqfile)
-    dereplicate_fastq("all_terminal_reads.fastq","all_terminal_reads.fastq")
-    map_and_sort(extended_assembly,"all_terminal_reads.fastq",output_handle,t)
+
+def qc_map(extended_assembly,left,right,output_handle,t=1) -> None:
+    '''Collect terminal reads previously identified
+    and maps them against the extended assembly'''
+    # The file has to be mode=w to create the correct type of object
+    # for sam_to_fastq
+    with tempfile.NamedTemporaryFile(suffix=".fastq",
+                                     delete=False,
+                                     mode="w") as temp_fastq:
+        temp_fastq_path = temp_fastq.name
+        sam_to_fastq(left, temp_fastq)
+        sam_to_fastq(right, temp_fastq)
+    dereplicate_fastq(fastq_in = temp_fastq_path,
+                      fastq_out = temp_fastq_path)
+    map_and_sort(extended_assembly,temp_fastq_path,output_handle,t)
+    os.remove(temp_fastq_path)
 
 def qc_map_illumina(extended_assembly,left_sam,right_sam,fastq_in1,fastq_in2,output_handle,t=1):
     '''Collect terminal reads previously identified and maps them against extended assembly.'''
     # get left paired read
-    sam_to_readpair(sam_in=left_sam,
+    with tempfile.TemporaryDirectory() as temp_dir: # ensures files are deleted after usage
+        # Create multiple temporary files in the temporary directory
+        l_tmp1 = os.path.join(temp_dir, "terminal_left_reads_1.fastq")
+        l_tmp2 = os.path.join(temp_dir, "terminal_left_reads_2.fastq")
+        r_tmp1 = os.path.join(temp_dir, "terminal_right_reads_1.fastq")
+        r_tmp2 = os.path.join(temp_dir, "terminal_right_reads_2.fastq")
+        a_tmp1 = os.path.join(temp_dir, "all_terminal_reads_1.fastq")
+        a_tmp2 = os.path.join(temp_dir, "all_terminal_reads_2.fastq")
+        
+        sam_to_readpair(sam_in=left_sam,
+                        fastq_in1=fastq_in1,
+                        fastq_in2=fastq_in2,
+                        fastq_out1=l_tmp1,
+                        fastq_out2=l_tmp2)
+        
+        # get right paired read
+
+        sam_to_readpair(sam_in=right_sam,
                     fastq_in1=fastq_in1,
                     fastq_in2=fastq_in2,
-                    fastq_out1="terminal_left_reads_1.fastq",
-                    fastq_out2="terminal_left_reads_2.fastq")
-    
-    # get right paired read
-    sam_to_readpair(sam_in=right_sam,
-                fastq_in1=fastq_in1,
-                fastq_in2=fastq_in2,
-                fastq_out1="terminal_right_reads_1.fastq",
-                fastq_out2="terminal_right_reads_2.fastq")
-    
-    # collect the paired read files:
-    cat_and_derep_fastq(fastq_in1="terminal_left_reads_1.fastq",
-                        fastq_in2="terminal_right_reads_1.fastq",
-                        fastq_out="all_terminal_reads_1.fastq")
-    
-    cat_and_derep_fastq(fastq_in1="terminal_left_reads_2.fastq",
-                        fastq_in2="terminal_right_reads_2.fastq",
-                        fastq_out="all_terminal_reads_2.fastq")
-    map_and_sort_illumina(reference=extended_assembly,
-                          read1="all_terminal_reads_1.fastq",
-                          read2="all_terminal_reads_2.fastq",
-                          output=output_handle,
-                          threads=t)
+                    fastq_out1=r_tmp1,
+                    fastq_out2=r_tmp2)
+        
+        # collect the paired read files:
+        cat_and_derep_fastq(fastq_in1=l_tmp1,
+                            fastq_in2=r_tmp1,
+                            fastq_out=a_tmp1)
+        
+        cat_and_derep_fastq(fastq_in1=l_tmp2,
+                            fastq_in2=r_tmp2,
+                            fastq_out=a_tmp2)
+        
+        map_and_sort_illumina(reference=extended_assembly,
+                            read1=a_tmp1,
+                            read2=a_tmp2,
+                            output=output_handle,
+                            threads=t)
 
 def cons_genome_map(left_cons,right_cons,polished_genome,output_handle,t=1):
     '''Collect consensus and maps them against the polished genome'''

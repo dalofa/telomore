@@ -362,6 +362,7 @@ def main(args):
     shutil.move(src=finished_fasta,
                 dst = os.path.join(telo_folder,finished_fasta))
     
+    # rm temp files
     if args.mode=="nanopore":
         for file in NP_tmp_files:
             os.remove(file)

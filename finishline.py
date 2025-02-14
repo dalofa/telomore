@@ -2,6 +2,7 @@
 Telomore: Script for finding and extracting telomeres from nanopore or illumina reads, which have been 
 excluded from a de novo assembly.
 """
+
 # imports
 import os
 import shutil
@@ -14,7 +15,7 @@ def main(args):
     ref_name = os.path.splitext(os.path.basename(args.reference))[0]
     folder_content = os.listdir()
 
-    logging.info(f"Running Telomore: 0.4 [{get_git_commit_hash()}] in {args.mode} mode")
+    logging.info(f"Running Finishline: 0.4 [{get_git_commit_hash()}] in {args.mode} mode")
     
     # Create output folder
     if args.mode=="nanopore":
@@ -277,9 +278,10 @@ def main(args):
         # rmv lastdb
         last_db_ext=[".bck",".des",".par",".prj",".sds",".ssp",".suf",".tis"]
         
-        for ext in last_db_ext:
-            db_file = f"{db_out}{ext}"
-            os.remove(db_file)
+        if args.mode=="nanopore":
+            for ext in last_db_ext:
+                db_file = f"{db_out}{ext}"
+                os.remove(db_file)
         
         # remove map
         os.remove(map_out) # map

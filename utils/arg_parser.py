@@ -21,7 +21,7 @@ def get_args():
         required=True, 
         help="""Choose which mode to run.
         --mode=nanopore takes a single read-file, specified using --single
-        --mode=illumina-mode takes two read-files with one mate-pair in each, specified using --read1 and --read2"""
+        --mode=illumina-mode takes two read-files specified using --read1 and --read2"""
     )
     parser.add_argument(
         "--single", 
@@ -31,12 +31,12 @@ def get_args():
     parser.add_argument(
         "--read1", 
         type=str,
-        help="Path to gzipped illumina mate1 fastq-file",
+        help="Path to gzipped illumina read1 fastq-file",
     )
     parser.add_argument(
         "--read2", 
         type=str,
-        help="Path to gzipped illumina mate2 fastq-file",
+        help="Path to gzipped illumina read2 fastq-file",
     )
     parser.add_argument(
         "-r", "--reference", 

@@ -19,10 +19,10 @@ options:
   -m {nanopore,illumina}, --mode {nanopore,illumina}
                         Choose which mode to run.
                                 --mode=nanopore takes a single read-file, specified using --single
-                                --mode=illumina-mode takes two read-files with one mate-pair in each, specified using --read1 and --read2
+                                --mode=illumina-mode takes two read-files, specified using --read1 and --read2
   --single SINGLE       Path to a single gzipped nanopore fastq-file
-  --read1 READ1         Path to gzipped illumina mate1 fastq-file
-  --read2 READ2         Path to gzipped illumina mate2 fastq-file
+  --read1 READ1         Path to gzipped illumina read1 fastq-file
+  --read2 READ2         Path to gzipped illumina read2 fastq-file
   -r REFERENCE, --reference REFERENCE
                         Path to reference file (.fasta, .fna, or .fa)
   -t THREADS, --threads THREADS
@@ -34,18 +34,18 @@ options:
 
 ## Process overview
 The process is as follows:
+1. **Map Reads:**
+Reads are mapped against all contigs in a reference using either minimap2 or Bowtie2.
+2. **Extract Extending Reads**
+Extending reads that are mapped to the ends of linear contigs are extracted.
+3. **Build Consensus**
+The terminal extending reads from each end is used to construct a consensus using either lamassemble [] or mafft [] and EMBOSS cons [].
+4. **Align and Attach consensus**
+The consensus for each end is aligned to the reference and used to extend it.
+5. **Trim Extended Replicon**
+In a final step, all terminally mapped reads are mapped to the new extended reference and used to trim away spurious sequence, based on read-support.
 
-0. **Identify the chromosome:**
-The longest contig is extracted and assumed to be the chromosome.
-1. **Map reads to chromosome**
-Nanopore reads are mapped to the chromosome using minimap2, while Illumina reads are mapped using Bowtie2. Terminal extending reads are extracted from this maps.
-2. **Generate consensus:**
-A consensus are constructed for each terminus of the genome using the extending reads. This is done using lamassemble for nanopore reads or mafft for illumina reads.
-3. **Extend assembly with consensus:**
-Each terminus of the chromsome is extended with corresponding consensus by mapping this consensus onto the chromsome.
-4. **Trimming of newly attached sequence:**
-The previously identified terminal reads are mapped to extended assembly and the sequence is trimmed based on read-support as specified in the result log.
-5. **QC and clean-up:**
+Output:
 A number of QC-maps are generated and moved to a folder called *_seqtype_QC, where * is the basename of the reference supplied.
 In here three bam files can be found together with their references:
 - 1: The terminal reads mapped against the genome+full consensus. These are denoted with *.nontrimmed*

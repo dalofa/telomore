@@ -15,7 +15,7 @@ def main(args):
     ref_name = os.path.splitext(os.path.basename(args.reference))[0]
     folder_content = os.listdir()
 
-    logging.info(f"Running Finishline: 0.4 [{get_git_commit_hash()}] in {args.mode} mode")
+    logging.info(f"Running Telomore: 0.4 [{get_git_commit_hash()}] in {args.mode} mode")
     
     # Create output folder
     if args.mode=="nanopore":

@@ -15,7 +15,7 @@ import tempfile
 import os
 
 
-def qc_map(extended_assembly,left,right,output_handle,t=1) -> None:
+def qc_map(extended_assembly:str,left:str,right:str,output_handle:str,t=1) -> None:
     '''Collect terminal reads previously identified
     and maps them against the extended assembly'''
     # The file has to be mode=w to create the correct type of object
@@ -31,7 +31,7 @@ def qc_map(extended_assembly,left,right,output_handle,t=1) -> None:
     map_and_sort(extended_assembly,temp_fastq_path,output_handle,t)
     os.remove(temp_fastq_path)
 
-def qc_map_illumina(extended_assembly,left_sam,right_sam,fastq_in1,fastq_in2,output_handle,t=1):
+def qc_map_illumina(extended_assembly:str,left_sam:str,right_sam:str,fastq_in1:str,fastq_in2:str,output_handle:str,t=1) -> None:
     '''Collect terminal reads previously identified and maps them against extended assembly.'''
     # get left paired read
     with tempfile.TemporaryDirectory() as temp_dir: # ensures files are deleted after usage
@@ -72,17 +72,17 @@ def qc_map_illumina(extended_assembly,left_sam,right_sam,fastq_in1,fastq_in2,out
                             output=output_handle,
                             threads=t)
 
-def cons_genome_map(left_cons,right_cons,polished_genome,output_handle,t=1):
+def cons_genome_map(left_cons:str,right_cons:str,polished_genome:str,output_handle:str,t=1) -> None:
     '''Collect consensus and maps them against the polished genome'''
     merge_fasta(left_cons,right_cons,"all_cons.fasta")
     map_and_sort(polished_genome,"all_cons.fasta",output_handle,t)
 
-def cons_cons_map(left_cons,right_cons,output_handle,t=1):
+def cons_cons_map(left_cons:str,right_cons:str,output_handle:str,t:int=1) -> None:
     '''Collect consensus and maps them against each other'''
     map_and_sort(left_cons,right_cons,output_handle,t)
     
-def cons_length(cons_file,output_handle,offset=100):
-    '''Prints the length of fasta files'''
+def cons_length(cons_file:str,output_handle:str,offset:int=100) -> None:
+    '''Write the length of the consensus sequences to a tsv file.'''
     cons_file = SeqIO.parse(cons_file, "fasta")
     header = ["seq_id","end_cons","full_cons"]
     tsv_log=[]
@@ -98,10 +98,11 @@ def cons_length(cons_file,output_handle,offset=100):
         writer = csv.writer(tsv_file,delimiter='\t')
         writer.writerows(tsv_log)
 
-def map_to_depth(bam_file, output_handle):
+def map_to_depth(bam_file:str, output_handle:str) -> None:
+    """Map the depth of coverage to a bam file and write it to a file."""
     pysam.depth("-aa",bam_file,"-o",output_handle)
 
-def finalize_log(log,right_fasta,left_fasta):
+def finalize_log(log:str,right_fasta:str,left_fasta:str) -> None:
     """Function to finalize the log by prepending the final information about consensus added."""
     file = open(log)
     log_cont = file.readlines()
@@ -148,13 +149,5 @@ def finalize_log(log,right_fasta,left_fasta):
     file.write("==============================================================================\n")
     file.close()
     
-    #with open(filename, 'r+') as f:
-    #    content = f.read()
-    #    f.seek(0, 0)
-    #    f.write(line.rstrip('\r\n') + '\n' + content)
 
 
-if __name__ == '__main__':
-   print("testing qc_report functions")
-   #cons_length("all_cons.fasta","length.tsv")
-   map_to_depth("np.chr.NBC_00753.fna.alignment.sam.sort.bam","teste_dreng.txt")

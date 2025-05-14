@@ -7,7 +7,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import logging
 
-def get_linear_elements(fasta_file):
+def get_linear_elements(fasta_file:str) -> list:
     """Returns a list of contigs that have linear in their header description"""
 
     linear_list = []
@@ -16,8 +16,8 @@ def get_linear_elements(fasta_file):
             linear_list.append(record.id)
     return linear_list
     
-def extract_contig(fasta_in,contig_name,fasta_out):
-    """Returns a fasta file of a specified contig"""
+def extract_contig(fasta_in:str,contig_name:str,fasta_out:str):
+    """Writes a fasta file of a specified contig"""
     for record in SeqIO.parse(fasta_in, "fasta"):
         if record.id==contig_name:
             contig = record
@@ -26,18 +26,15 @@ def extract_contig(fasta_in,contig_name,fasta_out):
                             handle= fasta_out,
                             format="fasta")
 
-        
-
-
-def get_fasta_length(fasta_file,contig_name):
+def get_fasta_length(fasta_file:str,contig_name:str) -> int:
     """Returns the length of a fasta record specified by the user"""
     for record in SeqIO.parse(fasta_file, "fasta"):
         if record.id==contig_name:
             length = len(record.seq)
             return(length)
 
-def dereplicate_fastq(fastq_in, fastq_out):
-    """Dereplicates a fastq file by read-name and sequence"""
+def dereplicate_fastq(fastq_in:str, fastq_out:str) -> None:
+    """Dereplicates a fastq file by read-name and sequence."""
     seen_reads = set()  # To store unique read identifiers and sequences
     unique_reads = []
 
@@ -53,7 +50,7 @@ def dereplicate_fastq(fastq_in, fastq_out):
     with open(fastq_out, "w") as outfile:
         SeqIO.write(unique_reads, outfile, "fastq")
 
-def cat_and_derep_fastq(fastq_in1,fastq_in2,fastq_out):
+def cat_and_derep_fastq(fastq_in1:str,fastq_in2:str,fastq_out:str) -> None:
     """Concatanates two fastq-files and dereplicates it"""
     with open(fastq_out, "w") as outfile:
     
@@ -70,8 +67,8 @@ def cat_and_derep_fastq(fastq_in1,fastq_in2,fastq_out):
                       fastq_out=fastq_out)
 
 
-def get_chromosome(fasta, output_handle):
-    """Returns the longest contig in a fasta-file"""
+def get_chromosome(fasta:str, output_handle:str) -> None:
+    """Writes the longest contig to a fasta-file"""
 
     # test if there are a single entry in the fasta file
     try: # there is a single entry
@@ -97,8 +94,8 @@ def get_chromosome(fasta, output_handle):
         logging.info(message)
 
 
-def attach_seq(left,right,chromsome,output_name,offset=0):
-    """Attaches a left and right fasta sequence to a cromosome"""
+def attach_seq(left:str,right:str,chromsome:str,output_name:str,offset: int=0) -> None:
+    """Attaches a left and right fasta sequence to an assembly sequence and writes it to a new file."""
 
     l = SeqIO.read(left,"fasta")
     r = SeqIO.read(right,"fasta")
@@ -117,7 +114,7 @@ def attach_seq(left,right,chromsome,output_name,offset=0):
     SeqIO.write(att_genome,output_name, "fasta")
 
 # A function to merge fasta files
-def merge_fasta(input_file1, input_file2, output_file):
+def merge_fasta(input_file1:str, input_file2:str, output_file:str) -> None:
     """Merges two fasta files into one"""
     # Read sequences from input_file1 and input_file2
     sequences1 = list(SeqIO.parse(input_file1, "fasta"))
@@ -130,10 +127,8 @@ def merge_fasta(input_file1, input_file2, output_file):
     with open(output_file, "w") as output_handle:
         SeqIO.write(merged_sequences, output_handle, "fasta")
 
-### ADD OPTION TO TRIM FROM START OR END
-
-def trim_to_cons(input_seq,num_base,output_handle):
-    """Trims fasta file to the first x_num of bases in it"""
+def trim_to_cons(input_seq:str,num_base:int,output_handle:str) -> None:
+    """Trims fasta file to the first x_num of bases in it and writes it to a new file."""
     
     # load file
     with open(input_seq) as fasta_file:
@@ -158,8 +153,8 @@ def trim_to_cons(input_seq,num_base,output_handle):
 
 
 
-def strip_fasta(input_file:str, output_file:str, x:int, remove_from:str='start'):
-    """Strip FASTA-file of the first of last x-bases."""
+def strip_fasta(input_file:str, output_file:str, x:int, remove_from:str='start') -> None:
+    """Strip fasta-file of the first of last x-bases."""
     
     assert type(x)==int
     
@@ -179,8 +174,8 @@ def strip_fasta(input_file:str, output_file:str, x:int, remove_from:str='start')
     SeqIO.write(records, output_file, "fasta")
 
 
-def build_extended_fasta(org_fasta:str, linear_elements: list, replicon_list:list,output_handle:str):
-    """Rejoins extended contigs in the order of the original fasta"""
+def build_extended_fasta(org_fasta:str, linear_elements: list, replicon_list:list,output_handle:str) -> None:
+    """Rejoins extended contigs in the order of the original fasta and writes it to a new file."""
     
     seq_rec_list = [] # list of seqrecord to write to newfile
 
@@ -198,9 +193,3 @@ def build_extended_fasta(org_fasta:str, linear_elements: list, replicon_list:lis
     SeqIO.write(sequences=seq_rec_list,
                 handle=output_handle,
                 format="fasta")
-
-
-
-if __name__ == '__main__':
-    #trim_to_cons("3_cons.fasta",120,"ot.boi")
-    print(get_linear_elements("test_files/test.fasta"))

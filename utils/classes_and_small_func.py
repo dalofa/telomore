@@ -1,4 +1,6 @@
-"""Class for handling files related to each replicon in a file"""
+"""
+Class for handling files related to each replicon in a file
+"""
 import os
 import shutil
 from git import Repo
@@ -7,6 +9,7 @@ from git import Repo
 # Class 
 # Replicon class
 class Replicon:
+    """Class to handle files related to each replicon in a file"""
     def __init__(self, name: str, org_fasta):
         self.name = name
         self.org_fasta = org_fasta
@@ -114,7 +117,8 @@ class Replicon:
             dst=os.path.join(folder,self.cons_log_ill_out))
             
             
-def get_git_commit_hash():
+def get_git_commit_hash() -> str:
+    """Get the short git commit hash of the current repository."""
     basedir = os.path.dirname(os.path.abspath(__file__))
     repo = Repo(basedir,search_parent_directories=True)
     

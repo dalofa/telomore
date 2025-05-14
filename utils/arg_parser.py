@@ -1,17 +1,40 @@
-# arg_parser.py
+"""
+Argument parser for the telomore tool.
+"""
 
 import argparse
+from argparse import Namespace
 import logging
 import sys
 
-def get_args():
+def get_args() -> Namespace:
     """Handles parsing of arguments"""
     parser = argparse.ArgumentParser(
-        description= """Recover potential telomeric sequences from Streptomyces genomes using Oxford Nanopore or illumina sequence data.
-- INPUT: Takes a fasta file with linear contigs tagged "linear" in the fasta_header and sequencing reads in fq.gz format.
-- OUTPUT: An extended assembly is written to basename.02.trimmed.fasta and QC-maps are written to a folder 
-  named basename_seqtype_QC.
-- LOG: A run-log is written to telomore.log and a result-log is written to basename.seqtype.cons.log.txt.
+        description= """Telomore: A tool to recover potential telomeric sequences from Streptomyces genomes.
+
+This tool processes sequencing data from Oxford Nanopore or Illumina platforms to extend assemblies and generate QC reports.
+
+INPUT:
+- For Nanopore mode (--mode=nanopore): Provide a single gzipped FASTQ file using --single.
+- For Illumina mode (--mode=illumina): Provide two gzipped FASTQ files using --read1 and --read2.
+- A reference genome file in FASTA format is required for both modes (--reference).
+
+OUTPUT:
+- Extended assembly written to basename.02.trimmed.fasta (basename is the name of the input file without the extension).
+- QC reports saved in a folder named basename_seqtype_QC.
+- Logs are written to telomore.log and basename.seqtype.cons.log.txt. in basename_seqtyope_QC.
+
+OPTIONS:
+- Specify the number of threads to use with --threads (default: 1).
+- Use --keep to retain intermediate files (default: False).
+- Use --quiet to suppress console logging.
+
+EXAMPLES:
+1. Nanopore mode:
+   python arg_parser.py --mode=nanopore --single reads.fastq.gz --reference genome.fasta
+
+2. Illumina mode:
+   python arg_parser.py --mode=illumina --read1 read1.fastq.gz --read2 read2.fastq.gz --reference genome.fasta
 """,
         formatter_class=argparse.RawTextHelpFormatter)
 

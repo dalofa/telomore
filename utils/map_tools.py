@@ -196,8 +196,8 @@ def get_right_soft(sam_file:Path, contig:Path ,right_out:Path ,offset:int=0) -> 
     rclip.close()
     rfastq.close()
 
-def revcomp_reads(reads_in,reads_out):
-   """A function that takes in fastq reads and retunrs their reverse complement"""
+def revcomp_reads(reads_in:str,reads_out:str) -> None:
+   """A function that takes in fastq reads and writes their reverse complement to a file"""
    
    with open(reads_in, "r") as input_handle, open(reads_out, "w") as output_handle:
     
@@ -219,7 +219,8 @@ def revcomp_reads(reads_in,reads_out):
         # Write the reverse complement record to the output FASTQ file
         SeqIO.write(rev_complement_record, output_handle, "fastq")
         
-def revcomp(fasta_in,fasta_out):
+def revcomp(fasta_in:str,fasta_out:str) -> None:
+   """A function that takes a fasta file and writes its reverse complement to a file"""
    with open(fasta_in, "r") as input_handle, open(fasta_out, "w") as output_handle:
 
       for record in SeqIO.parse(input_handle, "fasta"):
@@ -234,7 +235,7 @@ def revcomp(fasta_in,fasta_out):
         # Write the reverse complement record to the output FASTQ file
         SeqIO.write(rev_complement_record, output_handle, "fasta")
 
-def is_map_empty(file_path):
+def is_map_empty(file_path:str) -> bool:
    """Checks if a bam-file is empty by trying to fetch the first read"""
    # Open the alignment file
    with pysam.AlignmentFile(file_path, "rb") as alignment_file:
@@ -245,7 +246,7 @@ def is_map_empty(file_path):
       except StopIteration:
          return True  # Alignment is empty
         
-def is_consensus_unmapped(file_path):
+def is_consensus_unmapped(file_path:str) -> bool:
    """Checks if a map contains only unmapped reads"""
    with pysam.AlignmentFile(file_path, "rb") as alignment_file:
       reads = list(alignment_file) # get reads
@@ -260,7 +261,7 @@ def is_consensus_unmapped(file_path):
       
       return is_unmapped
 
-def is_consensus_empty(file_path):
+def is_consensus_empty(file_path:str) -> bool:
    """Checks if a map was produced by an empty consensus"""
    with pysam.AlignmentFile(file_path, "rb") as alignment_file:
       reads = list(alignment_file)  # Load all reads into a list
@@ -273,9 +274,10 @@ def is_consensus_empty(file_path):
             return True  # Only one unmapped read with no sequence
       return False  # Either more reads, or the read does not meet the conditions
 
-def stich_telo(ref, left_map ,right_map ,outfile, logout, tmp_left,tmp_right ):
+def stich_telo(ref:str, left_map:str ,right_map:str ,outfile:str, logout:str, tmp_left:str,tmp_right:str) -> tuple:
    """Writes a fasta-file extended with sequence based on a left- and right-side .bam-file. 
-   Also Adds this information to a log file"""
+   Also Adds this information to a log file.
+   Finally, it returs the length of the left and right consensus"""
 
    left_log_mes=""
    # Check if an empty left consensus was used to generate the map:
@@ -411,8 +413,8 @@ def get_support_info(bam_file, genome, position, qual_threshold=1):
 
    return(cov,matching_bases)
 
-def trim_by_map(untrimmed_assembly, sorted_bam_file, output_handle,cons_log, cov_thres=5,ratio_thres=0.7, qual_thres=0):
-   """Trims the ends of a genome using an alignment of reads at the ends."""
+def trim_by_map(untrimmed_assembly:str, sorted_bam_file:str, output_handle:str,cons_log:str, cov_thres:int=5,ratio_thres:int=0.7, qual_thres:int=0) -> None:
+   """Trims the ends of a genome using an alignment of reads at the ends and writes it to a file."""
    # load genome
    fasta = SeqIO.read(untrimmed_assembly,"fasta")
    fasta_end = len(fasta.seq)-1 # subtract one to make it 0-indexed
@@ -483,8 +485,8 @@ def trim_by_map(untrimmed_assembly, sorted_bam_file, output_handle,cons_log, cov
    log.close()
    SeqIO.write(trimmed_fasta,output_handle,"fasta")
 
-def trim_by_map_illumina(untrimmed_assembly, sorted_bam_file, output_handle,cons_log, cov_thres=1,ratio_thres=0.7, qual_thres=30):
-   """Trims the ends of a genome using an alignment of reads at the ends."""
+def trim_by_map_illumina(untrimmed_assembly:str, sorted_bam_file:str, output_handle:str,cons_log:str, cov_thres:int=1,ratio_thres:int=0.7, qual_thres:int=30) -> None:
+   """Trims the ends of a genome using an alignment of reads at the ends and writes it to a file."""
    # load genome
    fasta = SeqIO.read(untrimmed_assembly,"fasta")
    fasta_end = len(fasta.seq)-1 # subtract one to make it 0-indexed
@@ -555,7 +557,7 @@ def trim_by_map_illumina(untrimmed_assembly, sorted_bam_file, output_handle,cons
    log.close()
    SeqIO.write(trimmed_fasta,output_handle,"fasta")
 
-def generate_support_log(genome, qc_bam_file, output_handle):
+def generate_support_log(genome:str, qc_bam_file:str, output_handle:str) -> None:
    """Generates a coverage log for the ends of the genome"""
    #trim start/left-side
    
@@ -578,15 +580,3 @@ def generate_support_log(genome, qc_bam_file, output_handle):
          except TypeError: # if no reads are mapped
             continue
    
-   # Filter log for relevant positions
-
-if __name__ == '__main__':
-   print("testing module function")
-
-   stich_telo(ref = "/bigdata/dalofa/telomore/test_files/NBC_00522/NBC_00522.fasta", 
-              left_map="test_files/NBC_00522/CP108325_linear_telomore_extended_with_trimmed_consensus_attached_left_map.bam",
-              right_map="/bigdata/dalofa/telomore/test_files/NBC_00522/CP108325_linear_telomore_extended_with_trimmed_consensus_attached_right_map.bam",
-              outfile="test_boi_three.fasta",
-              logout="weh",
-              tmp_left="/bigdata/dalofa/telomore/test_files/NBC_00522/CP108325_linear_telomore_extended_with_trimmed_consensus_attached_left.fasta",
-              tmp_right="/bigdata/dalofa/telomore/test_files/NBC_00522/CP108325_linear_telomore_extended_with_trimmed_consensus_attached_right.fasta")

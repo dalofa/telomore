@@ -34,8 +34,6 @@ def main(args):
          logging.info("No tagged linear elements identified")
          exit()
     logging.info(f"Identified the following tagged linear elements {linear_elements}")
-    # Intialize dict for keeping track of files associated with each replicon
-    # Assuming linear_elements is defined as a list of strings
 
     # Create a list of replicon instances
     replicon_list = [Replicon(element, args.reference) for element in linear_elements]   
@@ -127,17 +125,12 @@ def main(args):
         logging.info(f"\tContig {replicon.name}")
         
         # Produce fasta file of just the contig to be extended
-        # rep_left_cons = replicon_dict[replicon]["l_cons_final_out"]
-        # rep_right_cons = replicon_dict[replicon]["r_cons_final_out"]
-
-        # tmp_cons_left= replicon + "_left.fasta"
-        # tmp_cons_right= replicon + "_right.fasta"
         extract_contig(fasta_in = replicon.org_fasta,
                        contig_name = replicon.name,
                        fasta_out=replicon.contig_fasta)
         
         # Discard bases that provide alternative mapping sites
-        # For the consensus to map to as Streptomyces have TIRs.
+        # for the consensus to map to as Streptomyces have TIRs.
         # discard half the contig
         
         strip_size=int(get_fasta_length(fasta_file = replicon.contig_fasta,
@@ -145,13 +138,14 @@ def main(args):
         strip_fasta(input_file = replicon.contig_fasta,
                     output_file=replicon.trunc_left_fasta,
                     x = strip_size,
-                    remove_from= "end")
+                    remove_from="end")
         strip_fasta(input_file = replicon.contig_fasta,
                     output_file = replicon.trunc_right_fasta,
                     x = strip_size,
                     remove_from="start")
+        
         if args.mode=="nanopore":
-            # Map onto reduced reference
+            # Map onto the reduced reference using minimap2
             map_and_sort(reference = replicon.trunc_left_fasta,
                         fastq = replicon.l_cons_final_out,
                         output = replicon.l_map_out,

@@ -9,7 +9,7 @@ import subprocess
 import logging
 import traceback
 
-def map_and_sort(reference: str, fastq: str, output:str,threads:int=1) ->None:
+def map_and_sort(reference: str, fastq: str, output:str,threads:int=1) -> None:
     """Maps long-reads against a reference using minimap2 through a bash
     script and returns a sorted and index bam-file"""
 
@@ -43,7 +43,7 @@ def map_and_sort(reference: str, fastq: str, output:str,threads:int=1) ->None:
       logging.error(f"Script stderr: {e.stderr}")
       logging.error(traceback.format_exc())
 
-def map_and_sort_illumina(reference, read1,read2, output,threads=1):
+def map_and_sort_illumina(reference: str, read1: str, read2: str, output: str,threads=1) -> None:
     """Maps illumina against a reference using bowtie2 through a bash
     script and returns a sorted and index bam-file"""
    
@@ -80,7 +80,7 @@ def map_and_sort_illumina(reference, read1,read2, output,threads=1):
       logging.error(f"Script stderr: {e.stderr}")
       logging.error(traceback.format_exc())
 
-def map_and_sort_illumina_cons(reference, consensus_fasta, output,threads=1):
+def map_and_sort_illumina_cons(reference:str, consensus_fasta:str, output:str,threads=1) -> None:
     """Maps consensus against a reference using bowtie2 through a bash
     script and returns a sorted and index bam-file"""
 
@@ -112,7 +112,7 @@ def map_and_sort_illumina_cons(reference, consensus_fasta, output,threads=1):
       logging.error(traceback.format_exc())
       
 
-def train_lastDB(fasta_name,reads,db_name, t=1):
+def train_lastDB(fasta_name:str,reads:str,db_name:str, t=1) -> None:
    '''Trains and lastDB database using a reference and long-reads'''
    # index fasta file
    try:
@@ -145,7 +145,7 @@ def train_lastDB(fasta_name,reads,db_name, t=1):
       logging.error(f"Script stderr: {e.stderr}")
       logging.error(traceback.format_exc())
 
-def generate_consensus_lamassemble(db_name,reads,output,flip="no"):
+def generate_consensus_lamassemble(db_name:str,reads:str,output:str) -> None:
    """Generates a consensus fasta-file given a LAST-DB and a series of reads. 
    Is suitable for dissimilar reads such as nanopore"""
    
@@ -188,7 +188,7 @@ def generate_consensus_lamassemble(db_name,reads,output,flip="no"):
          logging.error(f"Script stderr: {e.stderr}")
          logging.error(traceback.format_exc())
 
-def generate_consensus_mafft(reads, output):
+def generate_consensus_mafft(reads:str, output:str) -> None:
    """Generates a consensus fasta-file given a series of reads in fasta-format. 
    Relies on very similar reads."""
 
@@ -233,7 +233,7 @@ def generate_consensus_mafft(reads, output):
 
 
       try:
-            # Generate consensus using Emboss cons
+         # Generate consensus using Emboss cons
          # Plurality 1 ensures that only one reads needs to cover a position to generate consensus
          # This is dangerous with dissimilar seqeunces
          subprocess.run(["cons",
@@ -249,11 +249,3 @@ def generate_consensus_mafft(reads, output):
          logging.error(f"generate_consensus_mafft failed with error: {e}")
          logging.error(f"Script stderr: {e.stderr}")
          logging.error(traceback.format_exc())
-
-if __name__ == '__main__':
-   print("Testing module functions")
-
-   map_and_sort_illumina_cons(reference="NBC_00357_telomore_extended.chrom.left.fa",
-                              consensus_fasta="left_cons.fasta", 
-                              threads=16,
-                              output="blahhh")

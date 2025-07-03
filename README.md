@@ -56,7 +56,7 @@ Logs: Written to telomore.log and <basename>.seqtype.cons.log.txt.
 * Emboss tools (cons specifically)
 
 These can be installed using conda
-´´´
+```
 conda create -n telo_env \
 minimap2=2.25 \
 bowtie2 \
@@ -66,7 +66,8 @@ last \
 mafft \
 emboss \
 -y
-´´´
+```
+
 
 
 

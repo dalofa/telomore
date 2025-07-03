@@ -55,6 +55,22 @@ Logs: Written to telomore.log and <basename>.seqtype.cons.log.txt.
 * Mafft
 * Emboss tools (cons specifically)
 
+These can be installed using conda
+´´´
+conda create -n telo_env \
+minimap2=2.25 \
+bowtie2 \
+samtools \
+lamassemble \
+last \
+mafft \
+emboss \
+-y
+´´´
+
+
+
+
 ### Python Dependencies
 Python packages nessesary to run the script (generated using pipreqs):
 * Bio==1.8.0

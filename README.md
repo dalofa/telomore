@@ -26,8 +26,6 @@ Optional Arguments
 --keep: Retain intermediate files (default: False).
 --quiet: Suppress console logging.
 
-
-
 ## Process overview
 The process is as follows:
 1. **Map Reads:**
@@ -48,18 +46,19 @@ Logs: Written to telomore.log and <basename>.seqtype.cons.log.txt.
 
 
 ## Dependencies (CLI-tools)
-Minimap, version 2.25 or higher
-Bowtie2
-Samtools
-Lamassemble
-LAST-DB
-Lamassemble
-Mafft
-Emboss tools (cons specifically)
+* Minimap, version 2.25 or higher
+* Bowtie2
+* Samtools
+* Lamassemble
+* LAST-DB
+* Lamassemble
+* Mafft
+* Emboss tools (cons specifically)
 
 ### Python Dependencies
 Python packages nessesary to run the script (generated using pipreqs):
-Bio==1.7.0
-biopython==1.81
-pysam==0.21.0
+* Bio==1.8.0
+* biopython==1.78
+* GitPython==3.1.44
+* pysam==0.23.3
 

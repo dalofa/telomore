@@ -8,11 +8,12 @@ from Bio.Seq import Seq
 import subprocess
 import logging
 import traceback
+from pkg_resources import resource_filename
+
 
 def map_and_sort(reference: str, fastq: str, output:str,threads:int=1) -> None:
     """Maps long-reads against a reference using minimap2 through a bash
     script and returns a sorted and index bam-file"""
-
     # input check
     assert type(threads)==int, "threads must be an integer"
     assert os.path.isfile(reference), "the reference file specified does not exist"
@@ -20,10 +21,10 @@ def map_and_sort(reference: str, fastq: str, output:str,threads:int=1) -> None:
 
     try:
       # run bash script
-      basedir = os.path.dirname(os.path.abspath(__file__))
-      # Construct the command to run the bash script using an absolute path
+      # Use resource_filename to make compatible with python packaging
+      script_path = resource_filename('telomore', 'bash_scripts/minimap2_cmd.sh')
       cmd = " ".join(["bash", 
-                     os.path.join(basedir, "..", "bash_scripts", "minimap2_cmd.sh"),
+                     script_path,
                      reference,
                      fastq,
                      str(threads),
@@ -33,10 +34,6 @@ def map_and_sort(reference: str, fastq: str, output:str,threads:int=1) -> None:
                                     capture_output=True,
                                     text=True,
                                     check=True)
-      # Saves the minimap2-log to the run-log
-      #if minimap2_run.stderr:
-         #logging.warning(f"Minimap2_log:\n{minimap2_run.stderr}")
-        
     except subprocess.CalledProcessError as e:
       # If the bash script fails, capture the error and log the traceback
       logging.error(f"map_and_sort failed with error: {e}")
@@ -54,9 +51,9 @@ def map_and_sort_illumina(reference: str, read1: str, read2: str, output: str,th
     assert os.path.isfile(read2), "the fastx-file specified does not exist"
     
     # run bash script
-    basedir = os.path.dirname(os.path.abspath(__file__)) # nessesary to find the location of the bash script
+    script_path = resource_filename('telomore', 'bash_scripts/bowtie2_cmd.sh')
     cmd = " ".join(["bash",
-                    os.path.join(basedir,"..","bash_scripts","bowtie2_cmd.sh")
+                    script_path
                     ,reference ,
                     read1,
                     read2,
@@ -68,12 +65,6 @@ def map_and_sort_illumina(reference: str, read1: str, read2: str, output: str,th
                                    capture_output=True,
                                    text=True,
                                    check=True)
-      # Saves the bowtie2-log to the run-log
-      #if bowtie2_run.stderr:
-         #logging.warning(f"Minimap2_log:\n{bowtie2_run.stderr}")
-      #else:
-         #logging.info(bowtie2_run.stderr)
-
     except subprocess.CalledProcessError as e:
       # If the bash script fails, capture the error and log the traceback
       logging.error(f"map_and_sort failed with error: {e}")

@@ -8,14 +8,33 @@ import os
 import shutil
 import logging
 import traceback
-from utils import *
+from .utils import *
+
+def entrypoint():
+    """Entry point for CLI: parses args and calls main()."""
+#    args = get_args(sys.argv[1:])
+
+    args = get_args() # Get arguments
+    setup_logging(log_file="telomore.log",quiet=args.quiet) # setup logging
+    try:
+        main(args)
+
+    except Exception as e:
+        logging.error("An error occurred during the workflow:")
+        logging.error(traceback.format_exc())
+
+
+
+
+
+
 
 def main(args):
     # Generate a filename stripped of the .fasta/.fna/.fa extension
     ref_name = os.path.splitext(os.path.basename(args.reference))[0]
     folder_content = os.listdir()
 
-    logging.info(f"Running Telomore: 0.4 [{get_git_commit_hash()}] in {args.mode} mode")
+    logging.info(f"Running Telomore: 0.4")
     
     # Create output folder
     if args.mode=="nanopore":
@@ -284,15 +303,15 @@ def main(args):
     logging.info(f"Output files moved to {telo_folder}")
 
 # Run script
-if __name__ == '__main__':
-    
-    args = get_args() # Get arguments
-
-    setup_logging(log_file="telomore.log",quiet=args.quiet) # setup logging
-
-    try:
-        main(args)
-    
-    except Exception as e:
-        logging.error("An error occurred during the workflow:")
-        logging.error(traceback.format_exc()) 
+#if __name__ == '__main__':
+#    
+#    args = get_args() # Get arguments
+#
+#    setup_logging(log_file="telomore.log",quiet=args.quiet) # setup logging
+#
+#    try:
+#        main(args)
+#    
+#    except Exception as e:
+#        logging.error("An error occurred during the workflow:")
+#        logging.error(traceback.format_exc()) 

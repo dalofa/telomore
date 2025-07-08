@@ -68,9 +68,13 @@ emboss \
 -y
 ```
 
-
-
-
+This repo can then be downloaded using git clone, the conda enviroment activated and the tool installed
+```
+git clone https://github.com/dalofa/telomore
+conda activate telo_env
+cd telomore
+pip install .
+```
 
 ### Python Dependencies
 Python packages nessesary to run the script (generated using pipreqs):

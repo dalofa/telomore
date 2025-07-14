@@ -39,6 +39,7 @@ def map_and_sort(reference: str, fastq: str, output:str,threads:int=1) -> None:
       logging.error(f"map_and_sort failed with error: {e}")
       logging.error(f"Script stderr: {e.stderr}")
       logging.error(traceback.format_exc())
+      raise
 
 def map_and_sort_illumina(reference: str, read1: str, read2: str, output: str,threads=1) -> None:
     """Maps illumina against a reference using bowtie2 through a bash
@@ -70,6 +71,7 @@ def map_and_sort_illumina(reference: str, read1: str, read2: str, output: str,th
       logging.error(f"map_and_sort failed with error: {e}")
       logging.error(f"Script stderr: {e.stderr}")
       logging.error(traceback.format_exc())
+      raise
 
 def map_and_sort_illumina_cons(reference:str, consensus_fasta:str, output:str,threads=1) -> None:
     """Maps consensus against a reference using bowtie2 through a bash
@@ -101,7 +103,7 @@ def map_and_sort_illumina_cons(reference:str, consensus_fasta:str, output:str,th
       logging.error(f"map_and_sort_illumina_cons failed with error: {e}")
       logging.error(f"Script stderr: {e.stderr}")
       logging.error(traceback.format_exc())
-      
+      raise
 
 def train_lastDB(fasta_name:str,reads:str,db_name:str, t=1) -> None:
    '''Trains and lastDB database using a reference and long-reads'''
@@ -118,7 +120,7 @@ def train_lastDB(fasta_name:str,reads:str,db_name:str, t=1) -> None:
       logging.error(f"train_lastDB failed with error: {e}")
       logging.error(f"Script stderr: {e.stderr}")
       logging.error(traceback.format_exc())
-   
+      raise
    # train last-db
    try:
       file = open(db_name +".par","w") # needed to write to file
@@ -135,6 +137,7 @@ def train_lastDB(fasta_name:str,reads:str,db_name:str, t=1) -> None:
       logging.error(f"train_lastDB failed with error: {e}")
       logging.error(f"Script stderr: {e.stderr}")
       logging.error(traceback.format_exc())
+      raise
 
 def generate_consensus_lamassemble(db_name:str,reads:str,output:str) -> None:
    """Generates a consensus fasta-file given a LAST-DB and a series of reads. 
@@ -178,6 +181,7 @@ def generate_consensus_lamassemble(db_name:str,reads:str,output:str) -> None:
          logging.error(f"generate_consensus_lamassemble failed with error: {e}")
          logging.error(f"Script stderr: {e.stderr}")
          logging.error(traceback.format_exc())
+         raise
 
 def generate_consensus_mafft(reads:str, output:str) -> None:
    """Generates a consensus fasta-file given a series of reads in fasta-format. 
@@ -221,7 +225,7 @@ def generate_consensus_mafft(reads:str, output:str) -> None:
          logging.error(f"generate_consensus_mafft failed with error: {e}")
          logging.error(f"Script stderr: {e.stderr}")
          logging.error(traceback.format_exc())
-
+         raise
 
       try:
          # Generate consensus using Emboss cons
@@ -240,3 +244,4 @@ def generate_consensus_mafft(reads:str, output:str) -> None:
          logging.error(f"generate_consensus_mafft failed with error: {e}")
          logging.error(f"Script stderr: {e.stderr}")
          logging.error(traceback.format_exc())
+         raise

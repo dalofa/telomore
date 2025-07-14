@@ -22,7 +22,7 @@ def entrypoint():
     except Exception as e:
         logging.error("An error occurred during the workflow:")
         logging.error(traceback.format_exc())
-
+        exit(1)
 
 
 

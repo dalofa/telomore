@@ -24,11 +24,6 @@ def entrypoint():
         logging.error(traceback.format_exc())
         exit(1)
 
-
-
-
-
-
 def main(args):
     # Generate a filename stripped of the .fasta/.fna/.fa extension
     ref_name = os.path.splitext(os.path.basename(args.reference))[0]
@@ -208,6 +203,12 @@ def main(args):
     logging.info("Trimming consensus based on read support")
     
     for replicon in replicon_list:
+        # Iterate to the correct log
+        if args.mode=="nanopore":
+            cons_log_out= replicon.cons_log_np_out
+        elif args.mode=="illumina":
+            cons_log_out= replicon.cons_log_ill_out
+
         logging.info(f"\tContig {replicon.name}")
 
         if args.mode=="nanopore":
@@ -244,6 +245,13 @@ def main(args):
     logging.info("Generating QC map and finalizing result-log")
 
     for replicon in replicon_list:
+        # Iterate to the correct log
+        if args.mode=="nanopore":
+            cons_log_out= replicon.cons_log_np_out
+        elif args.mode=="illumina":
+            cons_log_out= replicon.cons_log_ill_out
+
+
         logging.info(f"\tContig {replicon.name}")
 
         if args.mode=="nanopore":
@@ -261,6 +269,7 @@ def main(args):
                              output_handle=replicon.qc_out,
                              t=args.threads)
             
+
         finalize_log(log = cons_log_out,
                      right_fasta = replicon.stitch_right_fasta,
                      left_fasta = replicon.stitch_left_fasta)
@@ -301,17 +310,3 @@ def main(args):
         os.remove(f"{map_out}.bai") # index
 
     logging.info(f"Output files moved to {telo_folder}")
-
-# Run script
-#if __name__ == '__main__':
-#    
-#    args = get_args() # Get arguments
-#
-#    setup_logging(log_file="telomore.log",quiet=args.quiet) # setup logging
-#
-#    try:
-#        main(args)
-#    
-#    except Exception as e:
-#        logging.error("An error occurred during the workflow:")
-#        logging.error(traceback.format_exc()) 

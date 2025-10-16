@@ -12,137 +12,137 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 def sam_to_readpair(sam_in: Path,fastq_in1: Path, fastq_in2: Path,fastq_out1: Path,fastq_out2: Path) -> None:
-   "Extract both reads from paired-end fastq-files if one of the reads is in sam-file"
-   with pysam.AlignmentFile(sam_in) as samfile:
-      reads_to_grep = set() # using a set should be faster than list
+    "Extract both reads from paired-end fastq-files if one of the reads is in sam-file"
+    with pysam.AlignmentFile(sam_in) as samfile:
+        reads_to_grep = set() # using a set should be faster than list
 
-      # get all read names
-      for read in samfile.fetch(until_eof=True):
-         read_name = read.query_name 
-         if " " in read.query_name:
-            read_name = read_name.split(" ")[0]
-         
-         reads_to_grep.add(read_name)
-      
-      # get read 1
-      with gzip.open(fastq_in1,"rt") as gzip_handle, open(fastq_out1,"w") as outfile:
-         for record in SeqIO.parse(gzip_handle,"fastq"):
-            if record.id in reads_to_grep:
-               SeqIO.write(record, outfile, "fastq")
+        # get all read names
+        for read in samfile.fetch(until_eof=True):
+            read_name = read.query_name 
+            if " " in read.query_name:
+                read_name = read_name.split(" ")[0]
+            
+            reads_to_grep.add(read_name)
+        
+        # get read 1
+        with gzip.open(fastq_in1,"rt") as gzip_handle, open(fastq_out1,"w") as outfile:
+            for record in SeqIO.parse(gzip_handle,"fastq"):
+                if record.id in reads_to_grep:
+                    SeqIO.write(record, outfile, "fastq")
 
-      # get read 2
-      with gzip.open(fastq_in2,"rt") as gzip_handle, open(fastq_out2,"w") as outfile:
-         for record in SeqIO.parse(gzip_handle,"fastq"):
-            if record.id in reads_to_grep:
-               SeqIO.write(record, outfile, "fastq")
+        # get read 2
+        with gzip.open(fastq_in2,"rt") as gzip_handle, open(fastq_out2,"w") as outfile:
+            for record in SeqIO.parse(gzip_handle,"fastq"):
+                if record.id in reads_to_grep:
+                    SeqIO.write(record, outfile, "fastq")
 
 def sam_to_fastq(sam_in: Path, fastq_out:Path) -> None:
-   """Convert a sam-file to fastq-format, excluding unmapped reads."""
-   with pysam.AlignmentFile(sam_in, "r") as samfile:
-         for read in samfile.fetch(until_eof=True):
-               if not read.is_unmapped:
-                  name = read.query_name
-                  seq = read.query_sequence
-                  qual = read.qual
-                  if qual is None:
-                     qual = 'I' * len(seq)  # Assign a default high-quality score
-                  
-                  # Write the read in FASTQ format to the provided handle
-                  fastq_out.write(f"@{name}\n{seq}\n+\n{qual}\n")
+    """Convert a sam-file to fastq-format, excluding unmapped reads."""
+    with pysam.AlignmentFile(sam_in, "r") as samfile:
+        for read in samfile.fetch(until_eof=True):
+            if not read.is_unmapped:
+                name = read.query_name
+                seq = read.query_sequence
+                qual = read.qual
+                if qual is None:
+                    qual = 'I' * len(seq)  # Assign a default high-quality score
+                
+                # Write the read in FASTQ format to the provided handle
+                fastq_out.write(f"@{name}\n{seq}\n+\n{qual}\n")
 
 def mapped_bases(cigarstring:str) -> int:
-   """Calculate the number of bases mapped to the reference in a given CIGAR string."""
-   # Define operations that consume reference bases
-   consuming_operations = "MDNX="
+    """Calculate the number of bases mapped to the reference in a given CIGAR string."""
+    # Define operations that consume reference bases
+    consuming_operations = "MDNX="
 
-   # Parse the CIGAR string using regex
-   # This produces a tuple in the format (121,"S")
-   operations = re.findall(r'(\d+)([MIDNSHP=X])', cigarstring)
-   
-   # Initialize base count
-   mapped_bases_count = 0
+    # Parse the CIGAR string using regex
+    # This produces a tuple in the format (121,"S")
+    operations = re.findall(r'(\d+)([MIDNSHP=X])', cigarstring)
 
-   # Loop through the parsed operations and sum bases for consuming operations
-   for length, op in operations:
-      if op in consuming_operations:
+    # Initialize base count
+    mapped_bases_count = 0
+
+    # Loop through the parsed operations and sum bases for consuming operations
+    for length, op in operations:
+        if op in consuming_operations:
             mapped_bases_count += int(length)
-   
-   return mapped_bases_count
+
+    return mapped_bases_count
 
 def cigar_maps_more_bases(cigar1:str, cigar2:str) -> bool:
-   """Compare two CIGAR strings and determine which one maps to more bases."""
-   bases1 = mapped_bases(cigar1)
-   bases2 = mapped_bases(cigar2)
-   
-   if bases1 > bases2:
-      return True
-   elif bases1 < bases2:
-      return False
+    """Compare two CIGAR strings and determine which one maps to more bases."""
+    bases1 = mapped_bases(cigar1)
+    bases2 = mapped_bases(cigar2)
+
+    if bases1 > bases2:
+        return True
+    elif bases1 < bases2:
+        return False
 
 def get_terminal_reads(sorted_bam_file:Path,contig:Path,loutput_handle:Path,routput_handle:Path) -> None:
-   """A function that retrieves all reads mapping at the very start or end of a reference"""
-   
-   input = pysam.AlignmentFile(sorted_bam_file, "r")
-   
-   # Fetch all reads aligned at start or end of reference
-   seq_end = input.get_reference_length(contig)
-   ref_name = contig
-   left_reads = input.fetch(ref_name,start=0, stop=20)
-   right_reads = input.fetch(ref_name,start = (seq_end-20),stop = seq_end)
+    """A function that retrieves all reads mapping at the very start or end of a reference"""
 
-   # dict to store best mapped read from each end
-   lterminal_reads={}
-   rterminal_reads={}
+    input = pysam.AlignmentFile(sorted_bam_file, "r")
 
-   for lread in left_reads:
-      query_name = lread.query_name
-      cigar = lread.cigarstring
+    # Fetch all reads aligned at start or end of reference
+    seq_end = input.get_reference_length(contig)
+    ref_name = contig
+    left_reads = input.fetch(ref_name,start=0, stop=20)
+    right_reads = input.fetch(ref_name,start = (seq_end-20),stop = seq_end)
 
-      if lread.query_sequence is None: # skip empty reads
-          continue
-       
-      # Check if the read is mapped multiple times and use
-      # the read that maps to most bases
-      if query_name in lterminal_reads:
-         prior_read = lterminal_reads[query_name]
-         prior_cigar = prior_read.cigarstring
+    # dict to store best mapped read from each end
+    lterminal_reads={}
+    rterminal_reads={}
 
-         # Compare CIGAR strings to keep the one that maps more bases
-         if cigar_maps_more_bases(cigar, prior_cigar):
+    for lread in left_reads:
+        query_name = lread.query_name
+        cigar = lread.cigarstring
+
+        if lread.query_sequence is None: # skip empty reads
+            continue
+        
+        # Check if the read is mapped multiple times and use
+        # the read that maps to most bases
+        if query_name in lterminal_reads:
+            prior_read = lterminal_reads[query_name]
+            prior_cigar = prior_read.cigarstring
+
+            # Compare CIGAR strings to keep the one that maps more bases
+            if cigar_maps_more_bases(cigar, prior_cigar):
+                lterminal_reads[query_name] = lread
+        else:
             lterminal_reads[query_name] = lread
-      else:
-         lterminal_reads[query_name] = lread
 
-   for rread in right_reads:
-      query_name = rread.query_name
-      cigar = rread.cigarstring
+    for rread in right_reads:
+        query_name = rread.query_name
+        cigar = rread.cigarstring
 
-      if rread.query_sequence is None: # skip empty reads
-         continue
-      
-      # Check if the read is mapped multiple times and use
-      # the read that maps to most bases
-      if query_name in rterminal_reads:
-         prior_read = rterminal_reads[query_name]
-         prior_cigar = prior_read.cigarstring
+        if rread.query_sequence is None: # skip empty reads
+            continue
 
-         # Compare CIGAR strings to keep the one that maps more bases
-         if cigar_maps_more_bases(cigar, prior_cigar):
-               rterminal_reads[query_name] = rread
-      else:
-         
-         rterminal_reads[query_name] = rread
+        # Check if the read is mapped multiple times and use
+        # the read that maps to most bases
+        if query_name in rterminal_reads:
+            prior_read = rterminal_reads[query_name]
+            prior_cigar = prior_read.cigarstring
 
-   # Write all fetched reads to a new file
-   lterminal_file = pysam.AlignmentFile(loutput_handle,"w",template=input)
-   for read in lterminal_reads.values():
-      lterminal_file.write(read)
-   lterminal_file.close()
+            # Compare CIGAR strings to keep the one that maps more bases
+            if cigar_maps_more_bases(cigar, prior_cigar):
+                rterminal_reads[query_name] = rread
+        else:
+            
+            rterminal_reads[query_name] = rread
 
-   rterminal_file = pysam.AlignmentFile(routput_handle,"w",template=input)
-   for read in rterminal_reads.values():
-      rterminal_file.write(read)
-   rterminal_file.close()
+    # Write all fetched reads to a new file
+    lterminal_file = pysam.AlignmentFile(loutput_handle,"w",template=input)
+    for read in lterminal_reads.values():
+        lterminal_file.write(read)
+    lterminal_file.close()
+
+    rterminal_file = pysam.AlignmentFile(routput_handle,"w",template=input)
+    for read in rterminal_reads.values():
+        rterminal_file.write(read)
+    rterminal_file.close()
 
 def get_left_soft(sam_file:Path, left_out:Path, offset:int=0) -> None:
     """A function that retrieves reads soft-clipped at 5'-end
@@ -156,16 +156,16 @@ def get_left_soft(sam_file:Path, left_out:Path, offset:int=0) -> None:
         lmatch = re.match(start_clip,read.cigarstring)
         
         if lmatch:
-           clip_num=int(lmatch.group(1)) # digits are retrieve via .group
+            clip_num=int(lmatch.group(1)) # digits are retrieve via .group
 
-           if clip_num >read.reference_start:
-              lclip.write(read) # write to sam-file
+            if clip_num >read.reference_start:
+                lclip.write(read) # write to sam-file
 
-              # get info for fastq-file
-              name = read.query_name
-              seq = read.query_sequence[0:clip_num+offset]
-              sanger_qual = "".join([chr(q+33) for q in read.query_qualities[0:clip_num+offset]]) # phred qual converted to ASCII with 33 offset
-              lfastq.write("@{}\n{}\n+\n{}\n".format(name, seq, sanger_qual))
+                # get info for fastq-file
+                name = read.query_name
+                seq = read.query_sequence[0:clip_num+offset]
+                sanger_qual = "".join([chr(q+33) for q in read.query_qualities[0:clip_num+offset]]) # phred qual converted to ASCII with 33 offset
+                lfastq.write("@{}\n{}\n+\n{}\n".format(name, seq, sanger_qual))
     sam_in.close()
     lclip.close()
     lfastq.close()
@@ -181,85 +181,85 @@ def get_right_soft(sam_file:Path, contig:Path ,right_out:Path ,offset:int=0) -> 
     for read in sam_in:
         rmatch = re.search(end_clip,read.cigarstring)
         if rmatch:
-           clip_num=int(rmatch.group(1)) # digits are retrieve via .group
-           
-           if clip_num+read.reference_end>seq_end:
-              rclip.write(read) # write to sam-file
-              
-              # get info for fastq-file
-              name = read.query_name
-              seq = read.query_sequence[-(clip_num+offset):]
-              sanger_qual = "".join([chr(q+33) for q in read.query_qualities[-(clip_num+offset):]]) # phred qual converted to ASCII with 33 offset
-              rfastq.write("@{}\n{}\n+\n{}\n".format(name, seq, sanger_qual))
+            clip_num=int(rmatch.group(1)) # digits are retrieve via .group
+            
+            if clip_num+read.reference_end>seq_end:
+                rclip.write(read) # write to sam-file
+                
+                # get info for fastq-file
+                name = read.query_name
+                seq = read.query_sequence[-(clip_num+offset):]
+                sanger_qual = "".join([chr(q+33) for q in read.query_qualities[-(clip_num+offset):]]) # phred qual converted to ASCII with 33 offset
+                rfastq.write("@{}\n{}\n+\n{}\n".format(name, seq, sanger_qual))
 
     sam_in.close()
     rclip.close()
     rfastq.close()
 
 def revcomp_reads(reads_in:str,reads_out:str) -> None:
-   """A function that takes in fastq reads and writes their reverse complement to a file"""
-   
-   with open(reads_in, "r") as input_handle, open(reads_out, "w") as output_handle:
-    
-    for record in SeqIO.parse(input_handle, "fastq"):
-        # Get the reverse complement of the sequence
-        rev_complement_seq = record.seq.reverse_complement()
-        
-        # Reverse the quality scores as well
-        rev_quality_scores = record.letter_annotations["phred_quality"][::-1]
-        
-        # Create a new record with the reverse complement sequence and quality scores
-        rev_complement_record = record
-        rev_complement_record.id = "rev_"+str(record.id)
+    """A function that takes in fastq reads and writes their reverse complement to a file"""
+
+    with open(reads_in, "r") as input_handle, open(reads_out, "w") as output_handle:
+
+        for record in SeqIO.parse(input_handle, "fastq"):
+            # Get the reverse complement of the sequence
+            rev_complement_seq = record.seq.reverse_complement()
+            
+            # Reverse the quality scores as well
+            rev_quality_scores = record.letter_annotations["phred_quality"][::-1]
+            
+            # Create a new record with the reverse complement sequence and quality scores
+            rev_complement_record = record
+            rev_complement_record.id = "rev_"+str(record.id)
 
 
-        rev_complement_record.seq = rev_complement_seq
-        rev_complement_record.letter_annotations["phred_quality"] = rev_quality_scores
-        
-        # Write the reverse complement record to the output FASTQ file
-        SeqIO.write(rev_complement_record, output_handle, "fastq")
+            rev_complement_record.seq = rev_complement_seq
+            rev_complement_record.letter_annotations["phred_quality"] = rev_quality_scores
+            
+            # Write the reverse complement record to the output FASTQ file
+            SeqIO.write(rev_complement_record, output_handle, "fastq")
         
 def revcomp(fasta_in:str,fasta_out:str) -> None:
-   """A function that takes a fasta file and writes its reverse complement to a file"""
-   with open(fasta_in, "r") as input_handle, open(fasta_out, "w") as output_handle:
+    """A function that takes a fasta file and writes its reverse complement to a file"""
+    with open(fasta_in, "r") as input_handle, open(fasta_out, "w") as output_handle:
 
-      for record in SeqIO.parse(input_handle, "fasta"):
-        # Get the reverse complement of the sequence
-        rev_complement_seq = record.seq.reverse_complement()
-        
-        # Create a new record with the reverse complement sequence and quality scores
-        rev_complement_record = record
-        rev_complement_record.id = "rev_"+str(record.id)
-        rev_complement_record.seq = rev_complement_seq
-        
-        # Write the reverse complement record to the output FASTQ file
-        SeqIO.write(rev_complement_record, output_handle, "fasta")
+        for record in SeqIO.parse(input_handle, "fasta"):
+            # Get the reverse complement of the sequence
+            rev_complement_seq = record.seq.reverse_complement()
+            
+            # Create a new record with the reverse complement sequence and quality scores
+            rev_complement_record = record
+            rev_complement_record.id = "rev_"+str(record.id)
+            rev_complement_record.seq = rev_complement_seq
+            
+            # Write the reverse complement record to the output FASTQ file
+            SeqIO.write(rev_complement_record, output_handle, "fasta")
 
 def is_map_empty(file_path:str) -> bool:
-   """Checks if a bam-file is empty by trying to fetch the first read"""
-   # Open the alignment file
-   with pysam.AlignmentFile(file_path, "rb") as alignment_file:
-      # Try to fetch the first read
-      try:
-         next(alignment_file)
-         return False  # Alignment is not empty
-      except StopIteration:
-         return True  # Alignment is empty
+    """Checks if a bam-file is empty by trying to fetch the first read"""
+    # Open the alignment file
+    with pysam.AlignmentFile(file_path, "rb") as alignment_file:
+        # Try to fetch the first read
+        try:
+            next(alignment_file)
+            return False  # Alignment is not empty
+        except StopIteration:
+            return True  # Alignment is empty
         
 def is_consensus_unmapped(file_path:str) -> bool:
-   """Checks if a map contains only unmapped reads"""
-   with pysam.AlignmentFile(file_path, "rb") as alignment_file:
-      reads = list(alignment_file) # get reads
-      
-      is_unmapped=True # s
+    """Checks if a map contains only unmapped reads"""
+    with pysam.AlignmentFile(file_path, "rb") as alignment_file:
+        reads = list(alignment_file) # get reads
+        
+        is_unmapped=True # s
 
-      if len(reads)>0:
-         for read in reads:
-            if not read.is_unmapped:
-               is_unmapped=False
-               return is_unmapped
-      
-      return is_unmapped
+        if len(reads)>0:
+            for read in reads:
+                if not read.is_unmapped:
+                    is_unmapped=False
+                    return is_unmapped
+        
+        return is_unmapped
 
 def is_consensus_empty(file_path:str) -> bool:
    """Checks if a map was produced by an empty consensus"""

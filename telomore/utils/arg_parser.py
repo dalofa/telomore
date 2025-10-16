@@ -40,8 +40,8 @@ EXAMPLES:
 
     parser.add_argument(
         "-m", '--mode', 
-        choices=['nanopore', 'illumina'], 
-        required=True, 
+        choices=['nanopore', 'illumina'],
+        required=True,
         help="""Choose which mode to run.
         --mode=nanopore takes a single read-file, specified using --single
         --mode=illumina-mode takes two read-files specified using --read1 and --read2"""
@@ -63,26 +63,26 @@ EXAMPLES:
     )
     parser.add_argument(
         "-r", "--reference", 
-        type=str, 
-        required=True, 
+        type=str,
+        required=True,
         help="Path to reference file (.fasta, .fna, or .fa)"
     )
     parser.add_argument(
         "-t", "--threads", 
-        type=int, 
+        type=int,
         default=1,
         help="Threads to use. Default is 1"
     )
     parser.add_argument(
         "-k", "--keep", 
-        action='store_true', 
+        action='store_true',
         help="Flag to keep intermediate files. Default is False"
     )
     parser.add_argument(
         "-q", "--quiet", 
-        action='store_true', 
+        action='store_true',
         help="Set logging to quiet."
-    ) 
+    )
 
     # Check if no arguments were provided
     if len(sys.argv) == 1:
@@ -90,7 +90,7 @@ EXAMPLES:
         sys.exit(1)
 
     args = parser.parse_args()
-    
+
     if args.mode == 'illumina':
         if not (args.read1 and args.read2):
             parser.error('Illumina mode requires two FASTQ files, specified by --read1 and --read2')
@@ -103,7 +103,7 @@ EXAMPLES:
 def setup_logging(log_file="telomore.log",quiet:bool=False):
     """Set-up logging"""
 
-    if quiet==True:
+    if quiet is True:
         handlers_to_use =[
             logging.FileHandler(log_file),  # Log file
         ]

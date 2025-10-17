@@ -1,5 +1,5 @@
 # TELOMORE
-Telomore is a tool for identifying and extracting telomeric sequences from **Oxford Nanopore** or **Illumina** sequencing reads of *Streptomyces* that have been excluded from a de novo assembly. It processes sequencing data to extend assemblies, generate quality control (QC) reports, and produce finalized assemblies with the telomere included.
+Telomore is a tool for identifying and extracting telomeric sequences from **Oxford Nanopore** or **Illumina** sequencing reads of *Streptomyces* that have been excluded from a de novo assembly. It processes sequencing data to extend assemblies, generate quality control (QC) maps, and produce finalized assemblies with the telomere/recessed bases included.
 
 ## Before running Telomore
 Telomore does not identify linear contigs but rather rely on the user to provide that information in
@@ -39,11 +39,31 @@ The consensus for each end is aligned to the reference and used to extend it.
 5. **Trim Extended Replicon**
 In a final step, all terminally mapped reads are mapped to the new extended reference and used to trim away spurious sequence, based on read-support.
 
-Output
-Extended Assembly: Written to <basename>.02.trimmed.fasta.
-QC Reports: Saved in a folder named <basename>_seqtype_QC.
-Logs: Written to telomore.log and <basename>.seqtype.cons.log.txt.
+## Outputs
+At the end of a run Telomore produces the following outputs:
 
+```Output
+├── {fasta_basename}_{seqtype}_telomore
+│   ├── {contig_name}_telomore_extended.fasta
+│   ├── {contig_name}_telomore_ext_{seqtype}.log
+│   ├── {contig_name}_telomore_QC.bam
+│   ├── {contig_name}_telomore_QC.bam.bai
+│   ├── {contig_name}_telomore_untrimmed.fasta
+│   └── {fasta_basename}_telomore.fasta
+└── telomore.log # log containing run information.
+```
+In the folder there is a number of files generated for each contig considered:
+| File Name | Description |
+|-----------|-------------|
+| `{contig_name}_telomore_extended.fasta` | Original contig sequence + added terminal bases - trimmed bases |
+| `{contig_name}_telomore_ext_{seqtype}.log` | Log contianing information about bases added, trimmed off and final result. |
+| `{contig_name}_telomore_QC.bam` | BAM file containing terminal reads mapped to `{contig_name}_telomore_extended.fasta`. Useful for manual inspection of the extension|
+| `{contig_name}_telomore_QC.bam.bai` | Index file for the corresponding BAM file. |
+| `{contig_name}_telomore_untrimmed.fasta` | Original contig sequence + added terminal bases |
+
+Additionally, there is a fasta-file collecting all tagged linear contigs as they appear in `{contig_name}_telomore_extended.fasta` together with all non-linear contigs in the order they appear in the original file.
+
+Inspecting the {contig_name}_QC.bam-file in IGV (Integrative Genomics Viewer) can be informative in evaluating the extended contig.
 
 ## Dependencies (CLI-tools)
 * Minimap, version 2.25 or higher

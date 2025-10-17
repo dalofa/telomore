@@ -37,8 +37,8 @@ def map_and_sort(reference: str, fastq: str, output:str,threads:int=1) -> None:
                                     check=True)
     except subprocess.CalledProcessError as e:
         # If the bash script fails, capture the error and log the traceback
-        logging.error("map_and_sort failed with error: %e", e)
-        logging.error("Script stderr: %e", e.stderr)
+        logging.error("map_and_sort failed with error: %s", e)
+        logging.error("Script stderr: %s", e.stderr)
         logging.error(traceback.format_exc())
         raise
 
@@ -69,8 +69,8 @@ def map_and_sort_illumina(reference: str, read1: str, read2: str, output: str,th
                                     check=True)
     except subprocess.CalledProcessError as e:
         # If the bash script fails, capture the error and log the traceback
-        logging.error("map_and_sort failed with error: %e", e)
-        logging.error("Script stderr: %e", e.stderr)
+        logging.error("map_and_sort failed with error: %s", e)
+        logging.error("Script stderr: %s", e.stderr)
         logging.error(traceback.format_exc())
         raise
 
@@ -101,8 +101,8 @@ def map_and_sort_illumina_cons(reference:str, consensus_fasta:str, output:str,th
 
     except subprocess.CalledProcessError as e:
       # If the bash script fails, capture the error and log the traceback
-        logging.error("map_and_sort_illumina_cons failed with error: %e", e)
-        logging.error("Script stderr: %e", e.stderr)
+        logging.error("map_and_sort_illumina_cons failed with error: %s", e)
+        logging.error("Script stderr: %s", e.stderr)
         logging.error(traceback.format_exc())
         raise
 
@@ -118,8 +118,8 @@ def train_lastDB(fasta_name:str,reads:str,db_name:str, t=1) -> None:
                                     check=True)
     except subprocess.CalledProcessError as e:
         # If the bash script fails, capture the error and log the traceback
-        logging.error("train_lastDB failed with error: %e", e)
-        logging.error("Script stderr: %e", e.stderr)
+        logging.error("train_lastDB failed with error: %s", e)
+        logging.error("Script stderr: %s", e.stderr)
         logging.error(traceback.format_exc())
         raise
    # train last-db
@@ -135,8 +135,8 @@ def train_lastDB(fasta_name:str,reads:str,db_name:str, t=1) -> None:
         file.close()
     except subprocess.CalledProcessError as e:
         # If the bash script fails, capture the error and log the traceback
-        logging.error("train_lastDB failed with error: %e", e)
-        logging.error("Script stderr: %e", e.stderr)
+        logging.error("train_lastDB failed with error: %s", e)
+        logging.error("Script stderr: %s", e.stderr)
         logging.error(traceback.format_exc())
         raise
 
@@ -151,13 +151,13 @@ def generate_consensus_lamassemble(db_name:str,reads:str,output:str) -> None:
         sequence_count += 1
 
     if sequence_count==0:
-        logging.info("There are no reads to construct a consensus from. Emtpy consensus returned to %o", output)
+        logging.info("There are no reads to construct a consensus from. Emtpy consensus returned to %s", output)
         with open(f"{output}", "w") as seq:
             empty_record = SeqRecord(Seq(""), id="empty_consensus")
             SeqIO.write(empty_record, seq, "fasta")
     if sequence_count == 1:
         single_record = record
-        logging.info("There are only a single read to construct a consensus from. Returning read as consensus to %o", output)
+        logging.info("There are only a single read to construct a consensus from. Returning read as consensus to %s", output)
         with open(f"{output}", "w") as seq:
             SeqIO.write(single_record, seq, "fasta")
     elif sequence_count>1:
@@ -178,8 +178,8 @@ def generate_consensus_lamassemble(db_name:str,reads:str,output:str) -> None:
 
         except subprocess.CalledProcessError as e:
         # If the bash script fails, capture the error and log the traceback
-            logging.error("generate_consensus_lamassemble failed with error: %e", e)
-            logging.error("Script stderr: %e", e.stderr)
+            logging.error("generate_consensus_lamassemble failed with error: %s", e)
+            logging.error("Script stderr: %s", e.stderr)
             logging.error(traceback.format_exc())
             raise
 
@@ -193,14 +193,14 @@ def generate_consensus_mafft(reads:str, output:str) -> None:
         sequence_count += 1
 
     if sequence_count==0:
-        logging.info("There are no reads to construct a consensus from. Emtpy consensus returned to %o", output)
+        logging.info("There are no reads to construct a consensus from. Emtpy consensus returned to %s", output)
         with open(f"{output}", "w") as seq:
             empty_record = SeqRecord(Seq(""), id="empty_consensus")
             SeqIO.write(empty_record, seq, "fasta")
 
     if sequence_count == 1:
         single_record = record
-        logging.info("There are only a single read to construct a consensus from. Returning read as consensus to %o",
+        logging.info("There are only a single read to construct a consensus from. Returning read as consensus to %s",
         output)
         with open(f"{output}", "w") as seq:
             SeqIO.write(single_record, seq, "fasta")
@@ -223,8 +223,8 @@ def generate_consensus_mafft(reads:str, output:str) -> None:
 
         except subprocess.CalledProcessError as e:
         # If the bash script fails, capture the error and log the traceback
-            logging.error("generate_consensus_mafft failed with error: %e", e)
-            logging.error("Script stderr: %e", e.stderr)
+            logging.error("generate_consensus_mafft failed with error: %s", e)
+            logging.error("Script stderr: %s", e.stderr)
             logging.error(traceback.format_exc())
             raise
 
@@ -242,7 +242,7 @@ def generate_consensus_mafft(reads:str, output:str) -> None:
                             check=True)
         except subprocess.CalledProcessError as e:
         # If the bash script fails, capture the error and log the traceback
-            logging.error("generate_consensus_mafft failed with error: %e", e)
-            logging.error("Script stderr: %e", e.stderr)
+            logging.error("generate_consensus_mafft failed with error: %s", e)
+            logging.error("Script stderr: %s", e.stderr)
             logging.error(traceback.format_exc())
             raise

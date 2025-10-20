@@ -212,6 +212,13 @@ def main(args):
         logging.info("\tContig %s", replicon.name)
 
         if args.mode=="nanopore":
+
+            # Set default values for consensus trimming if the User did not
+            if args.coverage_threshold is None:
+                args.coverage_threshold=5
+            if args.quality_threshold is None:
+                args.threshold=10
+
             qc_map(extended_assembly= replicon.stitch_out,
                    left = replicon.left_sam,
                    right= replicon.right_sam,
@@ -222,10 +229,17 @@ def main(args):
                         sorted_bam_file=replicon.trim_map,
                         output_handle=replicon.trim_out,
                         cons_log=cons_log_out,
+                        cov_thres=args.coverage_threshold,
                         ratio_thres=0.7,
-                        qual_thres=10)
+                        qual_thres=args.quality_threshold)
 
         elif args.mode=="illumina":
+            # Set default values for consensus trimming if the User did not
+            if args.coverage_threshold is None:
+                args.coverage_threshold=1
+            if args.quality_threshold is None:
+                args.threshold=30
+
             qc_map_illumina(extended_assembly=replicon.stitch_out,
                              left_sam=replicon.left_sam,
                              right_sam=replicon.right_sam,
@@ -237,9 +251,9 @@ def main(args):
                                  sorted_bam_file = replicon.trim_map,
                                  output_handle=replicon.trim_out,
                                  cons_log = cons_log_out,
-                                 cov_thres=1,
+                                 cov_thres=args.coverage_threshold,
                                  ratio_thres=0.7,
-                                 qual_thres=30)
+                                 qual_thres=args.quality_threshold)
     # 4: Generate QC files
     # -----------------------------------------------------------------
     logging.info("Generating QC map and finalizing result-log")

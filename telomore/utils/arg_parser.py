@@ -83,6 +83,14 @@ EXAMPLES:
         action='store_true',
         help="Set logging to quiet."
     )
+    parser.add_argument(
+        "--coverage_threshold",
+        type=int,
+        help="Coverage threshold for consensus trimming. Default is coverage=5 for nanopore and coverage=1 for Illumina.")
+    parser.add_argument(
+        "--quality_threshold",
+        type=int,
+        help="Quality threshold for consensus trimming. Default is q_score=10 for nanopore and q_score=30 for illumina.")
 
     # Check if no arguments were provided
     if len(sys.argv) == 1:
@@ -117,3 +125,6 @@ def setup_logging(log_file="telomore.log",quiet:bool=False):
         format="%(asctime)s - %(message)s",
         handlers=handlers_to_use
     )
+
+if __name__ == "__main__":
+    get_args()

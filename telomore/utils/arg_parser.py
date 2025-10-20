@@ -31,10 +31,10 @@ OPTIONS:
 
 EXAMPLES:
 1. Nanopore mode:
-   python arg_parser.py --mode=nanopore --single reads.fastq.gz --reference genome.fasta
+   telomore --mode=nanopore --single reads.fastq.gz --reference genome.fasta -t 8
 
 2. Illumina mode:
-   python arg_parser.py --mode=illumina --read1 read1.fastq.gz --read2 read2.fastq.gz --reference genome.fasta
+   telomore --mode=illumina --read1 read1.fastq.gz --read2 read2.fastq.gz --reference genome.fasta -t 8
 """,
         formatter_class=argparse.RawTextHelpFormatter)
 

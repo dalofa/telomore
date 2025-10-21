@@ -7,7 +7,7 @@ the header of the fasta-reference file.
 
 ## Usage
 ```
-python [telomore.py] --mode <mode> --reference <reference.fasta> [options]
+telomore --mode <mode> --reference <reference.fasta> [options]
 ```
 
 Required Arguments

@@ -217,7 +217,7 @@ def main(args):
             if args.coverage_threshold is None:
                 args.coverage_threshold=5
             if args.quality_threshold is None:
-                args.threshold=10
+                args.quality_threshold=10
 
             qc_map(extended_assembly= replicon.stitch_out,
                    left = replicon.left_sam,
@@ -238,7 +238,7 @@ def main(args):
             if args.coverage_threshold is None:
                 args.coverage_threshold=1
             if args.quality_threshold is None:
-                args.threshold=30
+                args.quality_threshold=30
 
             qc_map_illumina(extended_assembly=replicon.stitch_out,
                              left_sam=replicon.left_sam,

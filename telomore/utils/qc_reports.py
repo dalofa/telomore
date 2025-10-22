@@ -9,7 +9,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from .cmd_tools import map_and_sort, map_and_sort_illumina
-from .fasta_tools import merge_fasta, dereplicate_fastq, cat_and_derep_fastq
+from .fasta_tools import merge_fasta, dereplicate_fastq, cat_and_derep_fastq, check_fastq_order
 from .map_tools import sam_to_fastq, sam_to_readpair
 
 
@@ -64,11 +64,15 @@ def qc_map_illumina(extended_assembly:str,left_sam:str,right_sam:str,fastq_in1:s
                             fastq_in2=r_tmp2,
                             fastq_out=a_tmp2)
 
-        map_and_sort_illumina(reference=extended_assembly,
-                            read1=a_tmp1,
-                            read2=a_tmp2,
-                            output=output_handle,
-                            threads=t)
+        if check_fastq_order(a_tmp1,a_tmp2):
+
+            map_and_sort_illumina(reference=extended_assembly,
+                                read1=a_tmp1,
+                                read2=a_tmp2,
+                                output=output_handle,
+                                threads=t)
+        else:
+            raise Exception("FASTQ files are not properly paired or ordered.")
 
 def cons_genome_map(left_cons:str,right_cons:str,polished_genome:str,output_handle:str,t=1) -> None:
     '''Collect consensus and maps them against the polished genome'''

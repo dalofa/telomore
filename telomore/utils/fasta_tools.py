@@ -59,8 +59,8 @@ def dereplicate_fastq(fastq_in:str, fastq_out:str) -> None:
 
     with open(fastq_in, "r") as infile:
         for record in SeqIO.parse(infile, "fastq"):
-            # Combine read ID and sequence to ensure uniqueness by both criteria
-            read_key = (record.id, str(record.seq))
+            # Dereplicate only on read_id to avoid identical reads with different mappings producing duplicates
+            read_key =(record.id)
 
             if read_key not in seen_reads:
                 seen_reads.add(read_key)
@@ -68,6 +68,7 @@ def dereplicate_fastq(fastq_in:str, fastq_out:str) -> None:
 
     with open(fastq_out, "w") as outfile:
         SeqIO.write(unique_reads, outfile, "fastq")
+
 
 def cat_and_derep_fastq(fastq_in1:str,fastq_in2:str,fastq_out:str) -> None:
     """Concatanates two fastq-files and dereplicates it"""
@@ -83,6 +84,8 @@ def cat_and_derep_fastq(fastq_in1:str,fastq_in2:str,fastq_out:str) -> None:
 
     dereplicate_fastq(fastq_in = fastq_out,
                       fastq_out=fastq_out)
+    
+
 
 
 def get_chromosome(fasta:str, output_handle:str) -> None:

@@ -1,5 +1,5 @@
 # TELOMORE
-Telomore is a tool for identifying and extracting telomeric sequences from **Oxford Nanopore** or **Illumina** sequencing reads of *Streptomyces* that have been excluded from a de novo assembly. It processes sequencing data to extend assemblies, generate quality control (QC) maps, and produce finalized assemblies with the telomere/recessed bases included.
+Telomore is a tool for identifying and extracting telomeric sequences from **Oxford Nanopore** or **Illumina** sequencing reads of Streptomycetes that have been excluded from a de novo assembly. It processes sequencing data to extend assemblies, generate quality control (QC) maps, and produce finalized assemblies with the telomere/recessed bases included.
 
 ## Before running Telomore
 Telomore does not identify linear contigs but rather rely on the user to provide that information in
@@ -11,20 +11,22 @@ telomore --mode <mode> --reference <reference.fasta> [options]
 ```
 
 Required Arguments
---mode: Specify the sequencing platform. Options: nanopore or illumina.
---reference: Path to the reference genome file in FASTA format.
+- `--mode` Specify the sequencing platform. Options: nanopore or illumina.
+- `--reference` Path to the reference genome file in FASTA format.
 
 Nanopore-Specific Arguments
---single: Path to a single gzipped FASTQ file containing Nanopore reads.
+- `--single` Path to a single gzipped FASTQ file containing Nanopore reads.
 
 Illumina-Specific Arguments
---read1: Path to gzipped FASTQ file for Illumina read 1.
---read2: Path to gzipped FASTQ file for Illumina read 2.
+- `--read1` Path to gzipped FASTQ file for Illumina read 1.
+- `--read2` Path to gzipped FASTQ file for Illumina read 2.
 
 Optional Arguments
---threads: Number of threads to use (default: 1).
---keep: Retain intermediate files (default: False).
---quiet: Suppress console logging.
+- `--coverage_threshold` Set the threshold for coverage to stop trimming during consensus trimming (Default is coverage=5 for ONT reads and coverage=1 for Illumina reads).
+- `--quality_threshold` Set the Q-score required to count a read position in the coverage calculation during consensus trimming (Default is Q-score=10 for ONT reads and Q-score=30 for Illumina reads).
+- `--threads` Number of threads to use (default: 1).
+- `--keep` Retain intermediate files (default: False).
+- `--`quiet` Suppress console logging.
 
 ## Process overview
 The process is as follows:
@@ -78,6 +80,7 @@ Inspecting the {contig_name}_QC.bam-file in IGV (Integrative Genomics Viewer) ca
 These can be installed using conda
 ```
 conda create -n telo_env \
+python=3.11.9 \
 minimap2=2.25 \
 bowtie2 \
 samtools \

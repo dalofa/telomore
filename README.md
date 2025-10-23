@@ -26,7 +26,7 @@ Optional Arguments
 - `--quality_threshold` Set the Q-score required to count a read position in the coverage calculation during consensus trimming (Default is Q-score=10 for ONT reads and Q-score=30 for Illumina reads).
 - `--threads` Number of threads to use (default: 1).
 - `--keep` Retain intermediate files (default: False).
-- `--`quiet` Suppress console logging.
+- `--quiet` Suppress console logging.
 
 ## Process overview
 The process is as follows:

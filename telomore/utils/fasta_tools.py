@@ -3,8 +3,28 @@ Utilities for handling fasta files.
 """
 
 import logging
+from itertools import zip_longest
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+
+from Bio import SeqIO
+
+def check_fastq_order(file1, file2) -> bool:
+    """
+    Checks if two FASTQ files have the same length and order
+    """
+    handle1 = SeqIO.parse(file1, "fastq")
+    handle2 = SeqIO.parse(file2, "fastq")
+
+    # Iterate over reads, use zip_longest to not stop if one file is shorter than the other
+    for i, (read1, read2) in enumerate(zip_longest(handle1, handle2)):
+        if read1 is None or read2 is None:
+            print(f"{file1} and {file2} are not the same length, diverging at read {i+1}")
+            return False
+        if read1.id != read2.id:
+            print(f"Mismatch at read {i+1} in files {file1} {file2}: {read1.id} != {read2.id}")
+            return False
+    return True
 
 def get_linear_elements(fasta_file:str) -> list:
     """Returns a list of contigs that have linear in their header description"""
@@ -39,8 +59,8 @@ def dereplicate_fastq(fastq_in:str, fastq_out:str) -> None:
 
     with open(fastq_in, "r") as infile:
         for record in SeqIO.parse(infile, "fastq"):
-            # Combine read ID and sequence to ensure uniqueness by both criteria
-            read_key = (record.id, str(record.seq))
+            # Dereplicate only on read_id to avoid identical reads with different mappings producing duplicates
+            read_key =(record.id)
 
             if read_key not in seen_reads:
                 seen_reads.add(read_key)
@@ -48,6 +68,7 @@ def dereplicate_fastq(fastq_in:str, fastq_out:str) -> None:
 
     with open(fastq_out, "w") as outfile:
         SeqIO.write(unique_reads, outfile, "fastq")
+
 
 def cat_and_derep_fastq(fastq_in1:str,fastq_in2:str,fastq_out:str) -> None:
     """Concatanates two fastq-files and dereplicates it"""
@@ -63,6 +84,8 @@ def cat_and_derep_fastq(fastq_in1:str,fastq_in2:str,fastq_out:str) -> None:
 
     dereplicate_fastq(fastq_in = fastq_out,
                       fastq_out=fastq_out)
+    
+
 
 
 def get_chromosome(fasta:str, output_handle:str) -> None:
@@ -191,3 +214,5 @@ def build_extended_fasta(org_fasta:str, linear_elements: list, replicon_list:lis
     SeqIO.write(sequences=seq_rec_list,
                 handle=output_handle,
                 format="fasta")
+if __name__ == "__main__":
+    check_fastq_order("/tmp/tmpnrb8ke64/all_terminal_reads_1.fastq","/tmp/tmpnrb8ke64/all_terminal_reads_2.fastq")

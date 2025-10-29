@@ -91,6 +91,11 @@ EXAMPLES:
         "--quality_threshold",
         type=int,
         help="Quality threshold for consensus trimming. Default is q_score=10 for nanopore and q_score=30 for illumina.")
+    parser.add_argument(
+        '--skip-side', 
+        choices=['left', 'right'],
+        help="""Choose to skip processing of one side of the assembly."""
+    )
 
     # Check if no arguments were provided
     if len(sys.argv) == 1:

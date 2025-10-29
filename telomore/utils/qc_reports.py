@@ -104,7 +104,7 @@ def map_to_depth(bam_file:str, output_handle:str) -> None:
     """Map the depth of coverage to a bam file and write it to a file."""
     pysam.depth("-aa",bam_file,"-o",output_handle)
 
-def finalize_log(log:str,right_fasta:str,left_fasta:str) -> None:
+def finalize_log(log:str,right_fasta:str,left_fasta:str,side_skipped:str) -> None:
     """Function to finalize the log by prepending the final information about consensus added."""
     file = open(log)
     log_cont = file.readlines()
@@ -132,6 +132,11 @@ def finalize_log(log:str,right_fasta:str,left_fasta:str) -> None:
     else:
         new_right=right_len-int(trim_right)
         right_seq = right_seq[0:new_right]
+    
+    if side_skipped=="left":
+        new_left="skipped"
+    if side_skipped=="right":
+        new_right="skipped"
 
     final_lengths ="left_cons:{}\tright_consensus:{}".format(new_left,new_right)
 

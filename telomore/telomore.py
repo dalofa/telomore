@@ -97,40 +97,49 @@ def main(args):
     for replicon in replicon_list:
         logging.info("\tContig %s", replicon.name)
 
-        # GENERATE LEFT CONSENSUS
-        # To maintain alignment anchor point, the reads are flipped
-        # And the resulting consensus must then be flipped again
-        revcomp_reads(reads_in = replicon.left_filt_fq,
-                      reads_out = replicon.revcomp_out)
-
-        if args.mode=="nanopore":
+        if args.mode=="nanopore": # move out to allow skipping of reads
             db_out=ref_name+".db"
             train_lastDB(args.reference,
                             args.single,
                             db_out,
                             args.threads) # train on entire reference
-            generate_consensus_lamassemble(db_name = db_out,
-                                            reads = replicon.revcomp_out,
+        
+        if args.skip_side=="left":
+            logging.info("\t\tSkipping left side.")
+        
+        else:
+            # GENERATE LEFT CONSENSUS
+            # To maintain alignment anchor point, the reads are flipped
+            # And the resulting consensus must then be flipped again
+            revcomp_reads(reads_in = replicon.left_filt_fq,
+                        reads_out = replicon.revcomp_out)
+
+            if args.mode=="nanopore":
+                generate_consensus_lamassemble(db_name = db_out,
+                                                reads = replicon.revcomp_out,
+                                                output = replicon.l_cons_out)
+
+            elif args.mode=="illumina":
+                generate_consensus_mafft(reads = replicon.revcomp_out,
                                             output = replicon.l_cons_out)
+            # flip consensus to match original orientation
+            revcomp(fasta_in = replicon.l_cons_out,
+                    fasta_out = replicon.l_cons_final_out)
 
-        elif args.mode=="illumina":
-            generate_consensus_mafft(reads = replicon.revcomp_out,
-                                        output = replicon.l_cons_out)
-        # flip consensus to match original orientation
-        revcomp(fasta_in = replicon.l_cons_out,
-                fasta_out = replicon.l_cons_final_out)
-
-        # GENERATE RIGHT CONSENSUS
-        # The right reads are already oriented with the anchor point
-        # left-most and does therefore not need to be flipped
-        if args.mode=="nanopore":
-            # A last-db should aldready exist from the left-consensus
-            generate_consensus_lamassemble(db_name = db_out,
-                                            reads = replicon.right_filt_fq,
+        if args.skip_side=="right":
+            logging.info("\t\tSkipping right side.")
+        else:
+            # GENERATE RIGHT CONSENSUS
+            # The right reads are already oriented with the anchor point
+            # left-most and does therefore not need to be flipped
+            if args.mode=="nanopore":
+                # A last-db should aldready exist from the left-consensus
+                generate_consensus_lamassemble(db_name = db_out,
+                                                reads = replicon.right_filt_fq,
+                                                output = replicon.r_cons_final_out)
+            elif args.mode=="illumina":
+                generate_consensus_mafft(reads = replicon.right_filt_fq,
                                             output = replicon.r_cons_final_out)
-        elif args.mode=="illumina":
-            generate_consensus_mafft(reads = replicon.right_filt_fq,
-                                        output = replicon.r_cons_final_out)
     # 2: Extend assembly with consensus by mapping onto chromsome
     # -----------------------------------------------------------------
     logging.info("Extending assembly")
@@ -160,27 +169,41 @@ def main(args):
 
         if args.mode=="nanopore":
             # Map onto the reduced reference using minimap2
-            map_and_sort(reference = replicon.trunc_left_fasta,
-                        fastq = replicon.l_cons_final_out,
-                        output = replicon.l_map_out,
-                        threads = args.threads)
 
-            map_and_sort(reference = replicon.trunc_right_fasta,
-                        fastq = replicon.r_cons_final_out,
-                        output = replicon.r_map_out,
-                        threads = args.threads)
+            if args.skip_side=="left":
+                logging.info("\t\tSkipping left side.")
+            else:
+                map_and_sort(reference = replicon.trunc_left_fasta,
+                            fastq = replicon.l_cons_final_out,
+                            output = replicon.l_map_out,
+                            threads = args.threads)
+            
+            if args.skip_side=="right":
+                logging.info("\t\tSkipping right side.")
+            else:
+                map_and_sort(reference = replicon.trunc_right_fasta,
+                            fastq = replicon.r_cons_final_out,
+                            output = replicon.r_map_out,
+                            threads = args.threads)
 
         elif args.mode=="illumina":
             # Map onto reduced reference using bowtie2
-            map_and_sort_illumina_cons(reference = replicon.trunc_left_fasta,
-                        consensus_fasta= replicon.l_cons_final_out,
-                        output = replicon.l_map_out,
-                        threads = args.threads)
-
-            map_and_sort_illumina_cons(reference = replicon.trunc_right_fasta,
-                        consensus_fasta = replicon.r_cons_final_out,
-                        output = replicon.r_map_out,
-                        threads = args.threads)
+            
+            if args.skip_side=="left":
+                logging.info("\t\tSkipping right side.")
+            else:
+                map_and_sort_illumina_cons(reference = replicon.trunc_left_fasta,
+                            consensus_fasta= replicon.l_cons_final_out,
+                            output = replicon.l_map_out,
+                            threads = args.threads)
+            
+            if args.skip_side=="right":
+                logging.info("\t\tSkipping right side.")
+            else:
+                map_and_sort_illumina_cons(reference = replicon.trunc_right_fasta,
+                            consensus_fasta = replicon.r_cons_final_out,
+                            output = replicon.r_map_out,
+                            threads = args.threads)
 
 
         # Extend the assembly using the map
@@ -188,6 +211,11 @@ def main(args):
             cons_log_out= replicon.cons_log_np_out
         elif args.mode=="illumina":
             cons_log_out= replicon.cons_log_ill_out
+
+        if args.skip_side=="left":
+            create_unmapped_empty_bam(replicon.l_map_out)
+        elif args.skip_side=="right":
+            create_unmapped_empty_bam(replicon.r_map_out)
 
         stich_telo(ref = replicon.contig_fasta,
                    left_map = replicon.l_map_out,
@@ -286,7 +314,8 @@ def main(args):
 
         finalize_log(log = cons_log_out,
                      right_fasta = replicon.stitch_right_fasta,
-                     left_fasta = replicon.stitch_left_fasta)
+                     left_fasta = replicon.stitch_left_fasta,
+                     side_skipped = args.skip_side)
 
     # 5: Clean-up
     # -----------------------------------------------------------------

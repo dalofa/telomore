@@ -284,7 +284,7 @@ def stich_telo(ref:str, left_map:str ,right_map:str ,outfile:str, logout:str, tm
    if is_consensus_empty(left_map):
       # Make an empty seq list to enable errors later on
       left_seqs=[]
-      left_log_mes="#No consensus produced for left-side end. Likely, no reads extends the assembly. "
+      left_log_mes="#No consensus produced for left-side end. Likely, no reads extends the assembly or the side was skipped."
    elif is_consensus_unmapped(left_map):
       left_seqs=[]
       left_log_mes=f"#The consensus produced for the left-side does not map to left-side of {ref}"
@@ -317,7 +317,7 @@ def stich_telo(ref:str, left_map:str ,right_map:str ,outfile:str, logout:str, tm
    # Check if an empty left consensus was used to generate the map:
    if is_consensus_empty(right_map):
       right_seqs=[]
-      right_log_mes="#No consensus produced for right-side end. Likely, no reads extends the assembly."
+      right_log_mes="#No consensus produced for right-side end. Likely, no reads extends the assembly or the side was skipped."
    elif is_consensus_unmapped(right_map):
       right_seqs=[]
       right_log_mes=f"#The consensus produced for the right-side does not map to the right-side of {ref}"
@@ -579,4 +579,30 @@ def generate_support_log(genome:str, qc_bam_file:str, output_handle:str) -> None
             log.write(pos,cov,match)
          except TypeError: # if no reads are mapped
             continue
-   
+
+def create_unmapped_empty_bam(file_name:str) -> None:
+   """Creates a BAM file with a single unmapped read with no sequence.
+   Used to generate an empty map when a side is skipped."""
+
+   # Create a header for the BAM file
+
+   header = {
+      'HD': {'VN': '1.0'},
+      'SQ': [{'LN': 1000, 'SN': 'skipped_side_ref'}]  # Fake reference with length 1000
+   }
+
+   # Create an unmapped read
+   read = pysam.AlignedSegment()
+   read.query_name = "empty_read"
+   read.query_sequence = ""
+   read.flag = 4  # 4 means unmapped
+   read.mapping_quality = 0
+   read.cigar = []
+   read.next_reference_id = -1
+   read.next_reference_start = -1
+   read.template_length = 0
+   read.query_qualities = []
+
+   # Write the read to a BAM file
+   with pysam.AlignmentFile(file_name, "wb", header=header) as bam_out:
+      bam_out.write(read)

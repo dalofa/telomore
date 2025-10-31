@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "telomore"
 description = "Identify and extract telomeric sequences from Oxford Nanopore or Illumina sequencing reads to extend Streptomycetes assemblies."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "David Faurdal", email = "dalofa@biosustain.dtu.dk" }]
 

@@ -4,18 +4,47 @@ which have been excluded from a de novo assembly.
 """
 
 import logging
-
-# imports
 import os
 import shutil
 import traceback
 
-from .utils import *
+from telomore._version import __version__
+from telomore.utils.arg_parser import get_args, setup_logging
+from telomore.utils.classes_and_small_func import Replicon
+from telomore.utils.cmd_tools import (
+    generate_consensus_lamassemble,
+    generate_consensus_mafft,
+    map_and_sort,
+    map_and_sort_illumina,
+    map_and_sort_illumina_cons,
+    train_lastDB,
+)
+from telomore.utils.fasta_tools import (
+    build_extended_fasta,
+    extract_contig,
+    get_fasta_length,
+    get_linear_elements,
+    strip_fasta,
+)
+from telomore.utils.map_tools import (
+    get_left_soft,
+    get_right_soft,
+    get_terminal_reads,
+    revcomp,
+    revcomp_reads,
+    stich_telo,
+    trim_by_map,
+    trim_by_map_illumina,
+)
+from telomore.utils.qc_reports import (
+    finalize_log,
+    qc_map,
+    qc_map_illumina,
+)
 
 
 def entrypoint():
     """Entry point for CLI: parses args and calls main()."""
-    #    args = get_args(sys.argv[1:])
 
     args = get_args()  # Get arguments
     setup_logging(log_file='telomore.log', quiet=args.quiet)  # setup logging
@@ -33,7 +62,7 @@ def main(args):
     ref_name = os.path.splitext(os.path.basename(args.reference))[0]
     folder_content = os.listdir()
 
-    logging.info('Running Telomore: 0.4')
+    logging.info(f'Running Telomore: {__version__}')
 
     # Create output folder
     if args.mode == 'nanopore':

@@ -34,7 +34,6 @@ telomore = "telomore.app:entrypoint"
 
 [tool.hatch.build]
 source = "src"
-include = ["src/telomore/**/*.py", "src/telomore/bash_scripts/*.sh"]
 exclude = ["environment.yml", ".github", ".vscode"]
 
 [tool.hatch.build.targets.wheel]

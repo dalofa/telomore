@@ -4,16 +4,11 @@ Functions for running CLI-tools to map reads and generate consensus.
 
 import logging
 import os
+from pathlib import Path
 import subprocess
 import traceback
-from pathlib import Path
 
-try:
-    # Python 3.9+
-    from importlib.resources import files
-except ImportError:
-    # Python 3.7-3.8 compatibility
-    from importlib_resources import files
+from importlib.resources import files
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -31,8 +26,8 @@ def get_script_path(script_name: str) -> Path:
         return Path(str(script_path))
     except Exception:
         # Fallback for edge cases
-        import tempfile
         import shutil
+        import tempfile
 
         with script_path.open('rb') as src:
             with tempfile.NamedTemporaryFile(
@@ -70,7 +65,7 @@ def map_and_sort_illumina(
     script and returns a sorted and index bam-file"""
 
     # input check
-    assert type(threads) == int, 'threads must be an integer'
+    assert type(threads) is int, 'threads must be an integer'
     assert os.path.isfile(reference), 'the reference file specified does not exist'
     assert os.path.isfile(read1), 'the fastx-file specified does not exist'
     assert os.path.isfile(read2), 'the fastx-file specified does not exist'
@@ -94,7 +89,7 @@ def map_and_sort_illumina_cons(
     script and returns a sorted and index bam-file"""
 
     # input check
-    assert type(threads) == int, 'threads must be an integer'
+    assert type(threads) is int, 'threads must be an integer'
     assert os.path.isfile(reference), 'the reference file specified does not exist'
     assert os.path.isfile(consensus_fasta), 'the fastx-file specified does not exist'
 
@@ -156,6 +151,7 @@ def generate_consensus_lamassemble(db_name: str, reads: str, output: str) -> Non
     sequence_count = 0
     for record in SeqIO.parse(reads, 'fastq'):
         sequence_count += 1
+        latest_record = record
 
     if sequence_count == 0:
         logging.info(
@@ -166,7 +162,7 @@ def generate_consensus_lamassemble(db_name: str, reads: str, output: str) -> Non
             empty_record = SeqRecord(Seq(''), id='empty_consensus')
             SeqIO.write(empty_record, seq, 'fasta')
     if sequence_count == 1:
-        single_record = record
+        single_record = latest_record
         logging.info(
             'There are only a single read to construct a consensus from. Returning read as consensus to %s',
             output,
@@ -202,6 +198,7 @@ def generate_consensus_mafft(reads: str, output: str) -> None:
     sequence_count = 0
     for record in SeqIO.parse(reads, 'fastq'):
         sequence_count += 1
+        latest_record = record
 
     if sequence_count == 0:
         logging.info(
@@ -213,7 +210,7 @@ def generate_consensus_mafft(reads: str, output: str) -> None:
             SeqIO.write(empty_record, seq, 'fasta')
 
     if sequence_count == 1:
-        single_record = record
+        single_record = latest_record
         logging.info(
             'There are only a single read to construct a consensus from. Returning read as consensus to %s',
             output,

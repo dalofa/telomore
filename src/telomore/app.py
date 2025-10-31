@@ -43,6 +43,22 @@ from telomore.utils.qc_reports import (
 )
 
 
+def check_dependencies(required_tools=None):
+    """Check if required external dependencies are available."""
+    missing_tools = []
+    for tool in required_tools:
+        if shutil.which(tool) is None:
+            # Log missing tool
+            missing_tools.append(tool)
+        else:
+            # Log the path to the tool
+            logging.info(f'{tool}\t {shutil.which(tool)}')
+    if missing_tools:
+        # Log all missing tools and exit
+        logging.error(f'Missing required tools: {", ".join(missing_tools)}')
+        exit(1)
+
+
 def entrypoint():
     """Entry point for CLI: parses args and calls main()."""
 
@@ -59,10 +75,23 @@ def entrypoint():
 
 def main(args):
     """main routine for Telomore"""
+    logging.info(f'Running Telomore: {__version__}')
+
+    check_dependencies(
+        [
+            'minimap2',
+            'samtools',
+            'lamassemble',
+            'mafft',
+            'bowtie2',
+            'lastdb',
+            'lastal',
+            'cons',
+        ]
+    )
+
     ref_name = os.path.splitext(os.path.basename(args.reference))[0]
     folder_content = os.listdir()
-
-    logging.info(f'Running Telomore: {__version__}')
 
     # Create output folder
     if args.mode == 'nanopore':

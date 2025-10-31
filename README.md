@@ -81,14 +81,13 @@ Inspecting the {contig_name}_QC.bam-file in IGV (Integrative Genomics Viewer) ca
 
 ## Dependencies (CLI-tools)
 
-- Minimap, version 2.25 or higher
 - Bowtie2
-- Samtools
+- Emboss tools (cons specifically)
 - Lamassemble
 - LAST-DB
-- Lamassemble
 - Mafft
-- Emboss tools (cons specifically)
+- Minimap2, version 2.25 or higher
+- Samtools
 
 These can be installed using the conda recipe in this repo:
 

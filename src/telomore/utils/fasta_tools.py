@@ -127,8 +127,8 @@ def attach_seq(
 ) -> None:
     """Attaches a left and right fasta sequence to an assembly sequence and writes it to a new file."""
 
-    l = SeqIO.read(left, 'fasta')
-    r = SeqIO.read(right, 'fasta')
+    left_seq = SeqIO.read(left, 'fasta')
+    right_seq = SeqIO.read(right, 'fasta')
     chrom = SeqIO.read(chromsome, 'fasta')
 
     if offset == 0:  # if offset is 0 offset:-offset fucks it up
@@ -139,7 +139,7 @@ def attach_seq(
     else:
         genome = chrom[offset:-offset]
 
-    att_genome = l + genome + r
+    att_genome = left_seq + genome + right_seq
     att_genome.id = output_name.split('.')[0]
     SeqIO.write(att_genome, output_name, 'fasta')
 
@@ -190,7 +190,7 @@ def strip_fasta(
 ) -> None:
     """Strip fasta-file of the first of last x-bases."""
 
-    assert type(x) == int
+    assert type(x) is int
 
     records = []
 

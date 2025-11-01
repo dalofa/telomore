@@ -1,0 +1,22 @@
+name: telomore
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::last
+  - biopython
+  - bowtie2
+  - emboss
+  - lamassemble
+  - mafft
+  - minimap2=>2.25
+  - pip
+  - pysam
+  - python=3.13.9
+  - samtools
+  - pip:
+      - hatch
+      - isort
+      - numpydoc-validation
+      - pre-commit
+      - ruff

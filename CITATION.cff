@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "telomore"
+version: 0.4.0
+date-released: 2025-10-14
+authors:
+  - family-names: Faurdal
+    given-names: David
+    affiliation: "Technical University of Denmark"
+  - family-names: Booth
+    given-names: Thom J.
+    affiliation: "Technical University of Denmark"
+  - family-names: Weber
+    given-names: Tilmann
+    affiliation: "Technical University of Denmark"
+  - family-names: Sparholt Jørgensen
+    given-names: Tue
+    affiliation: "Technical University of Denmark"
+repository-code: "https://github.com/dalofa/telomore"
+license: MIT
+abstract: >-
+  Members of the Gram-positive Streptomycetaceae family of bacteria have linear chromosomes and carry linear plasmids, which end in telomeres bound by proteins. In a large-scale analysis of 762 linear complete genomes, we discovered that the telomeres were truncated in most assemblies, as they are not captured by Oxford Nanopore sequencing. To address this issue, we present Telomore, a tool to reconstitute this missing telomeric sequence using ONT and Illumina data. In the studied dataset, Telomore increased detection of archetypal telomeres from 0% to 37%, which could be near the occurrence rate in nature. Combining these reconstituted telomeres with previously published telomeres and all complete Streptomycetaceae RefSeq genomes, we created a compendium of more than 2000 telomeres. Similarity-based clustering identified 137 telomere clusters. We find that 78% of Telomore-extended chromosomes encode both telomeres, while this is only the case for 15% of comparable RefSeq chromosomes. Therefore, most assignments of “complete” to Streptomycetaceae are erroneous. Finally, we mined the 762 genomes for known telomeric maintenance proteins and used those to identify a plasmid-specific archetypal telomere and to identify a previously unidentified protein family likely involved with the maintenance of Sg2247-class telomeres. Together, these results highlight a common issue assembling complete linear Streptomycetaceae genomes and provide a programmatic solution and identify a candidate for a new telomeric protein.
+keywords:
+  - genomics
+  - telomeres
+  - bioinformatics
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Faurdal
+      given-names: David
+      affiliation: "Technical University of Denmark"
+    - family-names: Booth
+      given-names: Thom J.
+      affiliation: "Technical University of Denmark"
+    - family-names: Weber
+      given-names: Tilmann
+      affiliation: "Technical University of Denmark"
+    - family-names: Sparholt Jørgensen
+      given-names: Tue
+      affiliation: "Technical University of Denmark"
+  title: "Tying up loose ends: Recovering thousands of missing telomeres from Streptomyces and other Streptomycetaceae genomes."
+  year: 2025
+  journal: BioRxiv
+  url: "https://www.biorxiv.org/content/early/2025/10/14/2025.10.14.682034"
+  repository-code: "https://github.com/dalofa/telomore"
+  doi: 10.1101/2025.10.14.682034

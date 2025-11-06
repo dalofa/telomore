@@ -1,6 +1,6 @@
 # TELOMORE
 
-Telomore is a tool for identifying and extracting telomeric sequences from **Oxford Nanopore** or **Illumina** sequencing reads of Streptomycetes that have been excluded from a de novo assembly. It processes sequencing data to extend assemblies, generate quality control (QC) maps, and produce finalized assemblies with the telomere/recessed bases included.
+Telomore is a tool for identifying and extracting telomeric sequences from **Oxford Nanopore** or **Illumina** sequencing reads of *Streptomycetes spp.* that have been excluded from a *de novo* assembly. It processes sequencing data to extend assemblies, generate quality control (QC) maps, and produce finalized assemblies with the telomere/recessed bases included.
 
 ## Before running Telomore
 

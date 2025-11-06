@@ -7,10 +7,13 @@ from argparse import Namespace
 import logging
 import sys
 
+from telomore._version import __version__
+
+
 def get_args() -> Namespace:
     """Handles parsing of arguments"""
     parser = argparse.ArgumentParser(
-        description= """Telomore: A tool to recover potential telomeric sequences from Streptomyces genomes.
+        description="""Telomore: A tool to recover potential telomeric sequences from Streptomyces genomes.
 
 This tool processes sequencing data from Oxford Nanopore or Illumina platforms to extend assemblies and generate QC reports.
 
@@ -36,61 +39,70 @@ EXAMPLES:
 2. Illumina mode:
    telomore --mode=illumina --read1 read1.fastq.gz --read2 read2.fastq.gz --reference genome.fasta -t 8
 """,
-        formatter_class=argparse.RawTextHelpFormatter)
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
 
     parser.add_argument(
-        "-m", '--mode', 
+        '-v',
+        '--version',
+        action='version',
+        version=f'telomore {__version__}',
+        help='Show version number and exit',
+    )
+
+    parser.add_argument(
+        '-m',
+        '--mode',
         choices=['nanopore', 'illumina'],
         required=True,
         help="""Choose which mode to run.
         --mode=nanopore takes a single read-file, specified using --single
-        --mode=illumina-mode takes two read-files specified using --read1 and --read2"""
+        --mode=illumina-mode takes two read-files specified using --read1 and --read2""",
     )
     parser.add_argument(
-        "--single", 
+        '--single',
         type=str,
-        help="Path to a single gzipped nanopore fastq-file",
+        help='Path to a single gzipped nanopore fastq-file',
     )
     parser.add_argument(
-        "--read1", 
+        '--read1',
         type=str,
-        help="Path to gzipped illumina read1 fastq-file",
+        help='Path to gzipped illumina read1 fastq-file',
     )
     parser.add_argument(
-        "--read2", 
+        '--read2',
         type=str,
-        help="Path to gzipped illumina read2 fastq-file",
+        help='Path to gzipped illumina read2 fastq-file',
     )
     parser.add_argument(
-        "-r", "--reference", 
+        '-r',
+        '--reference',
         type=str,
         required=True,
-        help="Path to reference file (.fasta, .fna, or .fa)"
+        help='Path to reference file (.fasta, .fna, or .fa)',
     )
     parser.add_argument(
-        "-t", "--threads", 
-        type=int,
-        default=1,
-        help="Threads to use. Default is 1"
+        '-t', '--threads', type=int, default=1, help='Threads to use. Default is 1'
     )
     parser.add_argument(
-        "-k", "--keep", 
+        '-k',
+        '--keep',
         action='store_true',
-        help="Flag to keep intermediate files. Default is False"
+        help='Flag to keep intermediate files. Default is False',
     )
     parser.add_argument(
-        "-q", "--quiet", 
-        action='store_true',
-        help="Set logging to quiet."
+        '-q', '--quiet', action='store_true', help='Set logging to quiet.'
     )
     parser.add_argument(
-        "--coverage_threshold",
+        '--coverage_threshold',
         type=int,
-        help="Coverage threshold for consensus trimming. Default is coverage=5 for nanopore and coverage=1 for Illumina.")
+        help='Coverage threshold for consensus trimming. Default is coverage=5 for nanopore and coverage=1 for Illumina.',
+    )
     parser.add_argument(
-        "--quality_threshold",
+        '--quality_threshold',
         type=int,
-        help="Quality threshold for consensus trimming. Default is q_score=10 for nanopore and q_score=30 for illumina.")
+        help='Quality threshold for consensus trimming. Default is q_score=10 for nanopore and q_score=30 for illumina.',
+    )
 
     # Check if no arguments were provided
     if len(sys.argv) == 1:
@@ -101,30 +113,33 @@ EXAMPLES:
 
     if args.mode == 'illumina':
         if not (args.read1 and args.read2):
-            parser.error('Illumina mode requires two FASTQ files, specified by --read1 and --read2')
+            parser.error(
+                'Illumina mode requires two FASTQ files, specified by --read1 and --read2'
+            )
     elif args.mode == 'nanopore':
         if not args.single:
-            parser.error('Nanopore mode takes one collected FASTQ file, specified by --single')
+            parser.error(
+                'Nanopore mode takes one collected FASTQ file, specified by --single'
+            )
     return args
 
 
-def setup_logging(log_file="telomore.log",quiet:bool=False):
+def setup_logging(log_file='telomore.log', quiet: bool = False):
     """Set-up logging"""
 
     if quiet is True:
-        handlers_to_use =[
+        handlers_to_use = [
             logging.FileHandler(log_file),  # Log file
         ]
     else:
-        handlers_to_use =[
+        handlers_to_use = [
             logging.FileHandler(log_file),  # Log file
-            logging.StreamHandler(sys.stdout)  # Print to console
+            logging.StreamHandler(sys.stdout),  # Print to console
         ]
     logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(message)s",
-        handlers=handlers_to_use
+        level=logging.INFO, format='%(asctime)s - %(message)s', handlers=handlers_to_use
     )
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     get_args()

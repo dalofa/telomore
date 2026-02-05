@@ -1,8 +1,11 @@
 """
-Telomore: Script for finding and extracting telomeres from nanopore or illumina reads,
+Telomore main application module.
+
+Script for finding and extracting telomeres from nanopore or illumina reads,
 which have been excluded from a de novo assembly.
 """
 
+from argparse import Namespace
 import logging
 import os
 import shutil
@@ -32,7 +35,7 @@ from telomore.utils.map_tools import (
     get_terminal_reads,
     revcomp,
     revcomp_reads,
-    stich_telo,
+    stitch_telo,
     trim_by_map,
     trim_by_map_illumina,
 )
@@ -43,8 +46,41 @@ from telomore.utils.qc_reports import (
 )
 
 
-def check_dependencies(required_tools=None):
-    """Check if required external dependencies are available."""
+def check_dependencies(required_tools: list[str] | None = None) -> None:
+    """
+    Check if required external dependencies are available in PATH.
+
+    Verifies that all bioinformatics tools required by Telomore are installed
+    and accessible. Logs the path to each found tool and exits with error if
+    any tools are missing.
+
+    Parameters
+    ----------
+    required_tools : list of str or None, optional
+        List of command-line tool names to check. If None, no tools are checked.
+        Common tools include: minimap2, samtools, lamassemble, mafft, bowtie2,
+        lastdb, lastal, cons.
+
+    Returns
+    -------
+    None
+        Logs tool locations or exits if dependencies are missing.
+
+    Raises
+    ------
+    SystemExit
+        If any required tools are not found in PATH (exits with code 1)
+
+    Notes
+    -----
+    For each tool, this function:
+    - Checks if the tool is available using shutil.which()
+    - Logs the full path if found
+    - Collects missing tools and reports them all at once before exiting
+
+    This ensures users know about all missing dependencies upfront rather than
+    discovering them one at a time during execution.
+    """
     missing_tools = []
     for tool in required_tools:
         if shutil.which(tool) is None:
@@ -59,9 +95,34 @@ def check_dependencies(required_tools=None):
         exit(1)
 
 
-def entrypoint():
-    """Entry point for CLI: parses args and calls main()."""
+def entrypoint() -> None:
+    """
+    Entry point for the telomore command-line interface.
 
+    Parses command-line arguments, sets up logging, and calls the main workflow.
+    This function serves as the entry point defined in pyproject.toml for the
+    'telomore' console script.
+
+    Returns
+    -------
+    None
+        Executes the main workflow or exits with error code 1 on failure.
+
+    Raises
+    ------
+    SystemExit
+        If argument parsing fails or an unhandled exception occurs during workflow
+
+    Notes
+    -----
+    Error handling:
+    - Captures all exceptions during workflow execution
+    - Logs full traceback to log file
+    - Exits with code 1 to signal failure to calling process
+
+    Logging is configured before main() is called, with output to both
+    console and telomore.log file (unless --quiet is specified).
+    """
     args = get_args()  # Get arguments
     setup_logging(log_file='telomore.log', quiet=args.quiet)  # setup logging
     try:
@@ -73,8 +134,58 @@ def entrypoint():
         exit(1)
 
 
-def main(args):
-    """main routine for Telomore"""
+def main(args: Namespace) -> None:
+    """
+    Execute the main Telomore telomere extension workflow.
+
+    Orchestrates the complete pipeline for extending linear contigs with
+    telomeric sequences identified from unmapped reads. Processes either
+    Oxford Nanopore or Illumina sequencing data based on the mode parameter.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments containing:
+        - mode : str - Sequencing platform ('nanopore' or 'illumina')
+        - reference : str - Path to reference genome FASTA
+        - single : str - Nanopore FASTQ file (if mode='nanopore')
+        - read1, read2 : str - Illumina paired FASTQ files (if mode='illumina')
+        - threads : int - Number of threads for parallel operations
+        - keep : bool - Whether to retain intermediate files
+        - quiet : bool - Suppress console logging
+        - coverage_threshold : int or None - Minimum coverage for consensus trimming
+        - quality_threshold : int or None - Minimum base quality for consensus trimming
+
+    Returns
+    -------
+    None
+        Creates output directory with extended assemblies and QC files.
+
+    Raises
+    ------
+    SystemExit
+        If output folder exists, no linear contigs found, or dependencies missing
+
+    Notes
+    -----
+    Workflow steps:
+    1. Check external tool dependencies
+    2. Identify linear contigs from reference headers
+    3. Map reads to reference genome
+    4. Extract terminal extending reads for each linear contig
+    5. Generate consensus sequences from extending reads
+    6. Align and attach consensus to contig ends
+    7. Trim consensus based on read support
+    8. Generate QC BAM files for manual inspection
+    9. Create final assembly combining extended and unmodified contigs
+    10. Clean up intermediate files (unless --keep specified)
+
+    Platform-specific defaults:
+    - Nanopore: coverage_threshold=5, quality_threshold=10
+    - Illumina: coverage_threshold=1, quality_threshold=30
+
+    Output structure: {reference_basename}_{np|ill}_telomore/
+    """
     logging.info(f'Running Telomore: {__version__}')
 
     check_dependencies(
@@ -276,7 +387,7 @@ def main(args):
         elif args.mode == 'illumina':
             cons_log_out = replicon.cons_log_ill_out
 
-        stich_telo(
+        stitch_telo(
             ref=replicon.contig_fasta,
             left_map=replicon.l_map_out,
             right_map=replicon.r_map_out,

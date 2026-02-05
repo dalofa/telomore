@@ -16,13 +16,13 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
-dependencies = ["biopython", "pysam", "gitpython"]
+dependencies = ["biopython", "pysam"]
 
 dynamic = ["version"]
 
 # Optional dependencies for testing
 [project.optional-dependencies]
-dev = ["hatch", "isort", "numpydoc-validation", "pre-commit", "ruff"]
+dev = ["hatch", "isort", "numpydoc-validation", "pre-commit", "pydocstyle", "ruff"]
 
 [project.urls]
 documentation = "https://github.com/dalofa/telomore"
@@ -67,24 +67,40 @@ select = [
     "W", # pycodestyle warning rules
     "B", # flake8-bugbear rules
     "I", # isort rules
+    "D", # pydocstyle rules
 ]
 ignore = [
     "C901", # max-complexity-10
     "E501", # line-too-long
-    "I001", # isort-imports
+    "I001",  # isort-imports
     "B905", # `zip()` without an explicit `strict=` parameter
 ]
+
+# Don't auto-fix docstring issues - they're too fragile
+unfixable = ["D"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"] # Ignore all pydocstyle rules in tests
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 
 [tool.ruff.format]
 indent-style = "space"
 quote-style = "single"
 
+[tool.ruff.lint.isort]
+known-third-party = ["biopython", "pysam", "Bio"]
+known-first-party = ["telomore"]
+force-sort-within-sections = true
+
 [tool.isort]
 profile = "black"
-known_third_party = ["biopython", "pysam", "gitpython", "Bio"]
+known_third_party = ["biopython", "pysam", "Bio"]
 known_first_party = ["telomore"]
 default_section = "THIRDPARTY"
 force_sort_within_sections = true
+
 
 [tool.numpydoc_validation]
 checks = [
@@ -104,3 +120,20 @@ override_SS05 = [ # allow docstrings to start with these words
     '^Assess ',
     '^Access ',
 ]
+
+# Don't process filepaths that match these regex patterns
+exclude_files = [
+    '^_version\\.py$',
+]
+
+[tool.mypy]
+# Type hint strictness settings
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pydocstyle]
+convention = "numpy"
+match-dir = "[^\\.].*"     # matches all dirs that don't start with a dot
+match = "(?!test_).*\\.py" # matches files that don't start with 'test_' but end with '.py'

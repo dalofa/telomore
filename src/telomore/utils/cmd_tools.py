@@ -1,6 +1,4 @@
-"""
-Functions for running CLI-tools to map reads and generate consensus.
-"""
+"""Functions for running CLI-tools to map reads and generate consensus."""
 
 import logging
 import os
@@ -482,8 +480,44 @@ def map_and_sort_illumina_cons(
                     logging.warning(f'Could not remove index file {index_file}: {e}')
 
 
-def train_lastDB(fasta_name: str, reads: str, db_name: str, t=1) -> None:
-    """Trains and lastDB database using a reference and long-reads"""
+def train_lastDB(fasta_name: str, reads: str, db_name: str, t: int = 1) -> None:
+    """
+    Train a LAST database using a reference genome and long reads.
+
+    This function creates and trains a LAST database for use with lamassemble
+    consensus generation. The training process optimizes alignment parameters
+    based on the actual sequences in the reference and read files.
+
+    Parameters
+    ----------
+    fasta_name : str
+        Path to the reference genome file in FASTA format
+    reads : str
+        Path to the long reads file (FASTQ format, can be gzipped)
+    db_name : str
+        Output path/prefix for the LAST database files
+    t : int, default=1
+        Number of threads to use for indexing and training
+
+    Returns
+    -------
+    None
+        Creates database files with extensions: .bck, .des, .par, .prj, .sds, .ssp, .suf, .tis
+
+    Raises
+    ------
+    subprocess.CalledProcessError
+        If lastdb or last-train commands fail
+
+    Notes
+    -----
+    This function performs two steps:
+    1. Indexes the reference using lastdb with -uRY4 (specifies repeat masking)
+    2. Trains alignment parameters using last-train with -Qkeep option
+
+    The trained parameters are written to {db_name}.par and used by lamassemble
+    for accurate consensus generation from dissimilar sequences.
+    """
     # index fasta file
     try:
         subprocess.run(
@@ -513,9 +547,37 @@ def train_lastDB(fasta_name: str, reads: str, db_name: str, t=1) -> None:
 
 
 def generate_consensus_lamassemble(db_name: str, reads: str, output: str) -> None:
-    """Generates a consensus fasta-file given a LAST-DB and a series of reads.
-    Is suitable for dissimilar reads such as nanopore"""
+    """
+    Generate consensus sequence using lamassemble for Oxford Nanopore reads.
 
+    This function uses lamassemble with a trained LAST database to generate
+    consensus sequences from dissimilar reads, which is ideal for Oxford Nanopore
+    data with higher error rates. Handles edge cases of zero or single reads.
+
+    Parameters
+    ----------
+    db_name : str
+        Path prefix to the trained LAST database (without .par extension)
+    reads : str
+        Path to input reads in FASTQ format
+    output : str
+        Path for output consensus sequence in FASTA format
+
+    Returns
+    -------
+    None
+        Writes consensus sequence to output file and alignment to {output}.aln
+
+    Notes
+    -----
+    Special handling for edge cases:
+    - 0 reads: Writes empty consensus with id 'empty_consensus'
+    - 1 read: Uses that read directly as consensus
+    - 2+ reads: Runs lamassemble for proper consensus generation
+
+    The function also saves the alignment of reads to the consensus in a
+    separate .aln file for quality assessment.
+    """
     # Check if only a single read is present before generating consensus
     # If that is the case write just that read to consensus file
     sequence_count = 0
@@ -561,9 +623,44 @@ def generate_consensus_lamassemble(db_name: str, reads: str, output: str) -> Non
 
 
 def generate_consensus_mafft(reads: str, output: str) -> None:
-    """Generates a consensus fasta-file given a series of reads in fasta-format.
-    Relies on very similar reads."""
+    """
+    Generate consensus sequence using MAFFT and EMBOSS cons for Illumina reads.
 
+    This function generates consensus sequences from similar reads using multiple
+    sequence alignment (MAFFT) followed by consensus calling (EMBOSS cons).
+    This approach is suitable for Illumina reads which have lower error rates
+    and are more similar to each other.
+
+    Parameters
+    ----------
+    reads : str
+        Path to input reads in FASTQ format
+    output : str
+        Path for output consensus sequence in FASTA format
+
+    Returns
+    -------
+    None
+        Writes consensus sequence to output file and alignment to {output}.aln
+
+    Raises
+    ------
+    subprocess.CalledProcessError
+        If MAFFT or EMBOSS cons commands fail
+
+    Notes
+    -----
+    Special handling for edge cases:
+    - 0 reads: Writes empty consensus with id 'empty_consensus'
+    - 1 read: Uses that read directly as consensus
+    - 2+ reads: Performs MAFFT alignment followed by cons consensus calling
+
+    The EMBOSS cons is run with plurality=1, meaning only one read needs to
+    support a position for it to be included in the consensus. This is safe
+    for similar Illumina reads but would be dangerous for dissimilar sequences.
+
+    Temporary FASTA file created during conversion is automatically cleaned up.
+    """
     # Check if only a single read is mapped and use that as the consensus if there are no others.
     sequence_count = 0
     for record in SeqIO.parse(reads, 'fastq'):

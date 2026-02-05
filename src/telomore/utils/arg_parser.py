@@ -1,6 +1,4 @@
-"""
-Argument parser for the telomore tool.
-"""
+"""Argument parser for the telomore tool."""
 
 import argparse
 from argparse import Namespace
@@ -11,7 +9,53 @@ from telomore._version import __version__
 
 
 def get_args() -> Namespace:
-    """Handles parsing of arguments"""
+    r"""
+    Parse and validate command-line arguments for Telomore.
+
+    Defines the command-line interface for Telomore, including all required
+    and optional arguments. Validates mode-specific requirements and provides
+    helpful error messages.
+
+    Returns
+    -------
+    argparse.Namespace
+        Parsed arguments with attributes:
+        - mode : str - Sequencing platform ('nanopore' or 'illumina')
+        - reference : str - Path to reference genome FASTA
+        - single : str or None - Nanopore FASTQ file (required if mode='nanopore')
+        - read1 : str or None - Illumina R1 FASTQ (required if mode='illumina')
+        - read2 : str or None - Illumina R2 FASTQ (required if mode='illumina')
+        - threads : int - Number of threads (default: 1)
+        - keep : bool - Retain intermediate files (default: False)
+        - quiet : bool - Suppress console output (default: False)
+        - coverage_threshold : int or None - Coverage cutoff for trimming
+        - quality_threshold : int or None - Quality score cutoff for trimming
+
+    Raises
+    ------
+    SystemExit
+        If no arguments provided, required arguments missing, or mode-specific
+        validation fails. Prints help message and exits with code 1.
+
+    Notes
+    -----
+    Mode-specific validation:
+    - nanopore mode requires --single argument
+    - illumina mode requires both --read1 and --read2 arguments
+
+    Threshold defaults (applied in main workflow if not specified):
+    - Nanopore: coverage=5, quality=10
+    - Illumina: coverage=1, quality=30
+
+    Examples
+    --------
+    Nanopore mode:
+        telomore --mode nanopore --single reads.fq.gz --reference genome.fa -t 8
+
+    Illumina mode:
+        telomore --mode illumina --read1 R1.fq.gz --read2 R2.fq.gz \\
+                 --reference genome.fa -t 8 --coverage_threshold 2
+    """
     parser = argparse.ArgumentParser(
         description="""Telomore: A tool to recover potential telomeric sequences from Streptomyces genomes.
 
@@ -124,9 +168,40 @@ EXAMPLES:
     return args
 
 
-def setup_logging(log_file='telomore.log', quiet: bool = False):
-    """Set-up logging"""
+def setup_logging(log_file: str = 'telomore.log', quiet: bool = False) -> None:
+    """
+    Configure logging for Telomore with file and console output.
 
+    Sets up Python's logging system to write to both a log file and console
+    (unless quiet mode is enabled). Uses INFO level logging with timestamps.
+
+    Parameters
+    ----------
+    log_file : str, default='telomore.log'
+        Path to log file where all messages will be written
+    quiet : bool, default=False
+        If True, suppress console output (file logging still occurs)
+
+    Returns
+    -------
+    None
+        Configures the global logging system
+
+    Notes
+    -----
+    Log format: '%(asctime)s - %(message)s'
+    Log level: INFO (captures informational messages, warnings, and errors)
+
+    When quiet=False, logs appear in both:
+    - Console (via StreamHandler to stdout)
+    - File (via FileHandler to log_file)
+
+    When quiet=True, logs only appear in:
+    - File (via FileHandler to log_file)
+
+    This allows users to suppress verbose console output while maintaining
+    a complete log file for debugging and reproducibility.
+    """
     if quiet is True:
         handlers_to_use = [
             logging.FileHandler(log_file),  # Log file

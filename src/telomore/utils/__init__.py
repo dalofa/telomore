@@ -1,1 +1,1 @@
-"""Utilities for telomore"""
+"""Utilities for telomore."""

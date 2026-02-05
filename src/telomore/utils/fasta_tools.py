@@ -1,6 +1,4 @@
-"""
-Utilities for handling fasta files.
-"""
+"""Utilities for handling fasta files."""
 
 from itertools import zip_longest
 import logging
@@ -9,9 +7,37 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
 
-def check_fastq_order(file1, file2) -> bool:
+def check_fastq_order(file1: str, file2: str) -> bool:
     """
-    Checks if two FASTQ files have the same length and order
+    Check if two FASTQ files have the same length and read order.
+
+    Validates that paired-end FASTQ files are properly synchronized by ensuring
+    they contain the same number of reads in the same order. This is critical
+    for paired-end mapping tools which expect synchronized inputs.
+
+    Parameters
+    ----------
+    file1 : str
+        Path to first FASTQ file
+    file2 : str
+        Path to second FASTQ file
+
+    Returns
+    -------
+    bool
+        True if files are the same length with matching read IDs in order,
+        False otherwise
+
+    Notes
+    -----
+    This function:
+    - Iterates through both files simultaneously using zip_longest
+    - Compares read IDs at each position
+    - Prints informative error message if mismatch found
+    - Returns False immediately upon first mismatch
+
+    A return value of False indicates the files cannot be used together
+    for paired-end mapping without reordering or filtering.
     """
     handle1 = SeqIO.parse(file1, 'fastq')
     handle2 = SeqIO.parse(file2, 'fastq')
@@ -31,9 +57,38 @@ def check_fastq_order(file1, file2) -> bool:
     return True
 
 
-def get_linear_elements(fasta_file: str) -> list:
-    """Returns a list of contigs that have linear in their header description"""
+def get_linear_elements(fasta_file: str) -> list[str]:
+    """
+    Extract contig names that are tagged as linear in a FASTA file.
 
+    Parses a FASTA file to identify contigs with 'linear' in their description
+    line. This is used to identify which contigs should be processed for
+    telomere extension.
+
+    Parameters
+    ----------
+    fasta_file : str
+        Path to FASTA file where linear contigs are tagged
+
+    Returns
+    -------
+    list of str
+        List of contig IDs (record.id) for contigs with 'linear' in description
+
+    Notes
+    -----
+    Expected FASTA header format for linear contigs:
+        >contig_name linear
+        or
+        >contig_name [linear] some other description
+
+    The 'linear' keyword can appear anywhere in the description line.
+    Only the contig ID (before the first space) is returned, not the full
+    description.
+
+    Empty list is returned if no linear contigs are found, which causes
+    the workflow to exit gracefully.
+    """
     linear_list = []
     for record in SeqIO.parse(fasta_file, 'fasta'):
         if 'linear' in record.description:
@@ -41,8 +96,33 @@ def get_linear_elements(fasta_file: str) -> list:
     return linear_list
 
 
-def extract_contig(fasta_in: str, contig_name: str, fasta_out: str):
-    """Writes a fasta file of a specified contig"""
+def extract_contig(fasta_in: str, contig_name: str, fasta_out: str) -> None:
+    """
+    Extract a single contig from a multi-FASTA file.
+
+    Searches through a FASTA file for a contig with the specified name and
+    writes it to a new single-sequence FASTA file.
+
+    Parameters
+    ----------
+    fasta_in : str
+        Path to input multi-FASTA file
+    contig_name : str
+        Name of contig to extract (must match record.id exactly)
+    fasta_out : str
+        Path for output FASTA file containing only the extracted contig
+
+    Returns
+    -------
+    None
+        Writes extracted contig to fasta_out
+
+    Notes
+    -----
+    - Only the first contig matching contig_name is extracted
+    - If no match is found, no output file is created
+    - The output FASTA retains the original sequence and description
+    """
     for record in SeqIO.parse(fasta_in, 'fasta'):
         if record.id == contig_name:
             contig = record
@@ -51,7 +131,30 @@ def extract_contig(fasta_in: str, contig_name: str, fasta_out: str):
 
 
 def get_fasta_length(fasta_file: str, contig_name: str) -> int:
-    """Returns the length of a fasta record specified by the user"""
+    """
+    Get the sequence length of a specific contig in a FASTA file.
+
+    Searches through a FASTA file for a contig with the specified name and
+    returns its sequence length in bases.
+
+    Parameters
+    ----------
+    fasta_file : str
+        Path to FASTA file
+    contig_name : str
+        Name of contig whose length to retrieve (must match record.id exactly)
+
+    Returns
+    -------
+    int
+        Length of the contig sequence in bases
+
+    Notes
+    -----
+    - Returns length of first matching contig
+    - Returns None implicitly if contig not found (no explicit return statement)
+    - Used to determine truncation boundaries for preventing alternative mappings
+    """
     for record in SeqIO.parse(fasta_file, 'fasta'):
         if record.id == contig_name:
             length = len(record.seq)
@@ -59,7 +162,33 @@ def get_fasta_length(fasta_file: str, contig_name: str) -> int:
 
 
 def dereplicate_fastq(fastq_in: str, fastq_out: str) -> None:
-    """Dereplicates a fastq file by read-name and sequence."""
+    """
+    Remove duplicate reads from a FASTQ file based on read ID.
+
+    Creates a new FASTQ file containing only the first occurrence of each
+    unique read ID. This prevents the same read from being counted multiple
+    times in coverage calculations.
+
+    Parameters
+    ----------
+    fastq_in : str
+        Path to input FASTQ file (may contain duplicates)
+    fastq_out : str
+        Path for output deduplicated FASTQ file
+
+    Returns
+    -------
+    None
+        Writes deduplicated reads to fastq_out
+
+    Notes
+    -----
+    - Deduplication is based solely on read.id (not sequence)
+    - Order of first occurrences is preserved
+    - Subsequent reads with the same ID are discarded
+    - Useful when reads may map to multiple locations and appear in
+      multiple SAM extractions
+    """
     seen_reads = set()  # To store unique read identifiers and sequences
     unique_reads = []
 
@@ -77,7 +206,37 @@ def dereplicate_fastq(fastq_in: str, fastq_out: str) -> None:
 
 
 def cat_and_derep_fastq(fastq_in1: str, fastq_in2: str, fastq_out: str) -> None:
-    """Concatanates two fastq-files and dereplicates it"""
+    """
+    Concatenate two FASTQ files and remove duplicate reads.
+
+    Combines two FASTQ files into a single output file and then removes
+    duplicate reads based on read ID. This is useful for merging left and
+    right terminal reads while ensuring each read appears only once.
+
+    Parameters
+    ----------
+    fastq_in1 : str
+        Path to first input FASTQ file
+    fastq_in2 : str
+        Path to second input FASTQ file
+    fastq_out : str
+        Path for output deduplicated FASTQ file
+
+    Returns
+    -------
+    None
+        Writes concatenated and deduplicated reads to fastq_out
+
+    Notes
+    -----
+    This function operates in two stages:
+    1. Concatenation: All reads from both input files are written to output
+    2. Deduplication: The output file is overwritten with unique reads only
+
+    The deduplication is performed by the dereplicate_fastq function, which
+    removes duplicates based on read.id. The output file is written twice
+    (once for concatenation, once after deduplication).
+    """
     with open(fastq_out, 'w') as outfile:
         # concat
         with open(fastq_in1, 'r') as infile1:
@@ -92,8 +251,39 @@ def cat_and_derep_fastq(fastq_in1: str, fastq_in2: str, fastq_out: str) -> None:
 
 
 def get_chromosome(fasta: str, output_handle: str) -> None:
-    """Writes the longest contig to a fasta-file"""
+    """
+    Extract the primary chromosome from a FASTA file.
 
+    If the input contains a single contig, it is written to the output.
+    If multiple contigs exist, the longest contig is selected and written
+    as it is assumed to be the main chromosome. Logs information about
+    the selected contig.
+
+    Parameters
+    ----------
+    fasta : str
+        Path to input FASTA file (single or multi-contig)
+    output_handle : str
+        Path for output FASTA file containing the selected chromosome
+
+    Returns
+    -------
+    None
+        Writes the selected chromosome to output_handle and logs the selection
+
+    Notes
+    -----
+    Selection logic:
+    - Single contig: Uses that contig directly
+    - Multiple contigs: Selects the longest contig by sequence length
+
+    The function assumes the longest contig is the main chromosome, which
+    is appropriate for bacterial genomes or assemblies where the chromosome
+    is expected to be significantly longer than plasmids or contaminants.
+
+    Logging messages indicate which contig was selected and whether it was
+    the only contig or chosen as the longest.
+    """
     # test if there are a single entry in the fasta file
     try:  # there is a single entry
         chromosome = SeqIO.read(fasta, format='fasta')
@@ -123,13 +313,54 @@ def get_chromosome(fasta: str, output_handle: str) -> None:
 
 
 def attach_seq(
-    left: str, right: str, chromsome: str, output_name: str, offset: int = 0
+    left: str, right: str, chromosome: str, output_name: str, offset: int = 0
 ) -> None:
-    """Attaches a left and right fasta sequence to an assembly sequence and writes it to a new file."""
+    """
+    Attach telomeric sequences to both ends of a chromosome sequence.
 
+    Concatenates left and right sequences to the chromosome, optionally
+    trimming bases from each end of the chromosome before attachment.
+    This is used to build extended genomes with telomeric sequences.
+
+    Parameters
+    ----------
+    left : str
+        Path to FASTA file containing left/5' telomeric sequence
+    right : str
+        Path to FASTA file containing right/3' telomeric sequence
+    chromosome : str
+        Path to FASTA file containing chromosome sequence
+    output_name : str
+        Path for output FASTA file with attached sequences
+    offset : int, default=0
+        Number of bases to trim from each end of chromosome before attachment
+
+    Returns
+    -------
+    None
+        Writes extended genome to output_name
+
+    Raises
+    ------
+    ValueError
+        If offset is greater than or equal to half the chromosome length
+
+    Notes
+    -----
+    The offset parameter allows trimming of chromosome ends to remove
+    potentially problematic assembly regions before attaching telomeric
+    sequences. If offset > 0, bases [offset:-offset] are retained.
+
+    The output sequence ID is derived from output_name by removing the
+    file extension.
+
+    Example: For a 10kb chromosome with offset=100:
+    - Chromosome bases 100-9900 are retained
+    - Left sequence + chromosome[100:9900] + right sequence
+    """
     left_seq = SeqIO.read(left, 'fasta')
     right_seq = SeqIO.read(right, 'fasta')
-    chrom = SeqIO.read(chromsome, 'fasta')
+    chrom = SeqIO.read(chromosome, 'fasta')
 
     if offset == 0:  # if offset is 0 offset:-offset fucks it up
         genome = chrom
@@ -146,7 +377,35 @@ def attach_seq(
 
 # A function to merge fasta files
 def merge_fasta(input_file1: str, input_file2: str, output_file: str) -> None:
-    """Merges two fasta files into one"""
+    """
+    Merge two FASTA files into a single multi-FASTA file.
+
+    Combines all sequences from two FASTA files into one output file,
+    preserving the order (file1 sequences first, then file2 sequences).
+    Useful for creating multi-sequence reference files or combining
+    consensus sequences.
+
+    Parameters
+    ----------
+    input_file1 : str
+        Path to first input FASTA file
+    input_file2 : str
+        Path to second input FASTA file
+    output_file : str
+        Path for output merged FASTA file
+
+    Returns
+    -------
+    None
+        Writes merged sequences to output_file
+
+    Notes
+    -----
+    - All sequences from both files are included
+    - Original sequence IDs and descriptions are preserved
+    - Order is maintained: all sequences from file1, then all from file2
+    - Can merge single-sequence or multi-sequence FASTA files
+    """
     # Read sequences from input_file1 and input_file2
     sequences1 = list(SeqIO.parse(input_file1, 'fasta'))
     sequences2 = list(SeqIO.parse(input_file2, 'fasta'))
@@ -160,8 +419,38 @@ def merge_fasta(input_file1: str, input_file2: str, output_file: str) -> None:
 
 
 def trim_to_cons(input_seq: str, num_base: int, output_handle: str) -> None:
-    """Trims fasta file to the first x_num of bases in it and writes it to a new file."""
+    """
+    Trim sequences to a specified number of bases from the start.
 
+    Truncates all sequences in a FASTA file to the first num_base bases,
+    adding a 'trimmed_' prefix to sequence IDs. Skips sequences shorter
+    than the requested length with an error message.
+
+    Parameters
+    ----------
+    input_seq : str
+        Path to input FASTA file
+    num_base : int
+        Number of bases to retain from the start of each sequence
+    output_handle : str
+        Path for output trimmed FASTA file
+
+    Returns
+    -------
+    None
+        Writes trimmed sequences to output_handle
+
+    Notes
+    -----
+    Processing details:
+    - Sequences are trimmed to bases [0:num_base+1] (indices 0 through num_base)
+    - Sequence IDs are prefixed with 'trimmed_'
+    - Descriptions are removed from output sequences
+    - Sequences shorter than num_base are skipped with error log
+    - Only successfully trimmed sequences are written to output
+
+    If all sequences are too short, an empty output file may be created.
+    """
     # load file
     with open(input_seq) as fasta_file:
         all_rec = []
@@ -188,8 +477,44 @@ def trim_to_cons(input_seq: str, num_base: int, output_handle: str) -> None:
 def strip_fasta(
     input_file: str, output_file: str, x: int, remove_from: str = 'start'
 ) -> None:
-    """Strip fasta-file of the first of last x-bases."""
+    """
+    Remove a specified number of bases from sequence ends.
 
+    Strips x bases from either the start (5' end) or end (3' end) of all
+    sequences in a FASTA file. Useful for removing adapter sequences,
+    low-quality ends, or trimming consensus sequences.
+
+    Parameters
+    ----------
+    input_file : str
+        Path to input FASTA file
+    output_file : str
+        Path for output stripped FASTA file
+    x : int
+        Number of bases to remove from each sequence
+    remove_from : str, default='start'
+        Which end to remove bases from: 'start' for 5' end, 'end' for 3' end
+
+    Returns
+    -------
+    None
+        Writes stripped sequences to output_file
+
+    Raises
+    ------
+    AssertionError
+        If x is not an integer
+    ValueError
+        If remove_from is not 'start' or 'end'
+
+    Notes
+    -----
+    - Sequence IDs and descriptions are preserved
+    - If remove_from='start': sequence[x:] is retained
+    - If remove_from='end': sequence[:-x] is retained
+    - All sequences in the file are processed identically
+    - No validation that x is less than sequence length
+    """
     assert type(x) is int
 
     records = []
@@ -209,10 +534,44 @@ def strip_fasta(
 
 
 def build_extended_fasta(
-    org_fasta: str, linear_elements: list, replicon_list: list, output_handle: str
+    org_fasta: str, linear_elements: list[str], replicon_list: list, output_handle: str
 ) -> None:
-    """Rejoins extended contigs in the order of the original fasta and writes it to a new file."""
+    """
+    Reconstruct multi-FASTA with extended linear contigs in original order.
 
+    Replaces linear contigs that were extended by Telomore with their extended
+    versions, while keeping circular/unprocessed contigs unchanged. The output
+    maintains the original contig order and marks extended contigs as [linear].
+
+    Parameters
+    ----------
+    org_fasta : str
+        Path to original input FASTA file
+    linear_elements : list of str
+        List of contig IDs that were identified as linear and extended
+    replicon_list : list
+        List of Replicon objects containing paths to extended sequences
+    output_handle : str
+        Path for output FASTA file with extended contigs
+
+    Returns
+    -------
+    None
+        Writes reconstructed FASTA to output_handle
+
+    Notes
+    -----
+    Processing logic:
+    - Iterates through original FASTA in order
+    - For linear contigs: replaces with extended version from Replicon.trim_out
+    - For other contigs: copies unchanged from original
+    - Adds '[linear]' to description of extended contigs
+
+    This ensures the final assembly maintains the original contig order,
+    which is important for tools that expect specific reference structures.
+    The [linear] tag allows downstream tools to identify which contigs
+    were extended.
+    """
     seq_rec_list = []  # list of seqrecord to write to newfile
 
     for record in SeqIO.parse(org_fasta, 'fasta'):

@@ -1,6 +1,4 @@
-"""
-Functions for handling read mappings. Primarily for extracting and filtering terminal reads.
-"""
+"""Functions for handling read mappings and extracting terminal reads."""
 
 import gzip
 import logging
@@ -16,7 +14,43 @@ import pysam
 def sam_to_readpair(
     sam_in: Path, fastq_in1: Path, fastq_in2: Path, fastq_out1: Path, fastq_out2: Path
 ) -> None:
-    "Extract both reads from paired-end fastq-files if one of the reads is in sam-file"
+    """
+    Extract complete read pairs from paired-end FASTQ files based on SAM alignment.
+
+    Retrieves both reads (R1 and R2) of paired-end sequences if either read
+    appears in the input SAM file. This preserves read pairing for downstream
+    analysis that requires synchronized paired-end data.
+
+    Parameters
+    ----------
+    sam_in : Path
+        Path to input SAM alignment file.
+    fastq_in1 : Path
+        Path to forward/R1 FASTQ file (gzip compressed).
+    fastq_in2 : Path
+        Path to reverse/R2 FASTQ file (gzip compressed).
+    fastq_out1 : Path
+        Path for output R1 FASTQ file containing extracted read pairs.
+    fastq_out2 : Path
+        Path for output R2 FASTQ file containing extracted read pairs.
+
+    Returns
+    -------
+    None
+        Writes extracted read pairs to fastq_out1 and fastq_out2.
+
+    Notes
+    -----
+    Processing details:
+    - First pass: Collects all read IDs from SAM file into a set
+    - Handles read names with spaces by taking only the first part
+    - Second pass: Extracts matching reads from gzipped FASTQ files
+    - Both R1 and R2 are extracted if read name appears in SAM
+    - Output files are uncompressed FASTQ format
+
+    The input FASTQ files must be gzip-compressed (.gz), while outputs
+    are plain text for immediate downstream processing.
+    """
     with pysam.AlignmentFile(sam_in) as samfile:
         reads_to_grep = set()  # using a set should be faster than list
 
@@ -48,7 +82,36 @@ def sam_to_readpair(
 
 
 def sam_to_fastq(sam_in: Path, fastq_out: Path) -> None:
-    """Convert a sam-file to fastq-format, excluding unmapped reads."""
+    r"""
+    Convert SAM alignment file to FASTQ format, excluding unmapped reads.
+
+    Extracts sequence and quality information from aligned reads in a SAM file
+    and writes them in FASTQ format. Unmapped reads are filtered out. Used to
+    extract reads that successfully aligned to terminal regions.
+
+    Parameters
+    ----------
+    sam_in : Path
+        Path to input SAM alignment file.
+    fastq_out : Path
+        File handle (opened in write mode) for output FASTQ.
+
+    Returns
+    -------
+    None
+        Writes FASTQ records to the provided file handle.
+
+    Notes
+    -----
+    Processing details:
+    - Only mapped reads (not flagged as unmapped) are converted
+    - If quality scores are missing, assigns default high quality 'I' (Q40)
+    - FASTQ format: @name\\nseq\\n+\\nqual\\n
+    - The fastq_out parameter should be an open file handle, not a path string
+
+    Quality score handling is important for reads extracted from SAM files
+    that may not have retained the original quality information.
+    """
     with pysam.AlignmentFile(sam_in, 'r') as samfile:
         for read in samfile.fetch(until_eof=True):
             if not read.is_unmapped:
@@ -63,7 +126,42 @@ def sam_to_fastq(sam_in: Path, fastq_out: Path) -> None:
 
 
 def mapped_bases(cigarstring: str) -> int:
-    """Calculate the number of bases mapped to the reference in a given CIGAR string."""
+    """
+    Calculate the number of bases mapped to the reference from a CIGAR string.
+
+    Parses a CIGAR string and sums the lengths of all operations that consume
+    reference bases (M, D, N, X, =). This is used to compare alignment quality
+    when a read maps to multiple locations.
+
+    Parameters
+    ----------
+    cigarstring : str
+        CIGAR string from SAM alignment (e.g., '100M5S', '50M2D50M').
+
+    Returns
+    -------
+    int
+        Total number of bases that align to the reference sequence.
+
+    Notes
+    -----
+    CIGAR operations that consume reference bases:
+    - M: alignment match (can be match or mismatch)
+    - D: deletion from reference
+    - N: skipped region from reference
+    - X: sequence mismatch
+    - =: sequence match
+
+    Operations that do NOT consume reference (excluded from count):
+    - S: soft clipping
+    - I: insertion to reference
+    - H: hard clipping
+    - P: padding
+
+    This count represents how much of the reference sequence is covered
+    by the alignment, which is useful for selecting the best alignment
+    when a read maps to multiple positions.
+    """
     # Define operations that consume reference bases
     consuming_operations = 'MDNX='
 
@@ -83,7 +181,40 @@ def mapped_bases(cigarstring: str) -> int:
 
 
 def cigar_maps_more_bases(cigar1: str, cigar2: str) -> bool:
-    """Compare two CIGAR strings and determine which one maps to more bases."""
+    """
+    Compare two CIGAR strings to determine which maps more reference bases.
+
+    Evaluates which of two alignments covers more bases on the reference
+    sequence. Used to select the better alignment when a read maps to
+    multiple locations.
+
+    Parameters
+    ----------
+    cigar1 : str
+        First CIGAR string to compare.
+    cigar2 : str
+        Second CIGAR string to compare.
+
+    Returns
+    -------
+    bool or None
+        True if cigar1 maps more bases than cigar2, False if cigar2 maps
+        more bases, None if they map equal bases.
+
+    Notes
+    -----
+    The comparison is based on the number of reference-consuming bases
+    (M, D, N, X, =) calculated by the mapped_bases function.
+
+    Return values:
+    - True: cigar1 has more mapped bases
+    - False: cigar2 has more mapped bases
+    - None: both have equal mapped bases (implicit, no return statement)
+
+    This function is used to resolve multi-mapping reads by keeping the
+    alignment that covers the most reference sequence, which typically
+    indicates a better alignment quality.
+    """
     bases1 = mapped_bases(cigar1)
     bases2 = mapped_bases(cigar2)
 
@@ -96,8 +227,45 @@ def cigar_maps_more_bases(cigar1: str, cigar2: str) -> bool:
 def get_terminal_reads(
     sorted_bam_file: Path, contig: Path, loutput_handle: Path, routput_handle: Path
 ) -> None:
-    """A function that retrieves all reads mapping at the very start or end of a reference"""
+    """
+    Extract reads mapping to the terminal 20bp regions of a contig.
 
+    Retrieves all reads that align to the first or last 20 bases of a reference
+    contig. For multi-mapping reads, keeps only the alignment with the most
+    mapped bases. Critical for identifying reads that extend beyond assembly ends.
+
+    Parameters
+    ----------
+    sorted_bam_file : Path
+        Path to sorted BAM alignment file.
+    contig : Path
+        Name/ID of the contig to extract terminal reads from.
+    loutput_handle : Path
+        Path for output BAM file containing left-terminal reads.
+    routput_handle : Path
+        Path for output BAM file containing right-terminal reads.
+
+    Returns
+    -------
+    None
+        Writes left-terminal reads to loutput_handle and right-terminal reads
+        to routput_handle.
+
+    Notes
+    -----
+    Terminal region definition:
+    - Left terminal: positions 0-20 (first 20bp)
+    - Right terminal: (seq_end - 20) to seq_end (last 20bp)
+
+    Multi-mapping read handling:
+    - If a read maps to terminal region multiple times, compare CIGAR strings
+    - Keep only the alignment mapping the most reference bases
+    - Skips reads with no sequence (query_sequence is None)
+
+    This function is essential for the Telomore workflow as it identifies
+    reads that may contain sequence extending beyond the assembly, which
+    can be used to build consensus extensions.
+    """
     input = pysam.AlignmentFile(sorted_bam_file, 'r')
 
     # Fetch all reads aligned at start or end of reference
@@ -161,8 +329,44 @@ def get_terminal_reads(
 
 
 def get_left_soft(sam_file: Path, left_out: Path, offset: int = 0) -> None:
-    """A function that retrieves reads soft-clipped at 5'-end
-    It returns the reads as a sam file and only soft-clipped part as fastq-file"""
+    r"""
+    Extract reads with 5' soft-clipping that extends beyond reference start.
+
+    Identifies reads where the soft-clipped portion at the 5' end would extend
+    beyond position 0 of the reference. Writes full alignments to SAM and
+    extracts only the soft-clipped sequences to FASTQ. These represent sequence
+    extending left of the assembly.
+
+    Parameters
+    ----------
+    sam_file : Path
+        Path to input SAM alignment file.
+    left_out : Path
+        Base path for output files (adds .sam and .fastq extensions).
+    offset : int, default=0
+        Additional bases to include beyond the soft-clipped region.
+
+    Returns
+    -------
+    None
+        Creates two output files:
+        - {left_out}.sam: Full alignment records.
+        - {left_out}.fastq: Soft-clipped sequences only.
+
+    Notes
+    -----
+    Filtering logic:
+    - Looks for CIGAR patterns starting with soft-clip: ^(\\d+)S
+    - Only keeps reads where soft-clip length > reference_start position
+    - This ensures the clipped sequence extends beyond the reference start
+
+    FASTQ output contains:
+    - Sequence: bases [0:clip_num+offset] from read
+    - Quality: Phred scores converted to Sanger ASCII (Q+33)
+
+    The offset parameter allows including additional bases for context,
+    which can improve consensus building at the assembly boundary.
+    """
     sam_in = pysam.AlignmentFile(sam_file, 'r')
     lclip = pysam.AlignmentFile(left_out + '.sam', 'w', template=sam_in)
     lfastq = open(left_out + '.fastq', 'w')
@@ -192,8 +396,46 @@ def get_left_soft(sam_file: Path, left_out: Path, offset: int = 0) -> None:
 def get_right_soft(
     sam_file: Path, contig: Path, right_out: Path, offset: int = 0
 ) -> None:
-    """A function that retrieves reads soft-clipped at 3'-end
-    It returns the reads as a sam file and only soft-clipped part as fastq-file"""
+    r"""
+    Extract reads with 3' soft-clipping that extends beyond reference end.
+
+    Identifies reads where the soft-clipped portion at the 3' end would extend
+    beyond the reference sequence end. Writes full alignments to SAM and
+    extracts only the soft-clipped sequences to FASTQ. These represent sequence
+    extending right of the assembly.
+
+    Parameters
+    ----------
+    sam_file : Path
+        Path to input SAM alignment file.
+    contig : Path
+        Name/ID of the contig to determine reference length.
+    right_out : Path
+        Base path for output files (adds .sam and .fastq extensions).
+    offset : int, default=0
+        Additional bases to include beyond the soft-clipped region.
+
+    Returns
+    -------
+    None
+        Creates two output files:
+        - {right_out}.sam: Full alignment records.
+        - {right_out}.fastq: Soft-clipped sequences only.
+
+    Notes
+    -----
+    Filtering logic:
+    - Looks for CIGAR patterns ending with soft-clip: (\\d+)S$
+    - Only keeps reads where (clip_length + reference_end) > seq_end
+    - This ensures the clipped sequence extends beyond the reference end
+
+    FASTQ output contains:
+    - Sequence: last (clip_num+offset) bases from read
+    - Quality: Phred scores converted to Sanger ASCII (Q+33)
+
+    The offset parameter allows including additional bases for context,
+    which can improve consensus building at the assembly boundary.
+    """
     sam_in = pysam.AlignmentFile(sam_file, 'r')
     rclip = pysam.AlignmentFile(right_out + '.sam', 'w', template=sam_in)
     rfastq = open(right_out + '.fastq', 'w')
@@ -221,8 +463,37 @@ def get_right_soft(
 
 
 def revcomp_reads(reads_in: str, reads_out: str) -> None:
-    """A function that takes in fastq reads and writes their reverse complement to a file"""
+    """
+    Generate reverse complement of all reads in a FASTQ file.
 
+    Converts all sequences in a FASTQ file to their reverse complement,
+    reversing both the sequence and quality scores. Adds 'rev_' prefix
+    to read IDs. Used to orient left-terminal reads for consensus building.
+
+    Parameters
+    ----------
+    reads_in : str
+        Path to input FASTQ file.
+    reads_out : str
+        Path for output reverse-complemented FASTQ file.
+
+    Returns
+    -------
+    None
+        Writes reverse-complemented reads to reads_out.
+
+    Notes
+    -----
+    Transformation details:
+    - Sequence: Reverse complemented (A↔T, G↔C, reversed)
+    - Quality scores: Reversed to match new sequence orientation
+    - Read ID: Prefixed with 'rev_'
+    - Original ID and quality annotations are preserved in structure
+
+    This is necessary for left-terminal reads because they need to be
+    reverse-complemented before consensus building to match the expected
+    5' to 3' orientation for extension sequences.
+    """
     with open(reads_in, 'r') as input_handle, open(reads_out, 'w') as output_handle:
         for record in SeqIO.parse(input_handle, 'fastq'):
             # Get the reverse complement of the sequence
@@ -245,7 +516,36 @@ def revcomp_reads(reads_in: str, reads_out: str) -> None:
 
 
 def revcomp(fasta_in: str, fasta_out: str) -> None:
-    """A function that takes a fasta file and writes its reverse complement to a file"""
+    """
+    Generate reverse complement of all sequences in a FASTA file.
+
+    Converts all sequences in a FASTA file to their reverse complement.
+    Adds 'rev_' prefix to sequence IDs. Used to reorient consensus sequences
+    to match expected telomere orientation.
+
+    Parameters
+    ----------
+    fasta_in : str
+        Path to input FASTA file.
+    fasta_out : str
+        Path for output reverse-complemented FASTA file.
+
+    Returns
+    -------
+    None
+        Writes reverse-complemented sequences to fasta_out.
+
+    Notes
+    -----
+    Transformation details:
+    - Sequence: Reverse complemented (A↔T, G↔C, reversed)
+    - Sequence ID: Prefixed with 'rev_'
+    - Description preserved from original
+
+    Unlike revcomp_reads, this operates on FASTA format and doesn't
+    need to handle quality scores. Used primarily for consensus sequences
+    built from left-terminal reads.
+    """
     with open(fasta_in, 'r') as input_handle, open(fasta_out, 'w') as output_handle:
         for record in SeqIO.parse(input_handle, 'fasta'):
             # Get the reverse complement of the sequence
@@ -261,7 +561,33 @@ def revcomp(fasta_in: str, fasta_out: str) -> None:
 
 
 def is_map_empty(file_path: str) -> bool:
-    """Checks if a bam-file is empty by trying to fetch the first read"""
+    """
+    Check if a BAM file contains any reads.
+
+    Attempts to fetch the first read from a BAM alignment file to determine
+    if the file is empty. Used to validate that alignment steps produced
+    output before proceeding with downstream analysis.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to BAM file to check.
+
+    Returns
+    -------
+    bool
+        False if the file contains at least one read, True if empty.
+
+    Notes
+    -----
+    Implementation uses next() to attempt fetching the first read:
+    - If successful: Returns False (file not empty)
+    - If StopIteration raised: Returns True (file is empty)
+
+    This is more efficient than loading all reads since it stops at
+    the first read found. Empty BAM files indicate no reads aligned
+    in a mapping step, which may require special handling.
+    """
     # Open the alignment file
     with pysam.AlignmentFile(file_path, 'rb') as alignment_file:
         # Try to fetch the first read
@@ -273,7 +599,36 @@ def is_map_empty(file_path: str) -> bool:
 
 
 def is_consensus_unmapped(file_path: str) -> bool:
-    """Checks if a map contains only unmapped reads"""
+    """
+    Check if all reads in a BAM file are unmapped.
+
+    Determines whether a consensus sequence failed to map to the reference
+    by checking if all reads in the BAM file are flagged as unmapped. Used
+    to detect when a consensus doesn't match the expected location.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to BAM file to check.
+
+    Returns
+    -------
+    bool
+        True if all reads are unmapped or file is empty, False if any
+        read is mapped.
+
+    Notes
+    -----
+    Processing logic:
+    - Loads all reads into memory (suitable for small consensus BAMs)
+    - Returns True if file is empty (no reads)
+    - Returns False immediately upon finding first mapped read
+    - Returns True only if all reads are unmapped
+
+    An unmapped consensus indicates the consensus sequence doesn't align
+    to the expected position on the reference, suggesting it may not be
+    a valid extension or may belong elsewhere in the genome.
+    """
     with pysam.AlignmentFile(file_path, 'rb') as alignment_file:
         reads = list(alignment_file)  # get reads
 
@@ -289,7 +644,39 @@ def is_consensus_unmapped(file_path: str) -> bool:
 
 
 def is_consensus_empty(file_path: str) -> bool:
-    """Checks if a map was produced by an empty consensus"""
+    """
+    Check if a BAM file represents an empty consensus sequence.
+
+    Identifies BAM files produced by mapping empty consensus sequences, which
+    contain exactly one unmapped read with no sequence. This indicates no
+    consensus could be built, typically because no reads extended the assembly.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to BAM file to check.
+
+    Returns
+    -------
+    bool
+        True if the file contains exactly one unmapped read with no sequence,
+        False otherwise.
+
+    Notes
+    -----
+    Criteria for empty consensus:
+    1. Exactly one read in the file
+    2. Read is flagged as unmapped
+    3. Read has no sequence (seq is None or '*')
+
+    This specific pattern occurs when an empty FASTA sequence (often produced
+    when no terminal reads are found) is mapped against the reference. The
+    aligner produces a single unmapped record with no sequence data.
+
+    Distinguishes between:
+    - Empty consensus: No reads to build consensus from
+    - Unmapped consensus: Consensus built but doesn't align to expected location
+    """
     with pysam.AlignmentFile(file_path, 'rb') as alignment_file:
         reads = list(alignment_file)  # Load all reads into a list
 
@@ -302,7 +689,7 @@ def is_consensus_empty(file_path: str) -> bool:
         return False  # Either more reads, or the read does not meet the conditions
 
 
-def stich_telo(
+def stitch_telo(
     ref: str,
     left_map: str,
     right_map: str,
@@ -310,11 +697,62 @@ def stich_telo(
     logout: str,
     tmp_left: str,
     tmp_right: str,
-) -> tuple:
-    """Writes a fasta-file extended with sequence based on a left- and right-side .bam-file.
-    Also Adds this information to a log file.
-    Finally, it returs the length of the left and right consensus"""
+) -> tuple[int, int]:
+    """
+    Extend reference sequence with consensus sequences from terminal alignments.
 
+    Extracts soft-clipped portions of consensus sequences that extend beyond
+    the reference ends, attaches them to the reference, and creates a log
+    documenting the extension process. Handles cases where consensus is empty,
+    unmapped, or doesn't extend beyond reference.
+
+    Parameters
+    ----------
+    ref : str
+        Path to reference FASTA file.
+    left_map : str
+        Path to BAM file with left consensus aligned to reference.
+    right_map : str
+        Path to BAM file with right consensus aligned to reference.
+    outfile : str
+        Path for output extended FASTA file.
+    logout : str
+        Path for output log file documenting extension.
+    tmp_left : str
+        Path for temporary left consensus FASTA file.
+    tmp_right : str
+        Path for temporary right consensus FASTA file.
+
+    Returns
+    -------
+    tuple of (int, int)
+        Length of left consensus and length of right consensus in bases.
+
+    Notes
+    -----
+    Left consensus processing:
+    - Extracts reads mapping near reference start (position < 1000)
+    - Looks for 5' soft-clipping extending beyond position 0
+    - Adjusts for offset between soft-clip and actual overhang
+    - Logs if consensus is empty, unmapped, or doesn't extend reference
+
+    Right consensus processing:
+    - Extracts reads mapping near reference end (position > 1000)
+    - Looks for 3' soft-clipping extending beyond reference length
+    - Adjusts for offset between soft-clip and actual overhang
+    - Logs if consensus is empty, unmapped, or doesn't extend reference
+
+    The output file contains: left_consensus + original_reference + right_consensus
+
+    Empty SeqRecord objects are created when consensus fails validation,
+    allowing the workflow to continue without breaking on concatenation.
+
+    Log file format includes:
+    - Section header
+    - Consensus lengths
+    - Error messages if consensus rejected
+    - Full consensus sequences
+    """
     left_log_mes = ''
     # Check if an empty left consensus was used to generate the map:
     if is_consensus_empty(left_map):
@@ -325,7 +763,7 @@ def stich_telo(
         left_seqs = []
         left_log_mes = f'#The consensus produced for the left-side does not map to left-side of {ref}'
     else:
-        # extract left cons-to-stich
+        # extract left cons-to-stitch
         l_sam_in = pysam.AlignmentFile(left_map, 'r')
         left_seqs = []
         start_clip = r'^(\d+)S'
@@ -359,7 +797,7 @@ def stich_telo(
         right_seqs = []
         right_log_mes = f'#The consensus produced for the right-side does not map to the right-side of {ref}'
     else:
-        # extract right cons-to-stich
+        # extract right cons-to-stitch
         r_sam_in = pysam.AlignmentFile(right_map, 'r')
         seq_end = r_sam_in.lengths[0]  # get length of reference
         right_seqs = []
@@ -377,7 +815,7 @@ def stich_telo(
                     right_seqs.append(seq)
         r_sam_in.close()
 
-    # stich the fuckers toghether
+    # stitch the fuckers toghether
     genome = SeqIO.read(ref, 'fasta')
 
     # check if no conesnsus extens beyond the reference
@@ -429,8 +867,52 @@ def stich_telo(
     return (len(left_cons), len(right_cons))
 
 
-def get_support_info(bam_file, genome, position, qual_threshold=1):
-    """Returns the coverage and bases matching the reference at a given position considering only base above the quality threshold"""
+def get_support_info(
+    bam_file: str, genome: str, position: int, qual_threshold: int = 1
+) -> tuple[int, int]:
+    """
+    Calculate coverage and reference-matching bases at a specific position.
+
+    Determines read support at a genomic position by counting total coverage
+    and the number of bases matching the reference. Used to validate consensus
+    sequence quality by assessing read support at each position.
+
+    Parameters
+    ----------
+    bam_file : str
+        Path to BAM alignment file.
+    genome : str
+        Path to reference FASTA file.
+    position : int
+        Zero-based position to query.
+    qual_threshold : int, default=1
+        Minimum base quality score to include in counts.
+
+    Returns
+    -------
+    tuple of (int, int)
+        (coverage, matching_bases) where:
+        - coverage: Total number of bases at this position.
+        - matching_bases: Number of bases matching the reference.
+
+    Notes
+    -----
+    Base counting:
+    - Counts A, C, G, T bases separately at the position
+    - Only includes bases with quality >= qual_threshold
+    - Includes secondary mappings (read_callback='nofilter')
+    - Sums all bases for total coverage
+
+    Reference matching:
+    - Compares reference base at position to read bases
+    - If reference is 'N': matching_bases = 0
+    - Otherwise: matching_bases = count of bases matching reference
+
+    The matching ratio (matching_bases/coverage) indicates how well
+    reads support the reference sequence at that position. High ratios
+    (>0.7) indicate strong support, while low ratios suggest the consensus
+    may not be well-supported by the reads.
+    """
     fasta_file = SeqIO.read(genome, 'fasta')
     bam_in = pysam.AlignmentFile(
         bam_file,
@@ -475,10 +957,66 @@ def trim_by_map(
     output_handle: str,
     cons_log: str,
     cov_thres: int = 5,
-    ratio_thres: int = 0.7,
+    ratio_thres: float = 0.7,
     qual_thres: int = 0,
 ) -> None:
-    """Trims the ends of a genome using an alignment of reads at the ends and writes it to a file."""
+    """
+    Trim consensus extensions based on read support thresholds (Nanopore).
+
+    Validates attached consensus sequences by trimming from the ends inward
+    until finding positions with sufficient coverage and reference support.
+    Removes unsupported consensus bases while retaining well-supported extensions.
+    Optimized for Nanopore data with lower coverage requirements.
+
+    Parameters
+    ----------
+    untrimmed_assembly : str
+        Path to FASTA file with untrimmed consensus attached.
+    sorted_bam_file : str
+        Path to sorted BAM of terminal reads aligned to untrimmed assembly.
+    output_handle : str
+        Path for output trimmed FASTA file.
+    cons_log : str
+        Path to existing log file (will be appended with trimming info).
+    cov_thres : int, default=5
+        Minimum coverage depth required to keep a position.
+    ratio_thres : float, default=0.7
+        Minimum fraction of reads matching reference to keep a position.
+    qual_thres : int, default=0
+        Minimum base quality score to include in coverage calculation.
+
+    Returns
+    -------
+    None
+        Writes trimmed assembly to output_handle and appends to cons_log.
+
+    Notes
+    -----
+    Trimming algorithm:
+    1. Reads original consensus lengths from log file line 4
+    2. Left end: Scans positions 0 to left_length
+       - Stops at first position meeting coverage and ratio thresholds
+       - Trims all bases before this position
+    3. Right end: Scans positions (end - right_length) to end
+       - Stops at first position meeting coverage and ratio thresholds
+       - Trims all bases after this position
+
+    Validation criteria:
+    - Coverage >= cov_thres
+    - (matching_bases / coverage) > ratio_thres
+    - Base quality >= qual_thres
+
+    Outcomes logged for each end:
+    - Both rejected: Returns original reference only
+    - One rejected: Keeps validated consensus on one side only
+    - Both validated: Keeps both trimmed consensus sequences
+
+    The output sequence ID indicates whether consensus was attached and
+    includes descriptive suffix about trimming results.
+
+    Designed for Nanopore data: Lower coverage threshold (5x) but
+    similar ratio threshold to Illumina version.
+    """
     # load genome
     fasta = SeqIO.read(untrimmed_assembly, 'fasta')
     fasta_end = len(fasta.seq) - 1  # subtract one to make it 0-indexed
@@ -579,10 +1117,68 @@ def trim_by_map_illumina(
     output_handle: str,
     cons_log: str,
     cov_thres: int = 1,
-    ratio_thres: int = 0.7,
+    ratio_thres: float = 0.7,
     qual_thres: int = 30,
 ) -> None:
-    """Trims the ends of a genome using an alignment of reads at the ends and writes it to a file."""
+    """
+    Trim consensus extensions based on read support thresholds (Illumina).
+
+    Validates attached consensus sequences by trimming from the ends inward
+    until finding positions with sufficient coverage and reference support.
+    Removes unsupported consensus bases while retaining well-supported extensions.
+    Optimized for Illumina data with high quality requirements.
+
+    Parameters
+    ----------
+    untrimmed_assembly : str
+        Path to FASTA file with untrimmed consensus attached.
+    sorted_bam_file : str
+        Path to sorted BAM of terminal reads aligned to untrimmed assembly.
+    output_handle : str
+        Path for output trimmed FASTA file.
+    cons_log : str
+        Path to existing log file (will be appended with trimming info).
+    cov_thres : int, default=1
+        Minimum coverage depth required to keep a position.
+    ratio_thres : float, default=0.7
+        Minimum fraction of reads matching reference to keep a position.
+    qual_thres : int, default=30
+        Minimum base quality score (Q30) to include in coverage calculation.
+
+    Returns
+    -------
+    None
+        Writes trimmed assembly to output_handle and appends to cons_log.
+
+    Notes
+    -----
+    Trimming algorithm:
+    1. Reads original consensus lengths from log file line 4
+    2. Left end: Scans positions 0 to left_length
+       - Stops at first position meeting coverage and ratio thresholds
+       - Trims all bases before this position
+    3. Right end: Scans positions (end - right_length) to end
+       - Stops at first position meeting coverage and ratio thresholds
+       - Trims all bases after this position
+
+    Validation criteria:
+    - Coverage >= cov_thres
+    - (matching_bases / coverage) > ratio_thres
+    - Base quality >= qual_thres
+
+    Outcomes logged for each end:
+    - Both rejected: Returns original reference only
+    - One rejected: Keeps validated consensus on one side only
+    - Both validated: Keeps both trimmed consensus sequences
+
+    The output sequence ID indicates whether consensus was attached and
+    includes descriptive suffix about trimming results.
+
+    Designed for Illumina data: Higher quality threshold (Q30) but
+    lower coverage requirement (1x) compared to Nanopore version.
+    Illumina's higher per-base accuracy allows more stringent quality
+    filtering with lower coverage depth.
+    """
     # load genome
     fasta = SeqIO.read(untrimmed_assembly, 'fasta')
     fasta_end = len(fasta.seq) - 1  # subtract one to make it 0-indexed
@@ -678,7 +1274,46 @@ def trim_by_map_illumina(
 
 
 def generate_support_log(genome: str, qc_bam_file: str, output_handle: str) -> None:
-    """Generates a coverage log for the ends of the genome"""
+    """
+    Generate position-by-position coverage and support statistics for QC.
+
+    Creates a detailed log showing coverage and reference-matching bases at
+    every position in the genome. Used for quality control visualization and
+    analysis of read support across the extended assembly.
+
+    Parameters
+    ----------
+    genome : str
+        Path to reference genome FASTA file.
+    qc_bam_file : str
+        Path to BAM file with QC reads aligned to genome.
+    output_handle : str
+        Path for output log file with coverage statistics.
+
+    Returns
+    -------
+    None
+        Writes position, coverage, and matching bases to output_handle.
+
+    Notes
+    -----
+    For each position from 0 to (genome_length - 1):
+    - Calculates coverage (total bases)
+    - Calculates matching bases (bases matching reference)
+    - Prints position, coverage, matching_bases to stdout
+    - Skips positions where no reads map (TypeError caught)
+
+    The output allows plotting coverage profiles to visualize:
+    - Read support across the genome
+    - Quality of consensus extensions at telomeres
+    - Positions where support drops (potential trimming sites)
+
+    Uses qual_threshold=1 to include all bases regardless of quality,
+    providing a complete picture of coverage for QC purposes.
+
+    Note: Current implementation only prints to stdout. To write to file,
+    the log.write() call should be corrected.
+    """
     # trim start/left-side
 
     fasta = SeqIO.read(genome, 'fasta')

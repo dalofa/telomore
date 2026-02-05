@@ -1,11 +1,15 @@
 # TELOMORE
 
-Telomore is a tool for identifying and extracting telomeric sequences from **Oxford Nanopore** or **Illumina** sequencing reads of *Streptomycetes spp.* that have been excluded from a *de novo* assembly. It processes sequencing data to extend assemblies, generate quality control (QC) maps, and produce finalized assemblies with the telomere/recessed bases included.
+Telomore is a tool for identifying and extracting telomeric sequences from
+**Oxford Nanopore** or **Illumina** sequencing reads of *Streptomycetes spp.*
+that have been excluded from a *de novo* assembly. It processes sequencing data
+to extend assemblies, generate quality control (QC) maps, and produce finalized
+assemblies with the telomere/recessed bases included.
 
 ## Before running Telomore
 
-Telomore does not identify linear contigs but rather rely on the user to provide that information in
-the header of the fasta-reference file.
+Telomore does not identify linear contigs but rather rely on the user to provide
+that information in the header of the fasta-reference file.
 
 ## Usage
 
@@ -29,8 +33,12 @@ Illumina-Specific Arguments
 
 Optional Arguments
 
-- `--coverage_threshold` Set the threshold for coverage to stop trimming during consensus trimming (Default is coverage=5 for ONT reads and coverage=1 for Illumina reads).
-- `--quality_threshold` Set the Q-score required to count a read position in the coverage calculation during consensus trimming (Default is Q-score=10 for ONT reads and Q-score=30 for Illumina reads).
+- `--coverage_threshold` Set the threshold for coverage to stop trimming during
+consensus trimming (Default is coverage=5 for ONT reads and coverage=1 for
+Illumina reads).
+- `--quality_threshold` Set the Q-score required to count a read position in the
+coverage calculation during consensus trimming (Default is Q-score=10 for ONT
+reads and Q-score=30 for Illumina reads).
 - `--threads` Number of threads to use (default: 1).
 - `--keep` Retain intermediate files (default: False).
 - `--quiet` Suppress console logging.
@@ -40,15 +48,18 @@ Optional Arguments
 The process is as follows:
 
 1. **Map Reads:**
-Reads are mapped against all contigs in a reference using either minimap2 or Bowtie2.
+Reads are mapped against all contigs in a reference using either minimap2 or
+Bowtie2.
 2. **Extract Extending Reads**
 Extending reads that are mapped to the ends of linear contigs are extracted.
 3. **Build Consensus**
-The terminal extending reads from each end is used to construct a consensus using either lamassemble or mafft + EMBOSS cons
+The terminal extending reads from each end is used to construct a consensus
+using either lamassemble or mafft + EMBOSS cons
 4. **Align and Attach consensus**
 The consensus for each end is aligned to the reference and used to extend it.
 5. **Trim Extended Replicon**
-In a final step, all terminally mapped reads are mapped to the new extended reference and used to trim away spurious sequence, based on read-support.
+In a final step, all terminally mapped reads are mapped to the new extended
+reference and used to trim away spurious sequence, based on read-support.
 
 ## Outputs
 
@@ -75,9 +86,12 @@ In the folder there is a number of files generated for each contig considered:
 | `{contig_name}_telomore_QC.bam.bai` | Index file for the corresponding BAM file. |
 | `{contig_name}_telomore_untrimmed.fasta` | Original contig sequence + added terminal bases |
 
-Additionally, there is a fasta-file collecting all tagged linear contigs as they appear in `{contig_name}_telomore_extended.fasta` together with all non-linear contigs in the order they appear in the original file.
+Additionally, there is a fasta-file collecting all tagged linear contigs as they
+appear in `{contig_name}_telomore_extended.fasta` together with all non-linear
+contigs in the order they appear in the original file.
 
-Inspecting the {contig_name}_QC.bam-file in IGV (Integrative Genomics Viewer) can be informative in evaluating the extended contig.
+Inspecting the {contig_name}_QC.bam-file in IGV (Integrative Genomics Viewer)
+can be informative in evaluating the extended contig.
 
 ## Dependencies (CLI-tools)
 
@@ -95,7 +109,8 @@ These can be installed using the conda recipe in this repo:
 conda env create -f environment.yml -y
 ```
 
-This repo can then be downloaded using git clone, the conda enviroment activated and the tool installed
+This repo can then be downloaded using git clone, the conda enviroment activated
+and the tool installed
 
 ```bash
 # Activate telomore conda env

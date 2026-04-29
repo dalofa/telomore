@@ -2,6 +2,7 @@
 
 import gzip
 import logging
+import os
 from pathlib import Path
 import re
 
@@ -51,6 +52,12 @@ def sam_to_readpair(
     The input FASTQ files must be gzip-compressed (.gz), while outputs
     are plain text for immediate downstream processing.
     """
+    # If SAM file doesn't exist or was skipped, produce empty fastq outputs
+    if not sam_in or not Path(sam_in).exists():
+        open(fastq_out1, 'w').close()
+        open(fastq_out2, 'w').close()
+        return
+
     with pysam.AlignmentFile(sam_in) as samfile:
         reads_to_grep = set()  # using a set should be faster than list
 
@@ -112,6 +119,10 @@ def sam_to_fastq(sam_in: Path, fastq_out: Path) -> None:
     Quality score handling is important for reads extracted from SAM files
     that may not have retained the original quality information.
     """
+    # If sam_in is missing (skipped side), do nothing
+    if not sam_in or not Path(sam_in).exists():
+        return
+
     with pysam.AlignmentFile(sam_in, 'r') as samfile:
         for read in samfile.fetch(until_eof=True):
             if not read.is_unmapped:
@@ -754,8 +765,11 @@ def stitch_telo(
     - Full consensus sequences
     """
     left_log_mes = ''
-    # Check if an empty left consensus was used to generate the map:
-    if is_consensus_empty(left_map):
+    # If left_map is missing (skipped by user), treat as empty consensus
+    if not left_map or not os.path.exists(left_map):
+        left_seqs = []
+        left_log_mes = '#Left side skipped or not present.'
+    elif is_consensus_empty(left_map):
         # Make an empty seq list to enable errors later on
         left_seqs = []
         left_log_mes = '#No consensus produced for left-side end. Likely, no reads extends the assembly. '
@@ -789,8 +803,11 @@ def stitch_telo(
 
     right_log_mes = ''
 
-    # Check if an empty left consensus was used to generate the map:
-    if is_consensus_empty(right_map):
+    # If right_map is missing (skipped by user), treat as empty consensus
+    if not right_map or not os.path.exists(right_map):
+        right_seqs = []
+        right_log_mes = '#Right side skipped or not present.'
+    elif is_consensus_empty(right_map):
         right_seqs = []
         right_log_mes = '#No consensus produced for right-side end. Likely, no reads extends the assembly.'
     elif is_consensus_unmapped(right_map):

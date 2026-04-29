@@ -148,6 +148,12 @@ EXAMPLES:
         help='Quality threshold for consensus trimming. Default is q_score=10 for nanopore and q_score=30 for illumina.',
     )
 
+    parser.add_argument(
+        '--skip_side',
+        choices=['left', 'right'],
+        help='Skip processing of a terminal side (left or right). Only one value allowed.',
+    )
+
     # Check if no arguments were provided
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)

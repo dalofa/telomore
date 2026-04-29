@@ -42,6 +42,14 @@ reads and Q-score=30 for Illumina reads).
 - `--threads` Number of threads to use (default: 1).
 - `--keep` Retain intermediate files (default: False).
 - `--quiet` Suppress console logging.
+ - `--skip_side` Skip processing of a terminal side. Accepts `left` or `right`.
+	 When provided, Telomore will bypass extraction, consensus building, mapping,
+	 stitching and QC for the chosen side. Only one side may be skipped per run.
+
+Example (skip left side):
+```bash
+telomore --mode nanopore --single reads.fastq.gz --reference genome.fasta --skip_side left
+```
 
 ## Process overview
 

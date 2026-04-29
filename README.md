@@ -2,6 +2,7 @@
 <p align="center">
   <img src="images/telomore_logo.png" alt="finishline logo" width="800">
 </p>
+
 Telomore is a tool for identifying and extracting telomeric sequences from
 **Oxford Nanopore** or **Illumina** sequencing reads of *Streptomycetes spp.*
 that have been excluded from a *de novo* assembly. It processes sequencing data

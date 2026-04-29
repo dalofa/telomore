@@ -277,13 +277,17 @@ class Replicon:
         keep_files = [self.stitch_out, self.trim_out, self.qc_out, self.qc_out_index]
 
         for file in keep_files:
-            shutil.move(src=file, dst=os.path.join(folder, file))
+            if os.path.exists(file):
+                shutil.move(src=file, dst=os.path.join(folder, file))
+
         if mode == 'nanopore':
-            shutil.move(
-                src=self.cons_log_np_out, dst=os.path.join(folder, self.cons_log_np_out)
-            )
+            if os.path.exists(self.cons_log_np_out):
+                shutil.move(
+                    src=self.cons_log_np_out, dst=os.path.join(folder, self.cons_log_np_out)
+                )
         elif mode == 'illumina':
-            shutil.move(
-                src=self.cons_log_ill_out,
-                dst=os.path.join(folder, self.cons_log_ill_out),
-            )
+            if os.path.exists(self.cons_log_ill_out):
+                shutil.move(
+                    src=self.cons_log_ill_out,
+                    dst=os.path.join(folder, self.cons_log_ill_out),
+                )

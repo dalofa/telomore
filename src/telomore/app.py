@@ -188,6 +188,9 @@ def main(args: Namespace) -> None:
     """
     logging.info(f'Running Telomore: {__version__}')
 
+    # User option to skip processing one side (left/right)
+    skip_side = getattr(args, 'skip_side', None)
+
     check_dependencies(
         [
             'minimap2',
@@ -253,65 +256,79 @@ def main(args: Namespace) -> None:
     for replicon in replicon_list:
         logging.info('\tContig %s', replicon.name)
 
+        # extract terminal reads for both ends (cheap) but skip
+        # side-specific filtering if requested
         get_terminal_reads(
             sorted_bam_file=map_out,
             contig=replicon.name,
             loutput_handle=replicon.left_sam,
             routput_handle=replicon.right_sam,
         )
-        get_left_soft(
-            sam_file=replicon.left_sam, left_out=replicon.left_filt, offset=500
-        )
-        get_right_soft(
-            sam_file=replicon.right_sam,
-            contig=replicon.name,
-            right_out=replicon.right_filt,
-            offset=500,
-        )
 
-    # 1: Generate consensus
+        if skip_side != 'left':
+            get_left_soft(
+                sam_file=replicon.left_sam, left_out=replicon.left_filt, offset=500
+            )
+        else:
+            logging.info('Skipping left-side soft-clip extraction for %s', replicon.name)
+
+        if skip_side != 'right':
+            get_right_soft(
+                sam_file=replicon.right_sam,
+                contig=replicon.name,
+                right_out=replicon.right_filt,
+                offset=500,
+            )
+        else:
+            logging.info('Skipping right-side soft-clip extraction for %s', replicon.name)
+
+    # Generate consensus
     # -----------------------------------------------------------------
     logging.info('Generating consensus')
+    # If nanopore mode requires a LAST DB, build it once up-front
+    db_out = None
+    if args.mode == 'nanopore':
+        db_out = ref_name + '.db'
+        train_lastDB(args.reference, args.single, db_out, args.threads)
 
     # Generate consensus
     for replicon in replicon_list:
         logging.info('\tContig %s', replicon.name)
-
         # GENERATE LEFT CONSENSUS
-        # To maintain alignment anchor point, the reads are flipped
-        # And the resulting consensus must then be flipped again
-        revcomp_reads(reads_in=replicon.left_filt_fq, reads_out=replicon.revcomp_out)
+        if skip_side != 'left':
+            # To maintain alignment anchor point, the reads are flipped
+            # And the resulting consensus must then be flipped again
+            revcomp_reads(reads_in=replicon.left_filt_fq, reads_out=replicon.revcomp_out)
 
-        if args.mode == 'nanopore':
-            db_out = ref_name + '.db'
-            train_lastDB(
-                args.reference, args.single, db_out, args.threads
-            )  # train on entire reference
-            generate_consensus_lamassemble(
-                db_name=db_out, reads=replicon.revcomp_out, output=replicon.l_cons_out
-            )
+            if args.mode == 'nanopore':
+                generate_consensus_lamassemble(
+                    db_name=db_out, reads=replicon.revcomp_out, output=replicon.l_cons_out
+                )
 
-        elif args.mode == 'illumina':
-            generate_consensus_mafft(
-                reads=replicon.revcomp_out, output=replicon.l_cons_out
-            )
-        # flip consensus to match original orientation
-        revcomp(fasta_in=replicon.l_cons_out, fasta_out=replicon.l_cons_final_out)
+            elif args.mode == 'illumina':
+                generate_consensus_mafft(
+                    reads=replicon.revcomp_out, output=replicon.l_cons_out
+                )
+            # flip consensus to match original orientation
+            revcomp(fasta_in=replicon.l_cons_out, fasta_out=replicon.l_cons_final_out)
+        else:
+            logging.info('Skipping left-side consensus generation for %s', replicon.name)
 
         # GENERATE RIGHT CONSENSUS
-        # The right reads are already oriented with the anchor point
-        # left-most and does therefore not need to be flipped
-        if args.mode == 'nanopore':
-            # A last-db should aldready exist from the left-consensus
-            generate_consensus_lamassemble(
-                db_name=db_out,
-                reads=replicon.right_filt_fq,
-                output=replicon.r_cons_final_out,
-            )
-        elif args.mode == 'illumina':
-            generate_consensus_mafft(
-                reads=replicon.right_filt_fq, output=replicon.r_cons_final_out
-            )
+        if skip_side != 'right':
+            if args.mode == 'nanopore':
+                # A last-db should already exist from the up-front training
+                generate_consensus_lamassemble(
+                    db_name=db_out,
+                    reads=replicon.right_filt_fq,
+                    output=replicon.r_cons_final_out,
+                )
+            elif args.mode == 'illumina':
+                generate_consensus_mafft(
+                    reads=replicon.right_filt_fq, output=replicon.r_cons_final_out
+                )
+        else:
+            logging.info('Skipping right-side consensus generation for %s', replicon.name)
     # 2: Extend assembly with consensus by mapping onto chromsome
     # -----------------------------------------------------------------
     logging.info('Extending assembly')
@@ -350,36 +367,52 @@ def main(args: Namespace) -> None:
         )
 
         if args.mode == 'nanopore':
-            # Map onto the reduced reference using minimap2
-            map_and_sort(
-                reference=replicon.trunc_left_fasta,
-                fastq=replicon.l_cons_final_out,
-                output=replicon.l_map_out,
-                threads=args.threads,
-            )
+            # Map onto the reduced reference using minimap2 (skip side if requested)
+            if skip_side != 'left':
+                map_and_sort(
+                    reference=replicon.trunc_left_fasta,
+                    fastq=replicon.l_cons_final_out,
+                    output=replicon.l_map_out,
+                    threads=args.threads,
+                )
+            else:
+                replicon.l_map_out = None
+                logging.info('Skipping left-side mapping for %s', replicon.name)
 
-            map_and_sort(
-                reference=replicon.trunc_right_fasta,
-                fastq=replicon.r_cons_final_out,
-                output=replicon.r_map_out,
-                threads=args.threads,
-            )
+            if skip_side != 'right':
+                map_and_sort(
+                    reference=replicon.trunc_right_fasta,
+                    fastq=replicon.r_cons_final_out,
+                    output=replicon.r_map_out,
+                    threads=args.threads,
+                )
+            else:
+                replicon.r_map_out = None
+                logging.info('Skipping right-side mapping for %s', replicon.name)
 
         elif args.mode == 'illumina':
             # Map onto reduced reference using bowtie2
-            map_and_sort_illumina_cons(
-                reference=replicon.trunc_left_fasta,
-                consensus_fasta=replicon.l_cons_final_out,
-                output=replicon.l_map_out,
-                threads=args.threads,
-            )
+            if skip_side != 'left':
+                map_and_sort_illumina_cons(
+                    reference=replicon.trunc_left_fasta,
+                    consensus_fasta=replicon.l_cons_final_out,
+                    output=replicon.l_map_out,
+                    threads=args.threads,
+                )
+            else:
+                replicon.l_map_out = None
+                logging.info('Skipping left-side mapping for %s', replicon.name)
 
-            map_and_sort_illumina_cons(
-                reference=replicon.trunc_right_fasta,
-                consensus_fasta=replicon.r_cons_final_out,
-                output=replicon.r_map_out,
-                threads=args.threads,
-            )
+            if skip_side != 'right':
+                map_and_sort_illumina_cons(
+                    reference=replicon.trunc_right_fasta,
+                    consensus_fasta=replicon.r_cons_final_out,
+                    output=replicon.r_map_out,
+                    threads=args.threads,
+                )
+            else:
+                replicon.r_map_out = None
+                logging.info('Skipping right-side mapping for %s', replicon.name)
 
         # Extend the assembly using the map
         if args.mode == 'nanopore':

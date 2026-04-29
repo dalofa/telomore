@@ -1,5 +1,7 @@
 # TELOMORE
-
+<p align="center">
+  <img src="images/telomore_logo.png" alt="finishline logo" width="800">
+</p>
 Telomore is a tool for identifying and extracting telomeric sequences from
 **Oxford Nanopore** or **Illumina** sequencing reads of *Streptomycetes spp.*
 that have been excluded from a *de novo* assembly. It processes sequencing data
@@ -42,6 +44,12 @@ reads and Q-score=30 for Illumina reads).
 - `--threads` Number of threads to use (default: 1).
 - `--keep` Retain intermediate files (default: False).
 - `--quiet` Suppress console logging.
+ - `--skip_side` Skip processing of a terminal side. Accepts `left` or `right`.
+
+Example (skip left side):
+```bash
+telomore --mode nanopore --single reads.fastq.gz --reference genome.fasta --skip_side left
+```
 
 ## Process overview
 

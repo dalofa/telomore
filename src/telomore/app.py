@@ -270,7 +270,9 @@ def main(args: Namespace) -> None:
                 sam_file=replicon.left_sam, left_out=replicon.left_filt, offset=500
             )
         else:
-            logging.info('Skipping left-side soft-clip extraction for %s', replicon.name)
+            logging.info(
+                'Skipping left-side soft-clip extraction for %s', replicon.name
+            )
 
         if skip_side != 'right':
             get_right_soft(
@@ -280,7 +282,9 @@ def main(args: Namespace) -> None:
                 offset=500,
             )
         else:
-            logging.info('Skipping right-side soft-clip extraction for %s', replicon.name)
+            logging.info(
+                'Skipping right-side soft-clip extraction for %s', replicon.name
+            )
 
     # Generate consensus
     # -----------------------------------------------------------------
@@ -298,11 +302,15 @@ def main(args: Namespace) -> None:
         if skip_side != 'left':
             # To maintain alignment anchor point, the reads are flipped
             # And the resulting consensus must then be flipped again
-            revcomp_reads(reads_in=replicon.left_filt_fq, reads_out=replicon.revcomp_out)
+            revcomp_reads(
+                reads_in=replicon.left_filt_fq, reads_out=replicon.revcomp_out
+            )
 
             if args.mode == 'nanopore':
                 generate_consensus_lamassemble(
-                    db_name=db_out, reads=replicon.revcomp_out, output=replicon.l_cons_out
+                    db_name=db_out,
+                    reads=replicon.revcomp_out,
+                    output=replicon.l_cons_out,
                 )
 
             elif args.mode == 'illumina':
@@ -312,7 +320,9 @@ def main(args: Namespace) -> None:
             # flip consensus to match original orientation
             revcomp(fasta_in=replicon.l_cons_out, fasta_out=replicon.l_cons_final_out)
         else:
-            logging.info('Skipping left-side consensus generation for %s', replicon.name)
+            logging.info(
+                'Skipping left-side consensus generation for %s', replicon.name
+            )
 
         # GENERATE RIGHT CONSENSUS
         if skip_side != 'right':
@@ -328,7 +338,9 @@ def main(args: Namespace) -> None:
                     reads=replicon.right_filt_fq, output=replicon.r_cons_final_out
                 )
         else:
-            logging.info('Skipping right-side consensus generation for %s', replicon.name)
+            logging.info(
+                'Skipping right-side consensus generation for %s', replicon.name
+            )
     # 2: Extend assembly with consensus by mapping onto chromsome
     # -----------------------------------------------------------------
     logging.info('Extending assembly')

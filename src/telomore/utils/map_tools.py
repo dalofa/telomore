@@ -77,13 +77,19 @@ def sam_to_readpair(
             reads_to_grep.add(read_name)
 
         # get read 1
-        with (_open_fastq(fastq_in1, 'rt') as gzip_handle, open(fastq_out1, 'w') as outfile):
+        with (
+            _open_fastq(fastq_in1, 'rt') as gzip_handle,
+            open(fastq_out1, 'w') as outfile,
+        ):
             for record in SeqIO.parse(gzip_handle, 'fastq'):
                 if record.id in reads_to_grep:
                     SeqIO.write(record, outfile, 'fastq')
 
         # get read 2
-        with (_open_fastq(fastq_in2, 'rt') as gzip_handle, open(fastq_out2, 'w') as outfile):
+        with (
+            _open_fastq(fastq_in2, 'rt') as gzip_handle,
+            open(fastq_out2, 'w') as outfile,
+        ):
             for record in SeqIO.parse(gzip_handle, 'fastq'):
                 if record.id in reads_to_grep:
                     SeqIO.write(record, outfile, 'fastq')

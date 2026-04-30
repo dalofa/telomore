@@ -285,7 +285,8 @@ class Replicon:
         if mode == 'nanopore':
             if os.path.exists(self.cons_log_np_out):
                 shutil.move(
-                    src=self.cons_log_np_out, dst=os.path.join(folder, self.cons_log_np_out)
+                    src=self.cons_log_np_out,
+                    dst=os.path.join(folder, self.cons_log_np_out),
                 )
         elif mode == 'illumina':
             if os.path.exists(self.cons_log_ill_out):

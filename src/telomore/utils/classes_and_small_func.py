@@ -227,6 +227,8 @@ class Replicon:
             self.trim_map_index,
         ]
         for path in tmp_files:
+            if not path:
+                continue
             if os.path.exists(path):
                 os.remove(path)
 

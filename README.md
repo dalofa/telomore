@@ -14,6 +14,16 @@ assemblies with the telomere/recessed bases included.
 Telomore does not identify linear contigs but rather rely on the user to provide
 that information in the header of the fasta-reference file.
 
+To capture the archetypal (or other actinobacterial) telomere in full in an otherwise
+complete assembly, it is often sufficient to extend the assembly using Illumina data.
+However, in certain cases large chunks of an arm is missing and thus, one must extend
+with Nanopore before extending with Illumina data.
+
+**Beware:** Telomore was designed with expectation of a complete/near-complete 
+assembly, where each replicon is represented by a single contig. While, a more
+fragmented assembly can be input, this might lead to the overrepresentation of
+sequence.
+
 ## Usage
 
 ```bash

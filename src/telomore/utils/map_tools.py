@@ -12,6 +12,13 @@ from Bio.SeqRecord import SeqRecord
 import pysam
 
 
+def _open_fastq(path: Path, mode: str = 'rt'):
+    path = Path(path)
+    if path.suffix == '.gz':
+        return gzip.open(path, mode)
+    return open(path, mode)
+
+
 def sam_to_readpair(
     sam_in: Path, fastq_in1: Path, fastq_in2: Path, fastq_out1: Path, fastq_out2: Path
 ) -> None:
@@ -27,9 +34,9 @@ def sam_to_readpair(
     sam_in : Path
         Path to input SAM alignment file.
     fastq_in1 : Path
-        Path to forward/R1 FASTQ file (gzip compressed).
+        Path to forward/R1 FASTQ file, gzipped or plain text.
     fastq_in2 : Path
-        Path to reverse/R2 FASTQ file (gzip compressed).
+        Path to reverse/R2 FASTQ file, gzipped or plain text.
     fastq_out1 : Path
         Path for output R1 FASTQ file containing extracted read pairs.
     fastq_out2 : Path
@@ -49,8 +56,8 @@ def sam_to_readpair(
     - Both R1 and R2 are extracted if read name appears in SAM
     - Output files are uncompressed FASTQ format
 
-    The input FASTQ files must be gzip-compressed (.gz), while outputs
-    are plain text for immediate downstream processing.
+    The input FASTQ files may be gzip-compressed (.gz) or plain text;
+    outputs are plain text for immediate downstream processing.
     """
     # If SAM file doesn't exist or was skipped, produce empty fastq outputs
     if not sam_in or not Path(sam_in).exists():
@@ -70,19 +77,13 @@ def sam_to_readpair(
             reads_to_grep.add(read_name)
 
         # get read 1
-        with (
-            gzip.open(fastq_in1, 'rt') as gzip_handle,
-            open(fastq_out1, 'w') as outfile,
-        ):
+        with (_open_fastq(fastq_in1, 'rt') as gzip_handle, open(fastq_out1, 'w') as outfile):
             for record in SeqIO.parse(gzip_handle, 'fastq'):
                 if record.id in reads_to_grep:
                     SeqIO.write(record, outfile, 'fastq')
 
         # get read 2
-        with (
-            gzip.open(fastq_in2, 'rt') as gzip_handle,
-            open(fastq_out2, 'w') as outfile,
-        ):
+        with (_open_fastq(fastq_in2, 'rt') as gzip_handle, open(fastq_out2, 'w') as outfile):
             for record in SeqIO.parse(gzip_handle, 'fastq'):
                 if record.id in reads_to_grep:
                     SeqIO.write(record, outfile, 'fastq')

@@ -1,4 +1,7 @@
 # TELOMORE
+<p align="center">
+  <img src="images/telomore_logo.png" alt="finishline logo" width="800">
+</p>
 
 Telomore is a tool for identifying and extracting telomeric sequences from
 **Oxford Nanopore** or **Illumina** sequencing reads of *Streptomycetes spp.*
@@ -10,6 +13,16 @@ assemblies with the telomere/recessed bases included.
 
 Telomore does not identify linear contigs but rather rely on the user to provide
 that information in the header of the fasta-reference file.
+
+To capture the archetypal (or other actinobacterial) telomere in full in an otherwise
+complete assembly, it is often sufficient to extend the assembly using Illumina data.
+However, in certain cases large chunks of an arm is missing and thus, one must extend
+with Nanopore before extending with Illumina data.
+
+**Beware:** Telomore was designed with expectation of a complete/near-complete 
+assembly, where each replicon is represented by a single contig. While, a more
+fragmented assembly can be input, this might lead to the overrepresentation of
+sequence.
 
 ## Usage
 
@@ -43,8 +56,6 @@ reads and Q-score=30 for Illumina reads).
 - `--keep` Retain intermediate files (default: False).
 - `--quiet` Suppress console logging.
  - `--skip_side` Skip processing of a terminal side. Accepts `left` or `right`.
-	 When provided, Telomore will bypass extraction, consensus building, mapping,
-	 stitching and QC for the chosen side. Only one side may be skipped per run.
 
 Example (skip left side):
 ```bash

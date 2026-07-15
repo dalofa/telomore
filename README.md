@@ -9,6 +9,52 @@ that have been excluded from a *de novo* assembly. It processes sequencing data
 to extend assemblies, generate quality control (QC) maps, and produce finalized
 assemblies with the telomere/recessed bases included.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Before running Telomore](#before-running-telomore)
+- [Usage](#usage)
+- [Process Overview](#process-overview)
+- [Outputs](#outputs)
+- [Evaluating Output](#evaluate-output)
+- [Citation](#citation)
+- [License](#license)
+
+## Installation
+
+The easiest way to install telomore is using pip:
+```bash
+pip install telomore
+```
+
+Telomore depend on a number of CLI tools:
+- Bowtie2
+- Emboss tools (cons specifically)
+- Lamassemble
+- LAST-DB
+- Mafft
+- Minimap2, version 2.25 or higher
+- Samtools
+
+These can be installed using the conda recipe in this repo:
+
+```bash
+conda env create -f environment.yml -y
+```
+
+This repo can also be downloaded and used to install telomore:
+
+```bash
+# Activate telomore conda env
+conda activate telomore
+
+# Clone telomore repo
+git clone https://github.com/dalofa/telomore && cd telomore
+
+# Install package
+pip install -e '.[dev]'
+```
+
 ## Before running Telomore
 
 Telomore does not identify linear contigs but rather rely on the user to provide
@@ -112,32 +158,26 @@ contigs in the order they appear in the original file.
 Inspecting the {contig_name}_QC.bam-file in IGV (Integrative Genomics Viewer)
 can be informative in evaluating the extended contig.
 
-## Dependencies (CLI-tools)
+## Evaluate Output
+The best way to evaluate whether your assembly have been extending in a meaningful way is to inspect the QC-bam file produced at the end of the Telomore workflow. Ideally you would a high degree of correspondance between the consensus and the reads used to build it.
 
-- Bowtie2
-- Emboss tools (cons specifically)
-- Lamassemble
-- LAST-DB
-- Mafft
-- Minimap2, version 2.25 or higher
-- Samtools
+### Example 1: Illumina extension of NBC_00015
+The chromsome of Streptomyces sp. NBC_00015 were extended with ONT data and subsequently with Illumina data. The Illumina data extended the left end with 23 bases, which look weel supported when inspecting the bam file at the end.
+<p align="center">
+  <img src="images/NBC_00015_illumina.png" alt="map1" width="800">
+</p>
 
-These can be installed using the conda recipe in this repo:
+### Example 2: Nanopore extension of NBC_00008
+The chromsome of Streptomyces sp. NBC_00008 were extended with ONT data. The right end were extended with 23 bases, which seem well supported by the aligned reads. However, about 7 bases were trimmed of the consesus due to low quality of the final bases of the reads. Thus, one could consider other sequencing methods or rerunning with a decreased threshold for trimming.
+<p align="center">
+  <img src="images/NBC_00008_ONT.png" alt="map2" width="800">
+</p>
+### Example 3:
 
-```bash
-conda env create -f environment.yml -y
-```
-
-This repo can then be downloaded using git clone, the conda enviroment activated
-and the tool installed
-
-```bash
-# Activate telomore conda env
-conda activate telomore
-
-# Clone telomore repo
-git clone https://github.com/dalofa/telomore && cd telomore
-
-# Install package
-pip install -e '.[dev]'
-```
+### Example 4: Hairpin-type telomeres (closed telomeres)
+Certain bacteria (Such as Borrelia) utilize a type of telomere with covalently closed hairpins, rather than a blunt-end with a protein. These telomeres have the opposite problem, where a chimera is formed by readthrough of the hairpin onto the complementary strand. Using such reads will overextend the genome with complementary strand since the reads themselves support it:
+<p align="center">
+  <img src="images/hairpin_type_telomere.png" alt="map3" width="800">
+</p>
+See #51 for an example (which also where this example originates from). [Autocycler](https://github.com/rrwick/Autocycler/wiki/Linear-sequences) provides options for dealing with this issue.
+For mixed cases, where a hairpin-type telomere is on one end and streptomyces type telomere is on the end skip-side can be used to control which side are extended.

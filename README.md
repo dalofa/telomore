@@ -16,7 +16,9 @@ assemblies with the telomere/recessed bases included.
 - [Usage](#usage)
 - [Process Overview](#process-overview)
 - [Outputs](#outputs)
-- [Evaluating Output](#evaluate-output)
+- [Evaluating Output and Troubleshooting](#evaluating-output-and-troubleshooting)
+  - [Examples](#examples)
+  - [Troubleshooting](#troubleshooting)
 - [Citation](#citation)
 - [License](#license)
 
@@ -158,26 +160,40 @@ contigs in the order they appear in the original file.
 Inspecting the {contig_name}_QC.bam-file in IGV (Integrative Genomics Viewer)
 can be informative in evaluating the extended contig.
 
-## Evaluate Output
-The best way to evaluate whether your assembly have been extending in a meaningful way is to inspect the QC-bam file produced at the end of the Telomore workflow. Ideally you would a high degree of correspondance between the consensus and the reads used to build it.
+## Evaluating Output and Troubleshooting
+The best way to evaluate whether your assembly have been extending in a meaningful way is to inspect the QC-bam file produced at the end of the Telomore workflow. Ideally you would a high degree of agreement between the consensus and the reads used to build it. Below are some examples:
 
-### Example 1: Illumina extension of NBC_00015
-The chromsome of Streptomyces sp. NBC_00015 were extended with ONT data and subsequently with Illumina data. The Illumina data extended the left end with 23 bases, which look weel supported when inspecting the bam file at the end.
+### Examples
+
+#### Example 1: Illumina extension of NBC_00015
+The chromosome of Streptomyces sp. NBC_00015 were extended with ONT data and subsequently with Illumina data. The Illumina data extended the left end with 23 bases, which look weel supported when inspecting the bam file at the end.
 <p align="center">
   <img src="images/NBC_00015_illumina.png" alt="map1" width="800">
 </p>
 
-### Example 2: Nanopore extension of NBC_00008
+#### Example 2: Nanopore extension of NBC_00008
 The chromsome of Streptomyces sp. NBC_00008 were extended with ONT data. The right end were extended with 23 bases, which seem well supported by the aligned reads. However, about 7 bases were trimmed of the consesus due to low quality of the final bases of the reads. Thus, one could consider other sequencing methods or rerunning with a decreased threshold for trimming.
 <p align="center">
   <img src="images/NBC_00008_ONT.png" alt="map2" width="800">
 </p>
-### Example 3:
 
-### Example 4: Hairpin-type telomeres (closed telomeres)
+#### Example 3: Hairpin-type telomeres (closed telomeres)
 Certain bacteria (Such as Borrelia) utilize a type of telomere with covalently closed hairpins, rather than a blunt-end with a protein. These telomeres have the opposite problem, where a chimera is formed by readthrough of the hairpin onto the complementary strand. Using such reads will overextend the genome with complementary strand since the reads themselves support it:
 <p align="center">
   <img src="images/hairpin_type_telomere.png" alt="map3" width="800">
 </p>
 See #51 for an example (which also where this example originates from). [Autocycler](https://github.com/rrwick/Autocycler/wiki/Linear-sequences) provides options for dealing with this issue.
 For mixed cases, where a hairpin-type telomere is on one end and streptomyces type telomere is on the end skip-side can be used to control which side are extended.
+
+### Troubleshooting
+In cases where a consensus is rejected it can be worthwhile to investigate the particular reason. Typically, the reasons are as follows:
+- `There are no reads to construct a consensus from.`
+
+No reads extend the contig at the side. 
+
+- `{side} consensus does not extend genome`
+This can be either due to a consensus which maps to the genome in a non-extending fashion or a consensus which does not map to the genome. A non-mapping consensus is often due to spurious or chimeric reads. By running telomore with the `--keep` option, the reads used to construct each consensus can be found in the respective .aln-files. Additionally, the original mapping file {reference}_map.bam can be inspected to see if any of the reads seem out of place. For example:
+<p align="center">
+  <img src="images/failed_consensus_illumina.png" alt="map4" width="800">
+</p>
+In this case one read - which seems to be chimeric based on BLAST-matches - will yield a consensus that does not map at the end. Similarly, reads of poor quality present at the end can generate consensus that does not map at the or does not extend. Removing these reads can fix the issue but should be done with care.

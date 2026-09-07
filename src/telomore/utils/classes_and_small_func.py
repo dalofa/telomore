@@ -17,9 +17,9 @@ class Replicon:
     Parameters
     ----------
     name : str
-        Identifier for the replicon (typically contig name from FASTA)
+        Identifier for the replicon (typically contig name from FASTA).
     org_fasta : str
-        Path to the original multi-FASTA file containing this replicon
+        Path to the original multi-FASTA file containing this replicon.
 
     Attributes
     ----------
@@ -174,7 +174,7 @@ class Replicon:
         Returns
         -------
         None
-            Removes files from the filesystem
+            Removes files from the filesystem.
 
         Notes
         -----
@@ -243,14 +243,14 @@ class Replicon:
         Parameters
         ----------
         folder : str
-            Path to destination directory for output files
+            Path to destination directory for output files.
         mode : str
-            Sequencing technology mode: 'nanopore' or 'illumina'
+            Sequencing technology mode: 'nanopore' or 'illumina'.
 
         Returns
         -------
         None
-            Moves files to the destination folder
+            Moves files to the destination folder.
 
         Raises
         ------

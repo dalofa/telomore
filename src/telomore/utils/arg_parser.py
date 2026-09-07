@@ -29,7 +29,7 @@ def get_args() -> Namespace:
         - keep : bool - Retain intermediate files (default: False)
         - quiet : bool - Suppress console output (default: False)
         - coverage_threshold : int or None - Coverage cutoff for trimming
-        - quality_threshold : int or None - Quality score cutoff for trimming
+        - quality_threshold : int or None - Quality score cutoff for trimming.
 
     Raises
     ------
@@ -184,14 +184,14 @@ def setup_logging(log_file: str = 'telomore.log', quiet: bool = False) -> None:
     Parameters
     ----------
     log_file : str, default='telomore.log'
-        Path to log file where all messages will be written
+        Path to log file where all messages will be written.
     quiet : bool, default=False
-        If True, suppress console output (file logging still occurs)
+        If True, suppress console output (file logging still occurs).
 
     Returns
     -------
     None
-        Configures the global logging system
+        Configures the global logging system.
 
     Notes
     -----

@@ -13,6 +13,21 @@ import pysam
 
 
 def _open_fastq(path: Path, mode: str = 'rt'):
+    """
+    Open a FASTQ file, transparently handling gzip compression.
+
+    Parameters
+    ----------
+    path : Path
+        Path to the FASTQ file, gzipped or plain text.
+    mode : str, default='rt'
+        Mode to open the file with.
+
+    Returns
+    -------
+    file object
+        An open file handle for reading or writing the FASTQ file.
+    """
     path = Path(path)
     if path.suffix == '.gz':
         return gzip.open(path, mode)

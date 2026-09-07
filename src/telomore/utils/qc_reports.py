@@ -32,20 +32,20 @@ def qc_map(
     Parameters
     ----------
     extended_assembly : str
-        Path to FASTA file of extended assembly with consensus attached
+        Path to FASTA file of extended assembly with consensus attached.
     left : str
-        Path to SAM file containing left-terminal reads
+        Path to SAM file containing left-terminal reads.
     right : str
-        Path to SAM file containing right-terminal reads
+        Path to SAM file containing right-terminal reads.
     output_handle : str
-        Path for output sorted BAM file with QC alignments
+        Path for output sorted BAM file with QC alignments.
     t : int, default=1
-        Number of threads for mapping
+        Number of threads for mapping.
 
     Returns
     -------
     None
-        Writes QC alignment BAM to output_handle
+        Writes QC alignment BAM to output_handle.
 
     Notes
     -----
@@ -99,24 +99,24 @@ def qc_map_illumina(
     Parameters
     ----------
     extended_assembly : str
-        Path to FASTA file of extended assembly with consensus attached
+        Path to FASTA file of extended assembly with consensus attached.
     left_sam : str
-        Path to SAM file containing left-terminal read alignments
+        Path to SAM file containing left-terminal read alignments.
     right_sam : str
-        Path to SAM file containing right-terminal read alignments
+        Path to SAM file containing right-terminal read alignments.
     fastq_in1 : str
-        Path to original R1 FASTQ file (gzip compressed)
+        Path to original R1 FASTQ file (gzip compressed).
     fastq_in2 : str
-        Path to original R2 FASTQ file (gzip compressed)
+        Path to original R2 FASTQ file (gzip compressed).
     output_handle : str
-        Path for output sorted BAM file with QC alignments
+        Path for output sorted BAM file with QC alignments.
     t : int, default=1
-        Number of threads for mapping
+        Number of threads for mapping.
 
     Returns
     -------
     None
-        Writes QC alignment BAM to output_handle
+        Writes QC alignment BAM to output_handle.
 
     Raises
     ------
@@ -208,20 +208,20 @@ def cons_genome_map(
     Parameters
     ----------
     left_cons : str
-        Path to FASTA file containing left consensus sequence
+        Path to FASTA file containing left consensus sequence.
     right_cons : str
-        Path to FASTA file containing right consensus sequence
+        Path to FASTA file containing right consensus sequence.
     polished_genome : str
-        Path to FASTA file of polished/final genome
+        Path to FASTA file of polished/final genome.
     output_handle : str
-        Path for output sorted BAM file with consensus alignments
+        Path for output sorted BAM file with consensus alignments.
     t : int, default=1
-        Number of threads for mapping
+        Number of threads for mapping.
 
     Returns
     -------
     None
-        Writes consensus alignment BAM to output_handle
+        Writes consensus alignment BAM to output_handle.
 
     Notes
     -----
@@ -256,18 +256,18 @@ def cons_cons_map(
     Parameters
     ----------
     left_cons : str
-        Path to FASTA file containing left consensus (used as reference)
+        Path to FASTA file containing left consensus (used as reference).
     right_cons : str
-        Path to FASTA file containing right consensus (used as query)
+        Path to FASTA file containing right consensus (used as query).
     output_handle : str
-        Path for output sorted BAM file with cross-consensus alignments
+        Path for output sorted BAM file with cross-consensus alignments.
     t : int, default=1
-        Number of threads for mapping
+        Number of threads for mapping.
 
     Returns
     -------
     None
-        Writes cross-consensus alignment BAM to output_handle
+        Writes cross-consensus alignment BAM to output_handle.
 
     Notes
     -----
@@ -300,16 +300,16 @@ def cons_length(cons_file: str, output_handle: str, offset: int = 100) -> None:
     Parameters
     ----------
     cons_file : str
-        Path to FASTA file containing consensus sequences
+        Path to FASTA file containing consensus sequences.
     output_handle : str
-        Path for output TSV file with length statistics
+        Path for output TSV file with length statistics.
     offset : int, default=100
-        Number of bases of original reference included in consensus
+        Number of bases of original reference included in consensus.
 
     Returns
     -------
     None
-        Writes TSV with columns: seq_id, end_cons, full_cons
+        Writes TSV with columns: seq_id, end_cons, full_cons.
 
     Notes
     -----
@@ -358,14 +358,14 @@ def map_to_depth(bam_file: str, output_handle: str) -> None:
     Parameters
     ----------
     bam_file : str
-        Path to input BAM alignment file
+        Path to input BAM alignment file.
     output_handle : str
-        Path for output depth file
+        Path for output depth file.
 
     Returns
     -------
     None
-        Writes depth information to output_handle
+        Writes depth information to output_handle.
 
     Notes
     -----
@@ -402,16 +402,16 @@ def finalize_log(log: str, right_fasta: str, left_fasta: str) -> None:
     Parameters
     ----------
     log : str
-        Path to extension log file to finalize (will be overwritten)
+        Path to extension log file to finalize (will be overwritten).
     right_fasta : str
-        Path to FASTA file containing right consensus sequence
+        Path to FASTA file containing right consensus sequence.
     left_fasta : str
-        Path to FASTA file containing left consensus sequence
+        Path to FASTA file containing left consensus sequence.
 
     Returns
     -------
     None
-        Overwrites log file with finalized version including summary header
+        Overwrites log file with finalized version including summary header.
 
     Notes
     -----

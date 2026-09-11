@@ -65,7 +65,7 @@ complete assembly, it is often sufficient to extend the assembly using Illumina 
 However, in certain cases large chunks of an arm is missing and thus, one must extend
 with Nanopore before extending with Illumina data.
 
-**Beware:** Telomore was designed with expectation of a complete/near-complete 
+**Beware:** Telomore was designed with expectation of a complete/near-complete
 assembly, where each replicon is represented by a single contig. While, a more
 fragmented assembly can be input, this might lead to the overrepresentation of
 sequence.
@@ -187,7 +187,7 @@ For mixed cases, where a hairpin-type telomere is on one end and streptomyces ty
 In cases where a consensus is rejected it can be worthwhile to investigate the particular reason. Typically, the reasons are as follows:
 - `There are no reads to construct a consensus from.`
 
-No reads extend the contig at the side. 
+No reads extend the contig at the side.
 
 - `{side} consensus does not extend genome`
 This can be either due to a consensus which maps to the genome in a non-extending fashion or a consensus which does not map to the genome. A non-mapping consensus is often due to spurious or chimeric reads. By running telomore with the `--keep` option, the reads used to construct each consensus can be found in the respective .aln-files. Additionally, the original mapping file {reference}_map.bam can be inspected to see if any of the reads seem out of place. For example:

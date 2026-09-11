@@ -22,18 +22,18 @@ def map_and_sort(reference: str, fastq: str, output: str, threads: int = 1) -> N
     Parameters
     ----------
     reference : str
-        Path to the reference genome file (.fasta, .fna, or .fa)
+        Path to the reference genome file (.fasta, .fna, or .fa).
     fastq : str
-        Path to the Oxford Nanopore FASTQ file (can be gzipped)
+        Path to the Oxford Nanopore FASTQ file (can be gzipped).
     output : str
-        Path for the output BAM file
+        Path for the output BAM file.
     threads : int, default=1
-        Number of threads to use for mapping and sorting
+        Number of threads to use for mapping and sorting.
 
     Returns
     -------
     None
-        Creates a sorted, indexed BAM file at the specified output path
+        Creates a sorted, indexed BAM file at the specified output path.
 
     Raises
     ------
@@ -150,20 +150,20 @@ def map_and_sort_illumina(
     Parameters
     ----------
     reference : str
-        Path to the reference genome file (.fasta, .fna, or .fa)
+        Path to the reference genome file (.fasta, .fna, or .fa).
     read1 : str
-        Path to the first paired-end FASTQ file (gzipped)
+        Path to the first paired-end FASTQ file (gzipped).
     read2 : str
-        Path to the second paired-end FASTQ file (gzipped)
+        Path to the second paired-end FASTQ file (gzipped).
     output : str
-        Path for the output BAM file
+        Path for the output BAM file.
     threads : int, default=1
-        Number of threads to use for mapping and sorting
+        Number of threads to use for mapping and sorting.
 
     Returns
     -------
     None
-        Creates a sorted, indexed BAM file at the specified output path
+        Creates a sorted, indexed BAM file at the specified output path.
 
     Raises
     ------
@@ -323,18 +323,18 @@ def map_and_sort_illumina_cons(
     Parameters
     ----------
     reference : str
-        Path to the reference genome file (.fasta, .fna, or .fa)
+        Path to the reference genome file (.fasta, .fna, or .fa).
     consensus_fasta : str
-        Path to the consensus sequences file in FASTA format
+        Path to the consensus sequences file in FASTA format.
     output : str
-        Path for the output BAM file
+        Path for the output BAM file.
     threads : int, default=1
-        Number of threads to use for mapping and sorting
+        Number of threads to use for mapping and sorting.
 
     Returns
     -------
     None
-        Creates a sorted, indexed BAM file at the specified output path
+        Creates a sorted, indexed BAM file at the specified output path.
 
     Raises
     ------
@@ -491,18 +491,18 @@ def train_lastDB(fasta_name: str, reads: str, db_name: str, t: int = 1) -> None:
     Parameters
     ----------
     fasta_name : str
-        Path to the reference genome file in FASTA format
+        Path to the reference genome file in FASTA format.
     reads : str
-        Path to the long reads file (FASTQ format, can be gzipped)
+        Path to the long reads file (FASTQ format, can be gzipped).
     db_name : str
-        Output path/prefix for the LAST database files
+        Output path/prefix for the LAST database files.
     t : int, default=1
-        Number of threads to use for indexing and training
+        Number of threads to use for indexing and training.
 
     Returns
     -------
     None
-        Creates database files with extensions: .bck, .des, .par, .prj, .sds, .ssp, .suf, .tis
+        Creates database files with extensions: .bck, .des, .par, .prj, .sds, .ssp, .suf, .tis.
 
     Raises
     ------
@@ -557,16 +557,16 @@ def generate_consensus_lamassemble(db_name: str, reads: str, output: str) -> Non
     Parameters
     ----------
     db_name : str
-        Path prefix to the trained LAST database (without .par extension)
+        Path prefix to the trained LAST database (without .par extension).
     reads : str
-        Path to input reads in FASTQ format
+        Path to input reads in FASTQ format.
     output : str
-        Path for output consensus sequence in FASTA format
+        Path for output consensus sequence in FASTA format.
 
     Returns
     -------
     None
-        Writes consensus sequence to output file and alignment to {output}.aln
+        Writes consensus sequence to output file and alignment to {output}.aln.
 
     Notes
     -----
@@ -634,14 +634,14 @@ def generate_consensus_mafft(reads: str, output: str) -> None:
     Parameters
     ----------
     reads : str
-        Path to input reads in FASTQ format
+        Path to input reads in FASTQ format.
     output : str
-        Path for output consensus sequence in FASTA format
+        Path for output consensus sequence in FASTA format.
 
     Returns
     -------
     None
-        Writes consensus sequence to output file and alignment to {output}.aln
+        Writes consensus sequence to output file and alignment to {output}.aln.
 
     Raises
     ------

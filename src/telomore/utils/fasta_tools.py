@@ -18,15 +18,15 @@ def check_fastq_order(file1: str, file2: str) -> bool:
     Parameters
     ----------
     file1 : str
-        Path to first FASTQ file
+        Path to first FASTQ file.
     file2 : str
-        Path to second FASTQ file
+        Path to second FASTQ file.
 
     Returns
     -------
     bool
         True if files are the same length with matching read IDs in order,
-        False otherwise
+        False otherwise.
 
     Notes
     -----
@@ -68,12 +68,12 @@ def get_linear_elements(fasta_file: str) -> list[str]:
     Parameters
     ----------
     fasta_file : str
-        Path to FASTA file where linear contigs are tagged
+        Path to FASTA file where linear contigs are tagged.
 
     Returns
     -------
     list of str
-        List of contig IDs (record.id) for contigs with 'linear' in description
+        List of contig IDs (record.id) for contigs with 'linear' in description.
 
     Notes
     -----
@@ -106,16 +106,16 @@ def extract_contig(fasta_in: str, contig_name: str, fasta_out: str) -> None:
     Parameters
     ----------
     fasta_in : str
-        Path to input multi-FASTA file
+        Path to input multi-FASTA file.
     contig_name : str
-        Name of contig to extract (must match record.id exactly)
+        Name of contig to extract (must match record.id exactly).
     fasta_out : str
-        Path for output FASTA file containing only the extracted contig
+        Path for output FASTA file containing only the extracted contig.
 
     Returns
     -------
     None
-        Writes extracted contig to fasta_out
+        Writes extracted contig to fasta_out.
 
     Notes
     -----
@@ -140,14 +140,14 @@ def get_fasta_length(fasta_file: str, contig_name: str) -> int:
     Parameters
     ----------
     fasta_file : str
-        Path to FASTA file
+        Path to FASTA file.
     contig_name : str
-        Name of contig whose length to retrieve (must match record.id exactly)
+        Name of contig whose length to retrieve (must match record.id exactly).
 
     Returns
     -------
     int
-        Length of the contig sequence in bases
+        Length of the contig sequence in bases.
 
     Notes
     -----
@@ -172,14 +172,14 @@ def dereplicate_fastq(fastq_in: str, fastq_out: str) -> None:
     Parameters
     ----------
     fastq_in : str
-        Path to input FASTQ file (may contain duplicates)
+        Path to input FASTQ file (may contain duplicates).
     fastq_out : str
-        Path for output deduplicated FASTQ file
+        Path for output deduplicated FASTQ file.
 
     Returns
     -------
     None
-        Writes deduplicated reads to fastq_out
+        Writes deduplicated reads to fastq_out.
 
     Notes
     -----
@@ -216,16 +216,16 @@ def cat_and_derep_fastq(fastq_in1: str, fastq_in2: str, fastq_out: str) -> None:
     Parameters
     ----------
     fastq_in1 : str
-        Path to first input FASTQ file
+        Path to first input FASTQ file.
     fastq_in2 : str
-        Path to second input FASTQ file
+        Path to second input FASTQ file.
     fastq_out : str
-        Path for output deduplicated FASTQ file
+        Path for output deduplicated FASTQ file.
 
     Returns
     -------
     None
-        Writes concatenated and deduplicated reads to fastq_out
+        Writes concatenated and deduplicated reads to fastq_out.
 
     Notes
     -----
@@ -262,14 +262,14 @@ def get_chromosome(fasta: str, output_handle: str) -> None:
     Parameters
     ----------
     fasta : str
-        Path to input FASTA file (single or multi-contig)
+        Path to input FASTA file (single or multi-contig).
     output_handle : str
-        Path for output FASTA file containing the selected chromosome
+        Path for output FASTA file containing the selected chromosome.
 
     Returns
     -------
     None
-        Writes the selected chromosome to output_handle and logs the selection
+        Writes the selected chromosome to output_handle and logs the selection.
 
     Notes
     -----
@@ -325,20 +325,20 @@ def attach_seq(
     Parameters
     ----------
     left : str
-        Path to FASTA file containing left/5' telomeric sequence
+        Path to FASTA file containing left/5' telomeric sequence.
     right : str
-        Path to FASTA file containing right/3' telomeric sequence
+        Path to FASTA file containing right/3' telomeric sequence.
     chromosome : str
-        Path to FASTA file containing chromosome sequence
+        Path to FASTA file containing chromosome sequence.
     output_name : str
-        Path for output FASTA file with attached sequences
+        Path for output FASTA file with attached sequences.
     offset : int, default=0
-        Number of bases to trim from each end of chromosome before attachment
+        Number of bases to trim from each end of chromosome before attachment.
 
     Returns
     -------
     None
-        Writes extended genome to output_name
+        Writes extended genome to output_name.
 
     Raises
     ------
@@ -388,16 +388,16 @@ def merge_fasta(input_file1: str, input_file2: str, output_file: str) -> None:
     Parameters
     ----------
     input_file1 : str
-        Path to first input FASTA file
+        Path to first input FASTA file.
     input_file2 : str
-        Path to second input FASTA file
+        Path to second input FASTA file.
     output_file : str
-        Path for output merged FASTA file
+        Path for output merged FASTA file.
 
     Returns
     -------
     None
-        Writes merged sequences to output_file
+        Writes merged sequences to output_file.
 
     Notes
     -----
@@ -429,16 +429,16 @@ def trim_to_cons(input_seq: str, num_base: int, output_handle: str) -> None:
     Parameters
     ----------
     input_seq : str
-        Path to input FASTA file
+        Path to input FASTA file.
     num_base : int
-        Number of bases to retain from the start of each sequence
+        Number of bases to retain from the start of each sequence.
     output_handle : str
-        Path for output trimmed FASTA file
+        Path for output trimmed FASTA file.
 
     Returns
     -------
     None
-        Writes trimmed sequences to output_handle
+        Writes trimmed sequences to output_handle.
 
     Notes
     -----
@@ -487,18 +487,18 @@ def strip_fasta(
     Parameters
     ----------
     input_file : str
-        Path to input FASTA file
+        Path to input FASTA file.
     output_file : str
-        Path for output stripped FASTA file
+        Path for output stripped FASTA file.
     x : int
-        Number of bases to remove from each sequence
+        Number of bases to remove from each sequence.
     remove_from : str, default='start'
-        Which end to remove bases from: 'start' for 5' end, 'end' for 3' end
+        Which end to remove bases from: 'start' for 5' end, 'end' for 3' end.
 
     Returns
     -------
     None
-        Writes stripped sequences to output_file
+        Writes stripped sequences to output_file.
 
     Raises
     ------
@@ -546,18 +546,18 @@ def build_extended_fasta(
     Parameters
     ----------
     org_fasta : str
-        Path to original input FASTA file
+        Path to original input FASTA file.
     linear_elements : list of str
-        List of contig IDs that were identified as linear and extended
+        List of contig IDs that were identified as linear and extended.
     replicon_list : list
-        List of Replicon objects containing paths to extended sequences
+        List of Replicon objects containing paths to extended sequences.
     output_handle : str
-        Path for output FASTA file with extended contigs
+        Path for output FASTA file with extended contigs.
 
     Returns
     -------
     None
-        Writes reconstructed FASTA to output_handle
+        Writes reconstructed FASTA to output_handle.
 
     Notes
     -----

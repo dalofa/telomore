@@ -1,5 +1,13 @@
-# Package notes
+# Sandpit
 .ideas/
+.plans/
+
+# Agent configs
+.claude/
+.claudeignore
+.env
+.mcp.json
+CLAUDE.md
 
 # Mac stuff
 .DS_Store

@@ -21,10 +21,6 @@ jobs:
         with:
           src: "./src"
           args: "check --fix"
-      - uses: isort/isort-action@v1
-        with:
-          configuration: "--settings-path=./pyproject.toml"
-          sort-paths: "./src"
       - uses: stefanzweifel/git-auto-commit-action@v7
         id: auto-commit-action
         with:

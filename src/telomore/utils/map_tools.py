@@ -813,11 +813,12 @@ def stitch_telo(
                 clip_num = int(lmatch.group(1))  # digits are retrieve via .group
 
                 # check if the clipped sequence extends beyond genome
-                if clip_num - read.reference_start > 0: # This means it is extending
-                    seq = read.query_sequence[0 : (clip_num - read.reference_start)]  # Adjust for if more than just overhanging bases are soft-clipped
+                if clip_num - read.reference_start > 0:  # This means it is extending
+                    seq = read.query_sequence[
+                        0 : (clip_num - read.reference_start)
+                    ]  # Adjust for if more than just overhanging bases are soft-clipped
                     left_seqs.append(seq)
         l_sam_in.close()
-
 
     right_log_mes = ''
 
